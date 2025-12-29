@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV Pro Player</title>
+    <title>IPTV : Local & En ligne</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body {
@@ -16,61 +16,7 @@
             overflow: hidden;
         }
 
-        /* --- ÉCRAN DE CHARGEMENT (MODAL) --- */
-        #loadingOverlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 9999;
-            display: none; /* Caché par défaut */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        .loader-box {
-            width: 80%;
-            max-width: 400px;
-        }
-
-        .loader-title {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #00d2ff;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* Barre de progression */
-        .progress-container {
-            width: 100%;
-            height: 10px;
-            background-color: #333;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            transition: width 0.1s linear;
-        }
-
-        .loader-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            color: #aaa;
-            font-family: monospace;
-        }
-
-        .count-live { color: #00ff00; }
-
-        /* --- RESTE DU SITE --- */
+        /* --- BARRE LATÉRALE --- */
         .sidebar {
             width: 320px;
             background: #1e1e1e;
@@ -103,7 +49,10 @@
             text-align: right;
         }
 
-        .channel-list { flex: 1; overflow-y: auto; }
+        .channel-list {
+            flex: 1;
+            overflow-y: auto;
+        }
 
         .channel-item {
             padding: 12px 15px;
@@ -118,6 +67,7 @@
         .channel-item:hover { background: #333; color: #00d2ff; }
         .channel-item.active { background: #007bff; color: white; border-left: 4px solid #fff; }
 
+        /* --- ZONE LECTEUR --- */
         .main-content {
             flex: 1;
             display: flex;
@@ -127,6 +77,7 @@
             align-items: center;
         }
 
+        /* Zone de contrôle (Boutons) */
         .controls-top {
             width: 100%;
             max-width: 900px;
@@ -139,39 +90,67 @@
             gap: 10px;
         }
 
-        .load-options { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .load-options {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .btn { padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; color: white; }
-        .btn-blue { background: #007bff; }
-        .btn-green { background: #28a745; }
-        
-        .file-upload-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; font-size: 100px; }
-        input[type="text"] { padding: 8px; background: #2c2c2c; border: 1px solid #444; color: #ccc; border-radius: 4px; flex-grow: 1; }
+        /* Style spécial pour l'input fichier */
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .btn {
+            border: 2px solid gray;
+            color: white;
+            background-color: #333;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-blue { background: #007bff; border-color: #007bff; }
+        .btn-green { background: #28a745; border-color: #28a745; }
+
+        /* On cache le vrai input file moche et on met un bouton par dessus */
+        .file-upload-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            background: #2c2c2c;
+            border: 1px solid #444;
+            color: #ccc;
+            border-radius: 4px;
+            flex-grow: 1;
+        }
 
         .video-wrapper {
-            width: 100%; max-width: 900px; background: black;
-            border-radius: 8px; overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            width: 100%;
+            max-width: 900px;
+            background: black;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
         }
+
         video { width: 100%; height: auto; display: block; max-height: 70vh; }
         #statusInfo { margin-top: 15px; color: #888; font-family: monospace; }
     </style>
 </head>
 <body>
-
-    <div id="loadingOverlay">
-        <div class="loader-box">
-            <div class="loader-title">Chargement de la TV...</div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="loader-stats">
-                <span id="progressText">0%</span>
-                <span class="count-live" id="loadingCount">0 chaînes trouvées</span>
-            </div>
-            <div style="margin-top:10px; font-size:12px; color:#666;">Ne fermez pas la page...</div>
-        </div>
-    </div>
 
     <div class="sidebar">
         <div class="search-area">
@@ -184,13 +163,15 @@
     <div class="main-content">
         <div class="controls-top">
             <div class="load-options">
-                <span>📁 Fichier Local (.m3u)</span>
+                <span>Option A : Ouvrir un fichier téléchargé (.m3u)</span>
                 <div class="file-upload-wrapper">
-                    <button class="btn btn-blue">OUVRIR FICHIER</button>
+                    <button class="btn btn-blue">📁 CHOISIR FICHIER</button>
                     <input type="file" id="fileInput" accept=".m3u,.m3u8">
                 </div>
             </div>
+            
             <hr style="width:100%; border:0; border-top:1px solid #333; margin:5px 0;">
+
             <div class="load-options">
                 <input type="text" id="m3uUrl" value="https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u">
                 <button class="btn btn-green" onclick="loadFromUrl()">🌐 CHARGER URL</button>
@@ -200,148 +181,87 @@
         <div class="video-wrapper">
             <video id="video" controls autoplay></video>
         </div>
-        <div id="statusInfo">Prêt. Choisissez une source.</div>
+        <div id="statusInfo">Prêt. Choisissez une option ci-dessus.</div>
     </div>
 
     <script>
         var video = document.getElementById('video');
         var channelList = document.getElementById('channelList');
         var countDisplay = document.getElementById('channelCount');
-        
-        // Éléments du loader
-        var loaderOverlay = document.getElementById('loadingOverlay');
-        var progressBar = document.getElementById('progressBar');
-        var progressText = document.getElementById('progressText');
-        var loadingCount = document.getElementById('loadingCount');
-
         var hls = new Hls();
         var allChannels = []; 
 
-        // --- GESTION FICHIER LOCAL ---
+        // --- GESTION DU FICHIER LOCAL ---
         document.getElementById('fileInput').addEventListener('change', function(e) {
             var file = e.target.files[0];
             if (!file) return;
-            
-            showLoader(); // Afficher loader
+
+            document.getElementById('statusInfo').innerText = "Lecture du fichier : " + file.name;
             
             var reader = new FileReader();
             reader.onload = function(e) {
-                // On simule un petit délai pour voir l'animation commencer
-                setTimeout(() => processM3UData(e.target.result), 500);
+                var content = e.target.result;
+                parseM3U(content);
+                document.getElementById('statusInfo').innerText = "✅ Fichier local chargé !";
             };
             reader.readAsText(file);
         });
 
-        // --- GESTION URL ---
+        // --- GESTION DE L'URL (INTERNET) ---
         function loadFromUrl() {
             var url = document.getElementById('m3uUrl').value;
-            showLoader();
-
+            document.getElementById('statusInfo').innerText = "Téléchargement en cours...";
+            
             var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
 
             fetch(proxyUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error("Erreur réseau");
-                    return response.text();
-                })
+                .then(response => response.text())
                 .then(data => {
-                    processM3UData(data);
+                    parseM3U(data);
+                    document.getElementById('statusInfo').innerText = "✅ Liste en ligne chargée !";
                 })
                 .catch(err => {
-                    hideLoader();
-                    alert("Erreur de téléchargement : " + err);
+                    document.getElementById('statusInfo').innerText = "❌ Erreur de téléchargement.";
                 });
         }
 
-        // --- FONCTIONS LOADER ---
-        function showLoader() {
-            loaderOverlay.style.display = 'flex';
-            progressBar.style.width = '0%';
-            progressText.innerText = '0%';
-            loadingCount.innerText = '0 chaînes trouvées';
+        // --- ANALYSE COMMUNE (PARSING) ---
+        function parseM3U(data) {
             allChannels = [];
-        }
-
-        function hideLoader() {
-            // Petite pause à 100% avant de fermer pour l'effet visuel
-            setTimeout(() => {
-                loaderOverlay.style.display = 'none';
-            }, 500);
-        }
-
-        // --- LE COEUR DU SYSTÈME : TRAITEMENT PAR PAQUETS ---
-        // Cette fonction découpe le travail pour permettre l'animation
-        function processM3UData(data) {
             var lines = data.split('\n');
-            var totalLines = lines.length;
-            var processedLines = 0;
-            var tempChannels = [];
             var currentName = "Inconnu";
 
-            var i = 0;
-            var batchSize = 1000; // On traite 1000 lignes à la fois
-
-            function processBatch() {
-                var limit = Math.min(i + batchSize, totalLines);
-                
-                for (; i < limit; i++) {
-                    var line = lines[i].trim();
-                    if (line.startsWith('#EXTINF')) {
-                        var parts = line.split(',');
-                        currentName = parts.length > 1 ? parts[1] : "Chaîne sans nom";
-                    } else if (line.startsWith('http')) {
-                        tempChannels.push({ name: currentName, url: line });
-                    }
-                }
-
-                // Mise à jour de l'interface (Loader)
-                processedLines = i;
-                var percent = Math.round((processedLines / totalLines) * 100);
-                
-                progressBar.style.width = percent + '%';
-                progressText.innerText = percent + '%';
-                loadingCount.innerText = tempChannels.length + ' chaînes trouvées';
-
-                // Si on n'a pas fini, on relance le prochain paquet
-                if (i < totalLines) {
-                    setTimeout(processBatch, 10); // Pause de 10ms pour laisser l'écran s'afficher
-                } else {
-                    // FINI !
-                    allChannels = tempChannels;
-                    renderChannels(allChannels);
-                    hideLoader();
-                    document.getElementById('statusInfo').innerText = "✅ Chargement terminé !";
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (line.startsWith('#EXTINF')) {
+                    var parts = line.split(',');
+                    currentName = parts.length > 1 ? parts[1] : "Chaîne sans nom";
+                } else if (line.startsWith('http')) {
+                    allChannels.push({ name: currentName, url: line });
                 }
             }
-
-            // Démarrage du processus
-            processBatch();
+            renderChannels(allChannels);
         }
 
-        // --- AFFICHAGE ET LECTURE ---
         function renderChannels(channels) {
             channelList.innerHTML = "";
+            var displayLimit = 800; 
             countDisplay.innerText = channels.length + " chaînes";
-            
-            // On limite l'affichage initial pour ne pas faire ramer le DOM
-            var listToDisplay = channels.slice(0, 1000);
+
+            var listToDisplay = channels.slice(0, displayLimit);
 
             if(channels.length === 0) {
-                channelList.innerHTML = "<div style='padding:20px; text-align:center; color:#555'>Aucune chaîne trouvée.</div>";
+                channelList.innerHTML = "<div style='padding:20px; text-align:center; color:#555'>Aucun résultat</div>";
                 return;
             }
-
-            // Fragment de document pour insérer tout d'un coup (plus rapide)
-            var fragment = document.createDocumentFragment();
 
             listToDisplay.forEach(ch => {
                 var div = document.createElement('div');
                 div.className = 'channel-item';
                 div.innerText = ch.name;
                 div.onclick = function() { playStream(ch.url, this); };
-                fragment.appendChild(div);
+                channelList.appendChild(div);
             });
-            channelList.appendChild(fragment);
         }
 
         function filterChannels() {
@@ -365,7 +285,8 @@
                 });
                 hls.on(Hls.Events.ERROR, function (event, data) {
                     if (data.fatal) {
-                        hls.startLoad(); // Tentative de relance
+                       // Essai de relancer en cas de petit bug
+                       hls.startLoad();
                     }
                 });
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
