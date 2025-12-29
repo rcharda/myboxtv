@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Cloud</title>
+    <title>My Box TV - Ultimate</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -11,7 +11,7 @@
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-box { background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
-        .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 20px; font-weight:bold; letter-spacing: 2px; text-align: center; text-transform: uppercase; }
+        .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 16px; text-align: center; text-transform: uppercase; }
         .login-btn { background: #e50914; color: white; padding: 15px; width: 100%; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer; }
         .login-btn:hover { background: #ff0f1f; }
         #login-msg { color: #ff4444; margin-top: 15px; font-size: 14px; min-height: 20px;}
@@ -52,10 +52,10 @@
 <div id="login-overlay">
     <div class="login-box">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="80" style="margin-bottom:20px;">
-        <h2 style="margin:0; color:white;">CONNEXION</h2>
-        <p style="color:#888; font-size:12px;">Entrez votre ID d'abonnement</p>
-        <input type="text" id="licenseKey" class="login-input" placeholder="ID CLIENT">
-        <button onclick="checkLicense()" class="login-btn" id="btnConnect">SE CONNECTER</button>
+        <h2 style="margin:0; color:white;">ACTIVATION SÉCURISÉE</h2>
+        <p style="color:#888; font-size:12px;">Entrez votre clé d'abonnement</p>
+        <input type="text" id="licenseKey" class="login-input" placeholder="CLE-XXXX-XXXX">
+        <button onclick="checkLicense()" class="login-btn" id="btnConnect">VALIDER LA CLÉ</button>
         <div id="login-msg"></div>
     </div>
 </div>
@@ -77,11 +77,11 @@
     
     <div style="padding: 10px; background: #151515;">
         <div class="btn-group">
-            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (Cloud)</button>
-            <button onclick="logout()" class="action-btn" style="background:#555;">Déconnexion</button>
+            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (14K+)</button>
+            <button onclick="logout()" class="action-btn">🔒 DÉCO</button>
         </div>
     </div>
-    <div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: Canal, TF1...)"></div>
+    <div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Rechercher..."></div>
     <div id="channel-count">0 chaînes</div>
     <div id="channel-list"></div>
     <div class="dev-footer"><div>Dev: GBOHOUNME Richard Chiriaque</div></div>
@@ -89,17 +89,14 @@
 
 <script>
     // =======================================================
-    // TON LIEN EST INTÉGRÉ ICI :
-    const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
+    // VOTRE LIEN EST ICI :
+    const API_URL = "https://script.google.com/macros/s/AKfycbyXRGexA2_7NfPi-qThQgDUBrPJskqOAofO7MFpwdqx1gJTzSH2dbmN_DU_vTz5F2tfPQ/exec";
     // =======================================================
 
     const loginOverlay = document.getElementById('login-overlay');
     const msgDiv = document.getElementById('login-msg');
     const btnConnect = document.getElementById('btnConnect');
     const expireDiv = document.getElementById('expiration-display');
-    
-    // VARIABLE POUR STOCKER LES LIENS DYNAMIQUES
-    let DYNAMIC_PLAYLISTS = [];
 
     let deviceId = localStorage.getItem('mybox_device_id');
     if (!deviceId) {
@@ -111,20 +108,18 @@
         loginOverlay.style.display = 'none';
         const savedStatus = localStorage.getItem('mybox_status_text');
         expireDiv.innerText = savedStatus ? savedStatus : "Connecté";
-        // On charge les playlists depuis le cloud avant de lancer l'app
-        fetchPlaylistsAndInit();
+        setTimeout(initApp, 500);
     }
 
-    // --- ETAPE 1 : CONNEXION ---
     async function checkLicense() {
         const key = document.getElementById('licenseKey').value.trim();
-        if(key.length < 2) return;
+        if(key.length < 3) return;
 
-        btnConnect.innerText = "Connexion...";
+        btnConnect.innerText = "Vérification...";
         msgDiv.innerText = "";
 
         try {
-            const url = API_URL + "?action=login&key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId);
+            const url = API_URL + "?key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId);
             const res = await fetch(url);
             const text = await res.text();
 
@@ -133,73 +128,40 @@
                 localStorage.setItem('mybox_key', key);
                 
                 let statusText = "";
-                if (text.includes(":VIE")) statusText = "ID VALIDE (À VIE) ♾️";
-                else if(text.includes(":OK:")) statusText = "Reste: " + text.split(':')[2] + " jours";
-                else statusText = "Connecté";
+                if (text.includes(":VIE")) {
+                    statusText = "ABONNEMENT À VIE ♾️";
+                } else if(text.includes(":OK:")) {
+                    const jours = text.split(':')[2];
+                    statusText = "Reste: " + jours + " jours";
+                } else {
+                    statusText = "Abonnement Actif";
+                }
                 
                 expireDiv.innerText = statusText;
                 localStorage.setItem('mybox_status_text', statusText);
                 
                 loginOverlay.style.display = 'none';
-                
-                // Connexion réussie, maintenant on charge les sources
-                fetchPlaylistsAndInit();
-
+                initApp();
             } else if (text.includes("EXPIRED")) {
-                msgDiv.innerText = "❌ ID Expiré";
-            } else if (text.includes("DEVICE_LIMIT_REACHED")) {
-                msgDiv.innerText = "⚠️ Trop d'appareils connectés.";
+                msgDiv.innerText = "❌ Abonnement expiré";
+            } else if (text.includes("DEVICE_MISMATCH")) {
+                msgDiv.innerText = "❌ Clé déjà utilisée ailleurs !";
+            } else if (text.includes("INVALID")) {
+                msgDiv.innerText = "❌ Clé inexistante dans la liste";
             } else {
-                msgDiv.innerText = "❌ ID Invalide";
+                msgDiv.innerText = "❌ Erreur: " + text;
             }
         } catch (e) {
-            msgDiv.innerText = "Erreur réseau";
+            msgDiv.innerText = "Erreur de connexion internet";
         }
-        btnConnect.innerText = "SE CONNECTER";
+        btnConnect.innerText = "VALIDER LA CLÉ";
     }
 
-    // --- ETAPE 2 : RECUPERATION DES LIENS DEPUIS GOOGLE SHEET ---
-    async function fetchPlaylistsAndInit() {
-        // Si on a déjà scanné, on affiche le cache en attendant
-        loadCache();
-        
-        try {
-            const statusDiv = document.getElementById('status');
-            statusDiv.style.display = 'block';
-            statusDiv.innerText = "Mise à jour des sources...";
-            
-            // On demande les playlists au script
-            const res = await fetch(API_URL + "?action=get_playlists");
-            const text = await res.text();
-            
-            if (text.startsWith("PLAYLISTS:")) {
-                const rawLinks = text.replace("PLAYLISTS:", "");
-                // Le script sépare par ",,," pour éviter les bugs si une url contient une virgule
-                DYNAMIC_PLAYLISTS = rawLinks.split(",,,");
-                
-                console.log("Sources chargées : " + DYNAMIC_PLAYLISTS.length);
-                
-                // Si le cache est vide, on lance le scan auto
-                if(allChannels.length === 0) {
-                     startScan();
-                } else {
-                    statusDiv.style.display = 'none';
-                }
-            }
-        } catch(e) {
-            console.log("Erreur chargement sources, utilisation par défaut");
-            // Sources de secours si Google plante
-            DYNAMIC_PLAYLISTS = ["https://iptv-org.github.io/iptv/index.m3u"];
+    function logout() {
+        if(confirm("Se déconnecter ?")) {
+            localStorage.removeItem('mybox_auth');
+            location.reload();
         }
-    }
-
-    async function logout() {
-        if(!confirm("Déconnecter cet appareil ?")) return;
-        const key = localStorage.getItem('mybox_key');
-        try { await fetch(API_URL + "?action=logout&key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId)); } catch(e) {}
-        localStorage.removeItem('mybox_auth');
-        localStorage.removeItem('mybox_key');
-        location.reload();
     }
 
     // --- IPTV LOGIC ---
@@ -212,6 +174,16 @@
     const scanProgress = document.getElementById('scan-progress');
     let hls = null, allChannels = [], loadedUrls = new Set(), currentUrl = "";
 
+    const PLAYLISTS = [
+        "https://iptv-org.github.io/iptv/index.m3u",
+        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
+        "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
+    ];
+
+    function initApp() {
+        loadCache();
+        if(allChannels.length === 0) setTimeout(startScan, 1000);
+    }
     function loadCache() {
         const cached = localStorage.getItem('mybox_channels_v5');
         if (cached) {
@@ -244,37 +216,24 @@
         listContainer.appendChild(fragment);
         countDiv.innerText = `${allChannels.length} chaînes disponibles`;
     }
-    
     async function startScan() {
-        // On vide la liste pour rafraichir
-        allChannels = [];
-        loadedUrls = new Set();
-        listContainer.innerHTML = "";
-        
         statusDiv.style.display = 'block';
-        statusDiv.innerText = "Téléchargement des listes...";
+        statusDiv.innerText = "Scan en cours...";
         scanProgress.style.display = 'block';
         scanBar.style.width = "5%";
-        
-        // On utilise la liste venue de Google Sheet
-        const sourcesToScan = DYNAMIC_PLAYLISTS.length > 0 ? DYNAMIC_PLAYLISTS : ["https://iptv-org.github.io/iptv/index.m3u"];
-
-        for (let i = 0; i < sourcesToScan.length; i++) {
-            await crawlAndAdd(sourcesToScan[i]);
-            scanBar.style.width = ((i+1)/sourcesToScan.length * 90) + "%";
+        for (let i = 0; i < PLAYLISTS.length; i++) {
+            await crawlAndAdd(PLAYLISTS[i]);
+            scanBar.style.width = ((i+1)/PLAYLISTS.length * 30) + "%";
         }
         statusDiv.innerText = "Scan Terminé !";
         scanBar.style.width = "100%";
         setTimeout(() => { statusDiv.style.display = 'none'; scanProgress.style.display = 'none'; }, 3000);
     }
-
     async function crawlAndAdd(url) {
-        if(!url || url.length < 5) return; // Sécurité liens vides
         const text = await fetchUrl(url);
         if(!text) return;
         const lines = text.split('\n');
         let foldersToScan = [], newChannelsBatch = [], currentInfo = {}, baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-        
         for(let line of lines) {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
@@ -285,34 +244,26 @@
             } else if (line.length > 0 && !line.startsWith('#')) {
                 let fullUrl = line.startsWith('http') ? line : baseUrl + line;
                 const isFolder = fullUrl.endsWith('.m3u');
-                
-                if (isFolder) {
-                    foldersToScan.push(fullUrl);
-                } 
-                else if (currentInfo.name) {
-                    if (!loadedUrls.has(fullUrl)) {
-                        const newCh = {name: currentInfo.name, url: fullUrl, logo: currentInfo.logo};
-                        allChannels.push(newCh);
-                        loadedUrls.add(fullUrl);
-                        newChannelsBatch.push(newCh);
-                    }
+                if (isFolder) foldersToScan.push(fullUrl);
+                else if (currentInfo.name && !loadedUrls.has(fullUrl)) {
+                    const newCh = {name: currentInfo.name, url: fullUrl, logo: currentInfo.logo};
+                    allChannels.push(newCh);
+                    loadedUrls.add(fullUrl);
+                    newChannelsBatch.push(newCh);
                 }
                 currentInfo = {};
             }
         }
-
         if(newChannelsBatch.length > 0) { renderBatch(newChannelsBatch); saveCache(); }
-
         if (foldersToScan.length > 0) {
-            const BATCH_SIZE = 10; 
+            const BATCH_SIZE = 5;
             for(let i=0; i<foldersToScan.length; i+=BATCH_SIZE) {
                 const batch = foldersToScan.slice(i, i+BATCH_SIZE);
                 await Promise.all(batch.map(folderUrl => crawlAndAdd(folderUrl)));
-                await new Promise(r => setTimeout(r, 20)); 
+                await new Promise(r => setTimeout(r, 50));
             }
         }
     }
-
     async function fetchUrl(url) {
         const proxies = ["https://api.allorigins.win/raw?url=", "https://corsproxy.io/?"];
         for(let proxy of proxies) {
@@ -351,3 +302,4 @@
 </script>
 </body>
 </html>
+
