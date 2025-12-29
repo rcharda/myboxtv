@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Ultimate</title>
+    <title>My Box TV - Cloud</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -77,7 +77,7 @@
     
     <div style="padding: 10px; background: #151515;">
         <div class="btn-group">
-            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (Tout)</button>
+            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (Cloud)</button>
             <button onclick="logout()" class="action-btn" style="background:#555;">Déconnexion</button>
         </div>
     </div>
@@ -89,14 +89,17 @@
 
 <script>
     // =======================================================
-    // TON LIEN GOOGLE SCRIPT V2 :
-    const API_URL = "https://script.google.com/macros/s/AKfycbyXRGexA2_7NfPi-qThQgDUBrPJskqOAofO7MFpwdqx1gJTzSH2dbmN_DU_vTz5F2tfPQ/exec";
+    // TON LIEN EST INTÉGRÉ ICI :
+    const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
     // =======================================================
 
     const loginOverlay = document.getElementById('login-overlay');
     const msgDiv = document.getElementById('login-msg');
     const btnConnect = document.getElementById('btnConnect');
     const expireDiv = document.getElementById('expiration-display');
+    
+    // VARIABLE POUR STOCKER LES LIENS DYNAMIQUES
+    let DYNAMIC_PLAYLISTS = [];
 
     let deviceId = localStorage.getItem('mybox_device_id');
     if (!deviceId) {
@@ -108,9 +111,11 @@
         loginOverlay.style.display = 'none';
         const savedStatus = localStorage.getItem('mybox_status_text');
         expireDiv.innerText = savedStatus ? savedStatus : "Connecté";
-        setTimeout(initApp, 500);
+        // On charge les playlists depuis le cloud avant de lancer l'app
+        fetchPlaylistsAndInit();
     }
 
+    // --- ETAPE 1 : CONNEXION ---
     async function checkLicense() {
         const key = document.getElementById('licenseKey').value.trim();
         if(key.length < 2) return;
@@ -136,11 +141,14 @@
                 localStorage.setItem('mybox_status_text', statusText);
                 
                 loginOverlay.style.display = 'none';
-                initApp();
+                
+                // Connexion réussie, maintenant on charge les sources
+                fetchPlaylistsAndInit();
+
             } else if (text.includes("EXPIRED")) {
                 msgDiv.innerText = "❌ ID Expiré";
             } else if (text.includes("DEVICE_LIMIT_REACHED")) {
-                msgDiv.innerText = "⚠️ Trop d'appareils connectés. Augmentez votre forfait.";
+                msgDiv.innerText = "⚠️ Trop d'appareils connectés.";
             } else {
                 msgDiv.innerText = "❌ ID Invalide";
             }
@@ -148,6 +156,41 @@
             msgDiv.innerText = "Erreur réseau";
         }
         btnConnect.innerText = "SE CONNECTER";
+    }
+
+    // --- ETAPE 2 : RECUPERATION DES LIENS DEPUIS GOOGLE SHEET ---
+    async function fetchPlaylistsAndInit() {
+        // Si on a déjà scanné, on affiche le cache en attendant
+        loadCache();
+        
+        try {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.innerText = "Mise à jour des sources...";
+            
+            // On demande les playlists au script
+            const res = await fetch(API_URL + "?action=get_playlists");
+            const text = await res.text();
+            
+            if (text.startsWith("PLAYLISTS:")) {
+                const rawLinks = text.replace("PLAYLISTS:", "");
+                // Le script sépare par ",,," pour éviter les bugs si une url contient une virgule
+                DYNAMIC_PLAYLISTS = rawLinks.split(",,,");
+                
+                console.log("Sources chargées : " + DYNAMIC_PLAYLISTS.length);
+                
+                // Si le cache est vide, on lance le scan auto
+                if(allChannels.length === 0) {
+                     startScan();
+                } else {
+                    statusDiv.style.display = 'none';
+                }
+            }
+        } catch(e) {
+            console.log("Erreur chargement sources, utilisation par défaut");
+            // Sources de secours si Google plante
+            DYNAMIC_PLAYLISTS = ["https://iptv-org.github.io/iptv/index.m3u"];
+        }
     }
 
     async function logout() {
@@ -169,16 +212,6 @@
     const scanProgress = document.getElementById('scan-progress');
     let hls = null, allChannels = [], loadedUrls = new Set(), currentUrl = "";
 
-    const PLAYLISTS = [
-        "https://iptv-org.github.io/iptv/index.m3u", // La liste des 14 000 (Dossiers)
-        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
-        "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
-    ];
-
-    function initApp() {
-        loadCache();
-        if(allChannels.length === 0) setTimeout(startScan, 1000);
-    }
     function loadCache() {
         const cached = localStorage.getItem('mybox_channels_v5');
         if (cached) {
@@ -212,15 +245,23 @@
         countDiv.innerText = `${allChannels.length} chaînes disponibles`;
     }
     
-    // --- LE MOTEUR DE SCAN ---
     async function startScan() {
+        // On vide la liste pour rafraichir
+        allChannels = [];
+        loadedUrls = new Set();
+        listContainer.innerHTML = "";
+        
         statusDiv.style.display = 'block';
-        statusDiv.innerText = "Scan complet... (Patientez)";
+        statusDiv.innerText = "Téléchargement des listes...";
         scanProgress.style.display = 'block';
         scanBar.style.width = "5%";
-        for (let i = 0; i < PLAYLISTS.length; i++) {
-            await crawlAndAdd(PLAYLISTS[i]);
-            scanBar.style.width = ((i+1)/PLAYLISTS.length * 90) + "%"; // Progression fluide
+        
+        // On utilise la liste venue de Google Sheet
+        const sourcesToScan = DYNAMIC_PLAYLISTS.length > 0 ? DYNAMIC_PLAYLISTS : ["https://iptv-org.github.io/iptv/index.m3u"];
+
+        for (let i = 0; i < sourcesToScan.length; i++) {
+            await crawlAndAdd(sourcesToScan[i]);
+            scanBar.style.width = ((i+1)/sourcesToScan.length * 90) + "%";
         }
         statusDiv.innerText = "Scan Terminé !";
         scanBar.style.width = "100%";
@@ -228,6 +269,7 @@
     }
 
     async function crawlAndAdd(url) {
+        if(!url || url.length < 5) return; // Sécurité liens vides
         const text = await fetchUrl(url);
         if(!text) return;
         const lines = text.split('\n');
@@ -244,7 +286,6 @@
                 let fullUrl = line.startsWith('http') ? line : baseUrl + line;
                 const isFolder = fullUrl.endsWith('.m3u');
                 
-                // ICI J'AI ENLEVÉ LE BLOCAGE : On accepte TOUS les dossiers
                 if (isFolder) {
                     foldersToScan.push(fullUrl);
                 } 
@@ -262,13 +303,12 @@
 
         if(newChannelsBatch.length > 0) { renderBatch(newChannelsBatch); saveCache(); }
 
-        // Recursion (Scan des sous-dossiers)
         if (foldersToScan.length > 0) {
-            const BATCH_SIZE = 10; // On augmente la vitesse (10 dossiers à la fois)
+            const BATCH_SIZE = 10; 
             for(let i=0; i<foldersToScan.length; i+=BATCH_SIZE) {
                 const batch = foldersToScan.slice(i, i+BATCH_SIZE);
                 await Promise.all(batch.map(folderUrl => crawlAndAdd(folderUrl)));
-                await new Promise(r => setTimeout(r, 20)); // Petite pause
+                await new Promise(r => setTimeout(r, 20)); 
             }
         }
     }
