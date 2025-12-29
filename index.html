@@ -11,7 +11,7 @@
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-box { background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
-        .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 16px; text-align: center; text-transform: uppercase; }
+        .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 20px; font-weight:bold; letter-spacing: 2px; text-align: center; text-transform: uppercase; }
         .login-btn { background: #e50914; color: white; padding: 15px; width: 100%; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer; }
         .login-btn:hover { background: #ff0f1f; }
         #login-msg { color: #ff4444; margin-top: 15px; font-size: 14px; min-height: 20px;}
@@ -52,10 +52,10 @@
 <div id="login-overlay">
     <div class="login-box">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="80" style="margin-bottom:20px;">
-        <h2 style="margin:0; color:white;">ACTIVATION SÉCURISÉE</h2>
-        <p style="color:#888; font-size:12px;">Entrez votre clé d'abonnement</p>
-        <input type="text" id="licenseKey" class="login-input" placeholder="CLE-XXXX-XXXX">
-        <button onclick="checkLicense()" class="login-btn" id="btnConnect">VALIDER LA CLÉ</button>
+        <h2 style="margin:0; color:white;">CONNEXION</h2>
+        <p style="color:#888; font-size:12px;">Entrez votre ID d'abonnement</p>
+        <input type="text" id="licenseKey" class="login-input" placeholder="ID CLIENT">
+        <button onclick="checkLicense()" class="login-btn" id="btnConnect">SE CONNECTER</button>
         <div id="login-msg"></div>
     </div>
 </div>
@@ -77,11 +77,11 @@
     
     <div style="padding: 10px; background: #151515;">
         <div class="btn-group">
-            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (14K+)</button>
-            <button onclick="logout()" class="action-btn">🔒 DÉCO</button>
+            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (Tout)</button>
+            <button onclick="logout()" class="action-btn" style="background:#555;">Déconnexion</button>
         </div>
     </div>
-    <div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Rechercher..."></div>
+    <div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: Canal, TF1...)"></div>
     <div id="channel-count">0 chaînes</div>
     <div id="channel-list"></div>
     <div class="dev-footer"><div>Dev: GBOHOUNME Richard Chiriaque</div></div>
@@ -89,7 +89,7 @@
 
 <script>
     // =======================================================
-    // VOTRE LIEN EST ICI :
+    // TON LIEN GOOGLE SCRIPT V2 :
     const API_URL = "https://script.google.com/macros/s/AKfycbyXRGexA2_7NfPi-qThQgDUBrPJskqOAofO7MFpwdqx1gJTzSH2dbmN_DU_vTz5F2tfPQ/exec";
     // =======================================================
 
@@ -113,13 +113,13 @@
 
     async function checkLicense() {
         const key = document.getElementById('licenseKey').value.trim();
-        if(key.length < 3) return;
+        if(key.length < 2) return;
 
-        btnConnect.innerText = "Vérification...";
+        btnConnect.innerText = "Connexion...";
         msgDiv.innerText = "";
 
         try {
-            const url = API_URL + "?key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId);
+            const url = API_URL + "?action=login&key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId);
             const res = await fetch(url);
             const text = await res.text();
 
@@ -128,14 +128,9 @@
                 localStorage.setItem('mybox_key', key);
                 
                 let statusText = "";
-                if (text.includes(":VIE")) {
-                    statusText = "ABONNEMENT À VIE ♾️";
-                } else if(text.includes(":OK:")) {
-                    const jours = text.split(':')[2];
-                    statusText = "Reste: " + jours + " jours";
-                } else {
-                    statusText = "Abonnement Actif";
-                }
+                if (text.includes(":VIE")) statusText = "ID VALIDE (À VIE) ♾️";
+                else if(text.includes(":OK:")) statusText = "Reste: " + text.split(':')[2] + " jours";
+                else statusText = "Connecté";
                 
                 expireDiv.innerText = statusText;
                 localStorage.setItem('mybox_status_text', statusText);
@@ -143,25 +138,25 @@
                 loginOverlay.style.display = 'none';
                 initApp();
             } else if (text.includes("EXPIRED")) {
-                msgDiv.innerText = "❌ Abonnement expiré";
-            } else if (text.includes("DEVICE_MISMATCH")) {
-                msgDiv.innerText = "❌ Clé déjà utilisée ailleurs !";
-            } else if (text.includes("INVALID")) {
-                msgDiv.innerText = "❌ Clé inexistante dans la liste";
+                msgDiv.innerText = "❌ ID Expiré";
+            } else if (text.includes("DEVICE_LIMIT_REACHED")) {
+                msgDiv.innerText = "⚠️ Trop d'appareils connectés. Augmentez votre forfait.";
             } else {
-                msgDiv.innerText = "❌ Erreur: " + text;
+                msgDiv.innerText = "❌ ID Invalide";
             }
         } catch (e) {
-            msgDiv.innerText = "Erreur de connexion internet";
+            msgDiv.innerText = "Erreur réseau";
         }
-        btnConnect.innerText = "VALIDER LA CLÉ";
+        btnConnect.innerText = "SE CONNECTER";
     }
 
-    function logout() {
-        if(confirm("Se déconnecter ?")) {
-            localStorage.removeItem('mybox_auth');
-            location.reload();
-        }
+    async function logout() {
+        if(!confirm("Déconnecter cet appareil ?")) return;
+        const key = localStorage.getItem('mybox_key');
+        try { await fetch(API_URL + "?action=logout&key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId)); } catch(e) {}
+        localStorage.removeItem('mybox_auth');
+        localStorage.removeItem('mybox_key');
+        location.reload();
     }
 
     // --- IPTV LOGIC ---
@@ -175,7 +170,7 @@
     let hls = null, allChannels = [], loadedUrls = new Set(), currentUrl = "";
 
     const PLAYLISTS = [
-        "https://iptv-org.github.io/iptv/index.m3u",
+        "https://iptv-org.github.io/iptv/index.m3u", // La liste des 14 000 (Dossiers)
         "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
         "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
     ];
@@ -216,24 +211,28 @@
         listContainer.appendChild(fragment);
         countDiv.innerText = `${allChannels.length} chaînes disponibles`;
     }
+    
+    // --- LE MOTEUR DE SCAN ---
     async function startScan() {
         statusDiv.style.display = 'block';
-        statusDiv.innerText = "Scan en cours...";
+        statusDiv.innerText = "Scan complet... (Patientez)";
         scanProgress.style.display = 'block';
         scanBar.style.width = "5%";
         for (let i = 0; i < PLAYLISTS.length; i++) {
             await crawlAndAdd(PLAYLISTS[i]);
-            scanBar.style.width = ((i+1)/PLAYLISTS.length * 30) + "%";
+            scanBar.style.width = ((i+1)/PLAYLISTS.length * 90) + "%"; // Progression fluide
         }
         statusDiv.innerText = "Scan Terminé !";
         scanBar.style.width = "100%";
         setTimeout(() => { statusDiv.style.display = 'none'; scanProgress.style.display = 'none'; }, 3000);
     }
+
     async function crawlAndAdd(url) {
         const text = await fetchUrl(url);
         if(!text) return;
         const lines = text.split('\n');
         let foldersToScan = [], newChannelsBatch = [], currentInfo = {}, baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+        
         for(let line of lines) {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
@@ -244,26 +243,36 @@
             } else if (line.length > 0 && !line.startsWith('#')) {
                 let fullUrl = line.startsWith('http') ? line : baseUrl + line;
                 const isFolder = fullUrl.endsWith('.m3u');
-                if (isFolder) foldersToScan.push(fullUrl);
-                else if (currentInfo.name && !loadedUrls.has(fullUrl)) {
-                    const newCh = {name: currentInfo.name, url: fullUrl, logo: currentInfo.logo};
-                    allChannels.push(newCh);
-                    loadedUrls.add(fullUrl);
-                    newChannelsBatch.push(newCh);
+                
+                // ICI J'AI ENLEVÉ LE BLOCAGE : On accepte TOUS les dossiers
+                if (isFolder) {
+                    foldersToScan.push(fullUrl);
+                } 
+                else if (currentInfo.name) {
+                    if (!loadedUrls.has(fullUrl)) {
+                        const newCh = {name: currentInfo.name, url: fullUrl, logo: currentInfo.logo};
+                        allChannels.push(newCh);
+                        loadedUrls.add(fullUrl);
+                        newChannelsBatch.push(newCh);
+                    }
                 }
                 currentInfo = {};
             }
         }
+
         if(newChannelsBatch.length > 0) { renderBatch(newChannelsBatch); saveCache(); }
+
+        // Recursion (Scan des sous-dossiers)
         if (foldersToScan.length > 0) {
-            const BATCH_SIZE = 5;
+            const BATCH_SIZE = 10; // On augmente la vitesse (10 dossiers à la fois)
             for(let i=0; i<foldersToScan.length; i+=BATCH_SIZE) {
                 const batch = foldersToScan.slice(i, i+BATCH_SIZE);
                 await Promise.all(batch.map(folderUrl => crawlAndAdd(folderUrl)));
-                await new Promise(r => setTimeout(r, 50));
+                await new Promise(r => setTimeout(r, 20)); // Petite pause
             }
         }
     }
+
     async function fetchUrl(url) {
         const proxies = ["https://api.allorigins.win/raw?url=", "https://corsproxy.io/?"];
         for(let proxy of proxies) {
