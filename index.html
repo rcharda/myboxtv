@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Ultimate</title>
+    <title>My Box TV - V 1.1</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -11,28 +11,6 @@
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
 
-        /* --- ECRAN DE CONNEXION --- */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .login-box {
-            background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333;
-            text-align: center; width: 90%; max-width: 400px;
-        }
-        .login-input {
-            width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555;
-            color: white; border-radius: 5px; font-size: 16px; text-align: center; text-transform: uppercase;
-        }
-        .login-btn {
-            background: #e50914; color: white; padding: 15px; width: 100%; border: none;
-            font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer;
-        }
-        .login-btn:hover { background: #ff0f1f; }
-        #login-msg { color: #ff4444; margin-top: 15px; font-size: 14px; min-height: 20px;}
-
-        /* --- INTERFACE PRINCIPALE --- */
         #player-container { flex: 1; display: flex; flex-direction: column; justify-content: center; background: #000; position: relative; }
         video { width: 100%; height: 100%; object-fit: contain; }
 
@@ -42,10 +20,16 @@
         .brand-logo { max-width: 80px; height: auto; margin-bottom: 5px; }
         .app-title { font-weight: 700; font-size: 1.2em; color: #fff; letter-spacing: 1px; }
 
-        .btn-group { display: flex; gap: 5px; width: 100%; margin-top: 5px; }
-        .action-btn { background: #333; color: #aaa; border: 1px solid #444; flex: 1; padding: 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; }
-        .action-btn.scan { background: #e50914; color: white; border: none; }
-        .action-btn:hover { opacity: 0.8; }
+        /* BOUTONS ET BARRES */
+        .refresh-btn {
+            background: #333; color: #aaa; border: 1px solid #444;
+            padding: 8px 15px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 5px; width: 100%; font-weight: bold;
+        }
+        .refresh-btn:hover { background: #e50914; color: white; border-color: #e50914; }
+
+        #loader-container { width: 100%; background: #333; height: 16px; border-radius: 8px; margin-top: 10px; overflow: hidden; position: relative; display: none; }
+        #loader-bar { height: 100%; width: 0%; background: #e50914; transition: width 0.3s; }
+        #loader-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; font-size: 10px; text-align: center; line-height: 16px; color: white; text-shadow: 1px 1px 2px black; }
 
         .search-box { padding: 10px; background: #1a1a1a; }
         #searchInput { width: 100%; padding: 10px; border-radius: 20px; border: 1px solid #444; background: #2a2a2a; color: white; text-align: center; outline: none; }
@@ -53,21 +37,17 @@
         #channel-count { text-align: center; font-size: 11px; color: #888; padding: 5px; border-bottom: 1px solid #333; }
         #channel-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #444 #1a1a1a; }
         
-        .channel-item { padding: 8px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; animation: fadeIn 0.5s; }
+        .channel-item { padding: 8px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; transition: background 0.2s;}
         .channel-item:hover { background: #333; }
         .channel-item.active { background: #e50914 !important; color: white; border-left: 5px solid white; }
         
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
         .tv-icon { width: 40px; height: 40px; object-fit: contain; margin-right: 12px; background: #fff; border-radius: 4px; padding: 2px; }
         .tv-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .dev-footer { padding: 10px; background: #111; border-top: 1px solid #333; font-size: 11px; text-align: center; color: #777; }
-        
+        .whatsapp-link { display: inline-flex; background: #25D366; color: white; text-decoration: none; padding: 4px 10px; border-radius: 15px; margin-top: 5px; font-weight: bold; }
+
         #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
-        
-        #scan-progress { width: 100%; height: 4px; background: #222; display: none; margin-top: 5px;}
-        #scan-bar { height: 100%; width: 0%; background: #0f0; transition: width 0.2s; }
 
         @media screen and (max-width: 900px) {
             body { flex-direction: column; }
@@ -75,266 +55,86 @@
             #sidebar { width: 100%; height: 65vh; }
             .brand-header { flex-direction: row; justify-content: flex-start; padding: 10px; flex-wrap: wrap;}
             .brand-logo { max-width: 50px; margin: 0 10px 0 0; }
+            .refresh-btn { width: auto; margin-left: auto;}
+            #loader-container { width: 100%; order: 3; margin-top: 10px;}
         }
     </style>
 </head>
 <body>
 
-<div id="login-overlay">
-    <div class="login-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="80" style="margin-bottom:20px;">
-        <h2 style="margin:0; color:white;">ACTIVATION</h2>
-        <p style="color:#888; font-size:12px;">Entrez votre clé d'abonnement</p>
-        <input type="text" id="licenseKey" class="login-input" placeholder="CLE-XXXX-XXXX">
-        <button onclick="checkLicense()" class="login-btn" id="btnConnect">VALIDER LA CLÉ</button>
-        <div id="login-msg"></div>
-    </div>
-</div>
-
 <div id="player-container">
-    <div id="status">Prêt</div>
+    <div id="status">Démarrage...</div>
     <video id="video" controls playsinline></video>
 </div>
 
 <div id="sidebar">
     <div class="brand-header">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo" alt="Logo">
-        <div style="flex:1">
+        <div>
             <div class="app-title">My Box TV</div>
-            <div id="expiration-display" style="font-size:10px; color:#0f0; margin-top:2px;"></div>
-            <div id="scan-progress"><div id="scan-bar"></div></div>
         </div>
-    </div>
-    
-    <div style="padding: 10px; background: #151515;">
-        <div class="btn-group">
-            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (14K+)</button>
-            <button onclick="logout()" class="action-btn">🔒 DÉCO</button>
+        <button onclick="forceReload()" class="refresh-btn">🔄 LANCER LE SCAN (14K+)</button>
+        
+        <div id="loader-container">
+            <div id="loader-bar"></div>
+            <div id="loader-text">0%</div>
         </div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
+        <input type="text" id="searchInput" placeholder="🔍 Ex: TF1, Sport, Canal...">
     </div>
 
-    <div id="channel-count">0 chaînes</div>
+    <div id="channel-count">...</div>
+
     <div id="channel-list"></div>
 
     <div class="dev-footer">
         <div>Dev: GBOHOUNME Richard Chiriaque</div>
+        <a href="https://wa.me/22963828767" target="_blank" class="whatsapp-link">WhatsApp</a>
     </div>
 </div>
 
 <script>
-    // --- 1. CONFIGURATION (TON LIEN EST ICI) ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbyGGGjhE_gDC6tWhtR2q-EzH9Eq3DLsVCPHABAMFcw5sjOGH3CTvnkAnyA49tg0P_oeKw/exec";
-
-    // --- 2. LOGIQUE LICENCE ---
-    const loginOverlay = document.getElementById('login-overlay');
-    const msgDiv = document.getElementById('login-msg');
-    const btnConnect = document.getElementById('btnConnect');
-    const expireDiv = document.getElementById('expiration-display');
-
-    // ID Unique de l'appareil
-    let deviceId = localStorage.getItem('mybox_device_id');
-    if (!deviceId) {
-        deviceId = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-        localStorage.setItem('mybox_device_id', deviceId);
-    }
-
-    // Vérification Auto au démarrage
-    if (localStorage.getItem('mybox_auth') === 'OK') {
-        loginOverlay.style.display = 'none';
-        const savedStatus = localStorage.getItem('mybox_status_text');
-        expireDiv.innerText = savedStatus ? savedStatus : "Connecté";
-        setTimeout(initApp, 500);
-    }
-
-    async function checkLicense() {
-        const key = document.getElementById('licenseKey').value.trim();
-        if(key.length < 3) return;
-
-        btnConnect.innerText = "Vérification...";
-        msgDiv.innerText = "";
-
-        try {
-            const url = API_URL + "?key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId);
-            const res = await fetch(url);
-            const text = await res.text();
-
-            if (text.includes("SUCCESS")) {
-                localStorage.setItem('mybox_auth', 'OK');
-                localStorage.setItem('mybox_key', key);
-                
-                let statusText = "";
-                if (text.includes(":VIE")) {
-                    statusText = "ABONNEMENT À VIE ♾️";
-                } else if(text.includes(":OK:")) {
-                    const jours = text.split(':')[2];
-                    statusText = "Reste: " + jours + " jours";
-                } else {
-                    statusText = "Abonnement Actif";
-                }
-                
-                expireDiv.innerText = statusText;
-                localStorage.setItem('mybox_status_text', statusText);
-                
-                loginOverlay.style.display = 'none';
-                initApp();
-            } else if (text.includes("EXPIRED")) {
-                msgDiv.innerText = "❌ Clé expirée";
-            } else if (text.includes("DEVICE_MISMATCH")) {
-                msgDiv.innerText = "❌ Clé déjà utilisée ailleurs !";
-            } else {
-                msgDiv.innerText = "❌ Clé introuvable";
-            }
-        } catch (e) {
-            msgDiv.innerText = "Erreur internet";
-        }
-        btnConnect.innerText = "VALIDER LA CLÉ";
-    }
-
-    function logout() {
-        if(confirm("Se déconnecter ?")) {
-            localStorage.removeItem('mybox_auth');
-            location.reload();
-        }
-    }
-
-    // --- 3. LOGIQUE IPTV ---
     const video = document.getElementById('video');
     const listContainer = document.getElementById('channel-list');
     const statusDiv = document.getElementById('status');
     const searchInput = document.getElementById('searchInput');
     const countDiv = document.getElementById('channel-count');
-    const scanBar = document.getElementById('scan-bar');
-    const scanProgress = document.getElementById('scan-progress');
+    const loaderContainer = document.getElementById('loader-container');
+    const loaderBar = document.getElementById('loader-bar');
+    const loaderText = document.getElementById('loader-text');
     
     let hls = null;
-    let allChannels = []; 
-    let loadedUrls = new Set();
+    let allChannels = [];
     let currentUrl = "";
 
+    // VOS 3 LIENS A FUSIONNER
     const PLAYLISTS = [
-        "https://iptv-org.github.io/iptv/index.m3u",
+        "https://iptv-org.github.io/iptv/index.m3u", // Le fameux lien avec dossier
         "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
         "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
     ];
 
-    function initApp() {
-        loadCache();
-        // Si c'est vide, on lance le scan auto
-        if(allChannels.length === 0) {
-            setTimeout(startScan, 1000);
-        }
+    // --- SYSTEME DE CACHE ---
+    function saveToCache(data) {
+        try {
+            const minified = data.map(c => ({n: c.name, u: c.url, l: c.logo}));
+            localStorage.setItem('mybox_vlc_cache', JSON.stringify(minified));
+            console.log("Sauvegardé : " + minified.length);
+        } catch (e) { console.log("Mémoire pleine"); }
     }
 
-    function loadCache() {
-        const cached = localStorage.getItem('mybox_channels_v5');
+    function loadFromCache() {
+        const cached = localStorage.getItem('mybox_vlc_cache');
         if (cached) {
-            try {
-                const parsed = JSON.parse(cached);
-                allChannels = parsed;
-                parsed.forEach(c => loadedUrls.add(c.url));
-                countDiv.innerText = `${allChannels.length} chaînes (Mémoire)`;
-                renderBatch(allChannels.slice(0, 100));
-                setTimeout(() => renderBatch(allChannels.slice(100)), 500);
-            } catch (e) {}
+            const minified = JSON.parse(cached);
+            return minified.map(c => ({name: c.n, url: c.u, logo: c.l}));
         }
+        return null;
     }
 
-    function saveCache() {
-        try { localStorage.setItem('mybox_channels_v5', JSON.stringify(allChannels)); } catch(e) {}
-    }
-
-    function renderBatch(newChannels) {
-        if (newChannels.length === 0) return;
-        const fragment = document.createDocumentFragment();
-        newChannels.forEach(ch => {
-            const div = document.createElement('div');
-            div.className = 'channel-item';
-            const imgUrl = ch.logo || 'https://via.placeholder.com/40/333/fff?text=TV';
-            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" loading="lazy" onerror="this.src='https://via.placeholder.com/40/333/fff?text=TV'"><div class="tv-name">${ch.name}</div>`;
-            div.onclick = () => {
-                playStream(ch);
-                document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-                div.classList.add('active');
-            };
-            fragment.appendChild(div);
-        });
-        listContainer.appendChild(fragment);
-        countDiv.innerText = `${allChannels.length} chaînes disponibles`;
-    }
-
-    async function startScan() {
-        statusDiv.style.display = 'block';
-        statusDiv.innerText = "Scan en cours...";
-        scanProgress.style.display = 'block';
-        scanBar.style.width = "5%";
-
-        for (let i = 0; i < PLAYLISTS.length; i++) {
-            await crawlAndAdd(PLAYLISTS[i]);
-            scanBar.style.width = ((i+1)/PLAYLISTS.length * 30) + "%";
-        }
-        
-        statusDiv.innerText = "Scan Terminé !";
-        scanBar.style.width = "100%";
-        setTimeout(() => {
-            statusDiv.style.display = 'none';
-            scanProgress.style.display = 'none';
-        }, 3000);
-    }
-
-    async function crawlAndAdd(url) {
-        const text = await fetchUrl(url);
-        if(!text) return;
-
-        const lines = text.split('\n');
-        let foldersToScan = [];
-        let newChannelsBatch = [];
-        let currentInfo = {};
-        let baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-
-        for(let line of lines) {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                const parts = line.split(',');
-                const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
-                const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
-                currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
-            } else if (line.length > 0 && !line.startsWith('#')) {
-                let fullUrl = line.startsWith('http') ? line : baseUrl + line;
-                const isFolder = fullUrl.endsWith('.m3u');
-                
-                if (isFolder) {
-                    foldersToScan.push(fullUrl);
-                } else if (currentInfo.name) {
-                    if (!loadedUrls.has(fullUrl)) {
-                        const newCh = {name: currentInfo.name, url: fullUrl, logo: currentInfo.logo};
-                        allChannels.push(newCh);
-                        loadedUrls.add(fullUrl);
-                        newChannelsBatch.push(newCh);
-                    }
-                }
-                currentInfo = {};
-            }
-        }
-
-        if(newChannelsBatch.length > 0) {
-            renderBatch(newChannelsBatch);
-            saveCache();
-        }
-
-        if (foldersToScan.length > 0) {
-            const BATCH_SIZE = 5;
-            for(let i=0; i<foldersToScan.length; i+=BATCH_SIZE) {
-                const batch = foldersToScan.slice(i, i+BATCH_SIZE);
-                await Promise.all(batch.map(folderUrl => crawlAndAdd(folderUrl)));
-                await new Promise(r => setTimeout(r, 50));
-            }
-        }
-    }
-
+    // --- MOTEUR DE TÉLÉCHARGEMENT ---
     async function fetchUrl(url) {
         const proxies = ["https://api.allorigins.win/raw?url=", "https://corsproxy.io/?"];
         for(let proxy of proxies) {
@@ -344,6 +144,131 @@
             } catch(e) { continue; }
         }
         return null;
+    }
+
+    // --- LE ROBOT SCANNEUR (C'est ici que la magie opère) ---
+    async function crawlAndParse(url) {
+        const text = await fetchUrl(url);
+        if(!text) return [];
+
+        const lines = text.split('\n');
+        const items = [];
+        let folders = [];
+        let currentInfo = {};
+        
+        // On récupère la base de l'URL pour reconstruire les liens relatifs
+        // Ex: si l'url est .../iptv/index.m3u, la base est .../iptv/
+        let baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+
+        // 1. Première passe : On lit le fichier
+        for(let line of lines) {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
+                currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
+            } else if (line.length > 0 && !line.startsWith('#')) {
+                
+                // RECONSTRUCTION DU LIEN (Le secret de VLC)
+                let fullUrl = line;
+                if (!line.startsWith('http')) {
+                    fullUrl = baseUrl + line;
+                }
+
+                // Est-ce un dossier ? (fini par .m3u et n'est pas un flux .m3u8)
+                // Pour iptv-org, "channels/fr.m3u" est un dossier.
+                const isFolder = fullUrl.endsWith('.m3u');
+
+                if(isFolder) {
+                    folders.push({url: fullUrl, name: currentInfo.name || "Dossier"});
+                } else if (currentInfo.name) {
+                    items.push({name: currentInfo.name, url: fullUrl, logo: currentInfo.logo});
+                }
+                currentInfo = {};
+            }
+        }
+
+        // 2. Si on a trouvé des dossiers, on doit aller les chercher (RECURSIVITÉ)
+        // C'est ça qui prend du temps mais qui donne les 14.000 chaines
+        if (folders.length > 0) {
+            console.log(`Dossiers trouvés dans ${url}: ${folders.length}`);
+            
+            // On traite par paquet de 5 pour ne pas bloquer
+            const BATCH = 5;
+            for(let i=0; i<folders.length; i+=BATCH) {
+                const batch = folders.slice(i, i+BATCH);
+                
+                // Mise à jour interface
+                if(url.includes('index.m3u')) { // Seulement pour la liste principale
+                    const pct = Math.round((i / folders.length) * 100);
+                    updateLoader(pct, `Scan dossier: ${i}/${folders.length}`);
+                    renderList(allChannels.concat(items)); // Affiche ce qu'on a déjà
+                }
+
+                await Promise.all(batch.map(async (folder) => {
+                    // On scanne le sous-dossier
+                    const subItems = await crawlSubFolder(folder.url);
+                    items.push(...subItems);
+                }));
+            }
+        }
+
+        return items;
+    }
+
+    // Fonction légère pour les sous-dossiers (ne cherche pas de sous-sous-dossiers pour éviter boucle infinie)
+    async function crawlSubFolder(url) {
+        const text = await fetchUrl(url);
+        if(!text) return [];
+        const lines = text.split('\n');
+        const items = [];
+        let currentInfo = {};
+        for(let line of lines) {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
+                currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
+            } else if (line.length > 0 && !line.startsWith('#') && currentInfo.name) {
+                if(line.startsWith('http')) {
+                    items.push({name:currentInfo.name, url:line, logo:currentInfo.logo});
+                }
+                currentInfo = {};
+            }
+        }
+        return items;
+    }
+
+    function updateLoader(pct, text) {
+        loaderBar.style.width = pct + "%";
+        loaderText.innerText = `${pct}% - ${text}`;
+    }
+
+    // --- AFFICHAGE ---
+    function renderList(channels) {
+        listContainer.innerHTML = "";
+        countDiv.innerText = `${channels.length} chaînes trouvées`;
+        
+        const limit = channels.length > 200 ? 200 : channels.length;
+        const fragment = document.createDocumentFragment();
+
+        for(let i=0; i<limit; i++) {
+            const ch = channels[i];
+            const div = document.createElement('div');
+            div.className = 'channel-item';
+            
+            const imgUrl = ch.logo || 'https://via.placeholder.com/40/333/fff?text=TV';
+            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" loading="lazy" onerror="this.src='https://via.placeholder.com/40/333/fff?text=TV'"><div class="tv-name">${ch.name}</div>`;
+            div.onclick = () => {
+                playStream(ch);
+                document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+            };
+            fragment.appendChild(div);
+        }
+        listContainer.appendChild(fragment);
     }
 
     function playStream(channel) {
@@ -372,10 +297,73 @@
 
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        listContainer.innerHTML = "";
+        if(term.length < 2) { renderList(allChannels); return; }
         const filtered = allChannels.filter(c => c.name && c.name.toLowerCase().includes(term));
-        renderBatch(filtered.slice(0, 200));
+        renderList(filtered);
     });
+
+    // --- LE CERVEAU ---
+    async function init(forceUpdate = false) {
+        statusDiv.style.display = 'block';
+        
+        if (!forceUpdate) {
+            const cachedData = loadFromCache();
+            if (cachedData && cachedData.length > 5000) {
+                allChannels = cachedData;
+                statusDiv.innerText = "Prêt (Cache)";
+                setTimeout(() => statusDiv.style.display = 'none', 1000);
+                renderList(allChannels);
+                return; 
+            }
+        }
+
+        statusDiv.innerText = "Scan complet... (1 à 2 min)";
+        loaderContainer.style.display = 'block';
+        updateLoader(0, "Démarrage...");
+        
+        let tempChannels = [];
+
+        // ON SCANNE LES 3 SOURCES
+        for (let i = 0; i < PLAYLISTS.length; i++) {
+            const url = PLAYLISTS[i];
+            // On appelle notre Robot Scanneur
+            const items = await crawlAndParse(url);
+            
+            // On filtre les doublons éventuels
+            tempChannels = tempChannels.concat(items);
+            allChannels = tempChannels; // Mise à jour globale pour l'affichage en temps réel
+        }
+
+        // FIN
+        updateLoader(100, "Terminé !");
+        
+        if(allChannels.length > 2000) {
+             saveToCache(allChannels);
+             statusDiv.innerText = "Succès !";
+        } else {
+             statusDiv.innerText = "Erreur partielle";
+        }
+        
+        setTimeout(() => {
+            loaderContainer.style.display = 'none';
+            statusDiv.style.display = 'none';
+        }, 2000);
+        
+        renderList(allChannels);
+        if(allChannels.length > 0) playStream(allChannels[0]);
+    }
+
+    function forceReload() {
+        if(confirm("Lancer le scan complet des dossiers ? (Prend 1 à 2 minutes)")) {
+            localStorage.removeItem('mybox_vlc_cache');
+            init(true);
+        }
+    }
+
+    init();
+
 </script>
 </body>
 </html>
+
+
