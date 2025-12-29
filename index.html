@@ -56,27 +56,8 @@
             letter-spacing: 1px;
         }
 
-        /* SELECTEUR DE SOURCE (NOUVEAU) */
-        .source-box {
-            padding: 10px 15px;
-            background: #1a1a1a;
-            border-bottom: 1px solid #333;
-        }
-        #sourceSelect {
-            width: 100%;
-            padding: 10px;
-            border-radius: 5px;
-            background: #333;
-            color: white;
-            border: 1px solid #555;
-            font-size: 14px;
-            outline: none;
-            cursor: pointer;
-        }
-        #sourceSelect:hover { background: #444; }
-
         /* 2. RECHERCHE */
-        .search-box { padding: 10px 15px; background: #1a1a1a; }
+        .search-box { padding: 15px; background: #1a1a1a; }
         #searchInput {
             width: 100%; padding: 12px; border-radius: 25px;
             border: 1px solid #444; background: #2a2a2a; color: white;
@@ -84,7 +65,7 @@
         }
         #searchInput:focus { border-color: #e50914; background: #333;}
 
-        /* COMPTEUR */
+        /* NOUVEAU : LE COMPTEUR */
         #channel-count {
             text-align: center;
             font-size: 12px;
@@ -168,13 +149,6 @@
         <div class="app-title">My Box TV</div>
     </div>
 
-    <div class="source-box">
-        <select id="sourceSelect">
-            <option value="https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u">Playlist Principale (FreeIPTV)</option>
-            <option value="https://iptv-org.github.io/iptv/index.m3u">Playlist Monde (IPTV-ORG)</option>
-        </select>
-    </div>
-
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
     </div>
@@ -198,12 +172,13 @@
     const listContainer = document.getElementById('channel-list');
     const statusDiv = document.getElementById('status');
     const searchInput = document.getElementById('searchInput');
-    const countDiv = document.getElementById('channel-count');
-    const sourceSelect = document.getElementById('sourceSelect'); // Menu déroulant
+    const countDiv = document.getElementById('channel-count'); // On récupère la zone compteur
     
     let hls = null;
     let allChannels = [];
     let currentUrl = "";
+
+    const M3U_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u");
 
     function parseM3U(content) {
         const lines = content.split('\n');
@@ -231,9 +206,11 @@
         return channels;
     }
 
+    // Fonction d'affichage mise à jour avec le compteur
     function renderList(channelsToDisplay) {
         listContainer.innerHTML = "";
         
+        // MISE A JOUR DU COMPTEUR
         countDiv.innerText = `${channelsToDisplay.length} chaînes trouvées`;
 
         const limit = channelsToDisplay.length > 250 ? 250 : channelsToDisplay.length;
@@ -269,7 +246,6 @@
         
         statusDiv.style.background = "rgba(229, 9, 20, 0.8)";
         statusDiv.innerText = "Chargement : " + channel.name + "...";
-        statusDiv.style.display = 'block';
 
         if (Hls.isSupported()) {
             if (hls) hls.destroy();
@@ -308,46 +284,27 @@
         renderList(filtered);
     });
 
-    // Fonction pour charger une source spécifique
-    async function loadSource(url) {
+    async function init() {
         try {
-            statusDiv.style.display = 'block';
-            statusDiv.innerText = "Téléchargement de la playlist...";
-            listContainer.innerHTML = "<div style='padding:30px; text-align:center; color:#888;'>Mise à jour de la liste...</div>";
-            countDiv.innerText = "...";
-
-            // Utilisation du proxy pour éviter les blocages CORS
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
-
-            const response = await fetch(proxyUrl);
+            const response = await fetch(M3U_URL);
             if (!response.ok) throw new Error("Erreur réseau");
             const text = await response.text();
-            
             allChannels = parseM3U(text);
             
+            // Le statusDiv disparaît après 2 secondes, mais le compteur reste
             statusDiv.innerText = `Playlist chargée.`;
-            setTimeout(() => { statusDiv.style.display = 'none'; }, 1500);
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
 
             renderList(allChannels);
-            
-            // Optionnel : Lancer la première chaîne automatiquement
-            // if (allChannels.length > 0) playStream(allChannels[0]);
+            if (allChannels.length > 0) playStream(allChannels[0]);
 
         } catch (error) {
             console.error(error);
-            statusDiv.innerText = "❌ Erreur chargement playlist";
-            listContainer.innerHTML = "<div style='padding:30px; text-align:center; color:red;'>Erreur : Impossible de lire ce lien.</div>";
+            statusDiv.innerText = "❌ Erreur critique : Impossible de charger la playlist IPTV.";
         }
     }
 
-    // Ecouteur pour le changement de menu déroulant
-    sourceSelect.addEventListener('change', (e) => {
-        loadSource(e.target.value);
-    });
-
-    // Démarrage : Charger la première option du menu
-    loadSource(sourceSelect.value);
-
+    init();
 </script>
 </body>
 </html>
