@@ -3,41 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Cloud</title>
+    <title>My Box TV - AutoStream</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
+        
+        /* LOGIN */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-box { background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
         .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 20px; font-weight:bold; letter-spacing: 2px; text-align: center; text-transform: uppercase; }
         .login-btn { background: #e50914; color: white; padding: 15px; width: 100%; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer; }
         .login-btn:hover { background: #ff0f1f; }
         #login-msg { color: #ff4444; margin-top: 15px; font-size: 14px; min-height: 20px;}
+
+        /* PLAYER */
         #player-container { flex: 1; display: flex; flex-direction: column; justify-content: center; background: #000; position: relative; }
         video { width: 100%; height: 100%; object-fit: contain; }
+
+        /* SIDEBAR */
         #sidebar { width: 350px; background: #1a1a1a; display: flex; flex-direction: column; border-left: 1px solid #333; z-index: 10; }
         .brand-header { padding: 15px; background: #222; border-bottom: 2px solid #e50914; display: flex; flex-direction: column; align-items: center; }
         .brand-logo { max-width: 80px; height: auto; margin-bottom: 5px; }
         .app-title { font-weight: 700; font-size: 1.2em; color: #fff; letter-spacing: 1px; }
+        
+        /* CONTROLS */
         .btn-group { display: flex; gap: 5px; width: 100%; margin-top: 5px; }
-        .action-btn { background: #333; color: #aaa; border: 1px solid #444; flex: 1; padding: 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; }
+        .action-btn { background: #333; color: #aaa; border: 1px solid #444; flex: 1; padding: 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s;}
+        .action-btn:active { transform: scale(0.98); }
         .action-btn.scan { background: #e50914; color: white; border: none; }
+        
         .search-box { padding: 10px; background: #1a1a1a; }
         #searchInput { width: 100%; padding: 10px; border-radius: 20px; border: 1px solid #444; background: #2a2a2a; color: white; text-align: center; outline: none; }
+
+        /* LIST */
         #channel-count { text-align: center; font-size: 11px; color: #888; padding: 5px; border-bottom: 1px solid #333; }
         #channel-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #444 #1a1a1a; }
-        .channel-item { padding: 8px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; animation: fadeIn 0.5s; }
+        
+        .channel-item { padding: 10px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; animation: slideIn 0.3s ease-out; }
         .channel-item:hover { background: #333; }
         .channel-item.active { background: #e50914 !important; color: white; border-left: 5px solid white; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
         .tv-icon { width: 40px; height: 40px; object-fit: contain; margin-right: 12px; background: #fff; border-radius: 4px; padding: 2px; }
         .tv-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .dev-footer { padding: 10px; background: #111; border-top: 1px solid #333; font-size: 11px; text-align: center; color: #777; }
+        
+        /* STATUS BAR */
         #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
         #scan-progress { width: 100%; height: 4px; background: #222; display: none; margin-top: 5px;}
-        #scan-bar { height: 100%; width: 0%; background: #0f0; transition: width 0.2s; }
+        #scan-bar { height: 100%; width: 0%; background: #0f0; transition: width 0.3s; }
+
         @media screen and (max-width: 900px) {
             body { flex-direction: column; }
             #player-container { height: 35vh; flex: none; border-bottom: 2px solid #e50914;}
@@ -77,7 +95,7 @@
     
     <div style="padding: 10px; background: #151515;">
         <div class="btn-group">
-            <button onclick="startScan()" class="action-btn scan">▶ SCANNER (Cloud)</button>
+            <button onclick="manualRescan()" class="action-btn scan">🔄 ACTUALISER</button>
             <button onclick="logout()" class="action-btn" style="background:#555;">Déconnexion</button>
         </div>
     </div>
@@ -89,7 +107,7 @@
 
 <script>
     // =======================================================
-    // TON LIEN EST INTÉGRÉ ICI :
+    // LIEN GOOGLE SCRIPT V2 (DEPLOYÉ):
     const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
     // =======================================================
 
@@ -98,24 +116,28 @@
     const btnConnect = document.getElementById('btnConnect');
     const expireDiv = document.getElementById('expiration-display');
     
-    // VARIABLE POUR STOCKER LES LIENS DYNAMIQUES
+    // Variables globales
     let DYNAMIC_PLAYLISTS = [];
+    let isScanning = false;
 
+    // --- INITIALISATION ---
     let deviceId = localStorage.getItem('mybox_device_id');
     if (!deviceId) {
         deviceId = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
         localStorage.setItem('mybox_device_id', deviceId);
     }
 
+    // Démarrage auto si déjà connecté
     if (localStorage.getItem('mybox_auth') === 'OK') {
         loginOverlay.style.display = 'none';
         const savedStatus = localStorage.getItem('mybox_status_text');
         expireDiv.innerText = savedStatus ? savedStatus : "Connecté";
-        // On charge les playlists depuis le cloud avant de lancer l'app
-        fetchPlaylistsAndInit();
+        
+        // LANCEMENT IMMEDIAT DU SCAN
+        initSystem();
     }
 
-    // --- ETAPE 1 : CONNEXION ---
+    // --- 1. GESTION CONNEXION ---
     async function checkLicense() {
         const key = document.getElementById('licenseKey').value.trim();
         if(key.length < 2) return;
@@ -125,10 +147,10 @@
 
         try {
             const url = API_URL + "?action=login&key=" + encodeURIComponent(key) + "&device=" + encodeURIComponent(deviceId);
-            const res = await fetch(url);
-            const text = await res.text();
+            // On utilise fetchWithRetry aussi pour le login pour être robuste
+            const text = await fetchWithRetry(url, 3);
 
-            if (text.includes("SUCCESS")) {
+            if (text && text.includes("SUCCESS")) {
                 localStorage.setItem('mybox_auth', 'OK');
                 localStorage.setItem('mybox_key', key);
                 
@@ -141,55 +163,61 @@
                 localStorage.setItem('mybox_status_text', statusText);
                 
                 loginOverlay.style.display = 'none';
-                
-                // Connexion réussie, maintenant on charge les sources
-                fetchPlaylistsAndInit();
+                initSystem();
 
-            } else if (text.includes("EXPIRED")) {
+            } else if (text && text.includes("EXPIRED")) {
                 msgDiv.innerText = "❌ ID Expiré";
-            } else if (text.includes("DEVICE_LIMIT_REACHED")) {
-                msgDiv.innerText = "⚠️ Trop d'appareils connectés.";
+            } else if (text && text.includes("DEVICE_LIMIT_REACHED")) {
+                msgDiv.innerText = "⚠️ Trop d'appareils.";
             } else {
                 msgDiv.innerText = "❌ ID Invalide";
             }
         } catch (e) {
-            msgDiv.innerText = "Erreur réseau";
+            msgDiv.innerText = "Erreur réseau grave";
         }
         btnConnect.innerText = "SE CONNECTER";
     }
 
-    // --- ETAPE 2 : RECUPERATION DES LIENS DEPUIS GOOGLE SHEET ---
-    async function fetchPlaylistsAndInit() {
-        // Si on a déjà scanné, on affiche le cache en attendant
+    // --- 2. SYSTEME DE RECUPERATION ROBUSTE ---
+    async function initSystem() {
+        // 1. On charge le cache immédiatement pour afficher quelque chose
         loadCache();
+
+        // 2. On récupère les sources Google Sheet
+        const statusDiv = document.getElementById('status');
+        statusDiv.style.display = 'block';
+        statusDiv.innerText = "Mise à jour sources...";
         
         try {
-            const statusDiv = document.getElementById('status');
-            statusDiv.style.display = 'block';
-            statusDiv.innerText = "Mise à jour des sources...";
+            const text = await fetchWithRetry(API_URL + "?action=get_playlists", 3);
             
-            // On demande les playlists au script
-            const res = await fetch(API_URL + "?action=get_playlists");
-            const text = await res.text();
-            
-            if (text.startsWith("PLAYLISTS:")) {
+            if (text && text.startsWith("PLAYLISTS:")) {
                 const rawLinks = text.replace("PLAYLISTS:", "");
-                // Le script sépare par ",,," pour éviter les bugs si une url contient une virgule
                 DYNAMIC_PLAYLISTS = rawLinks.split(",,,");
-                
-                console.log("Sources chargées : " + DYNAMIC_PLAYLISTS.length);
-                
-                // Si le cache est vide, on lance le scan auto
-                if(allChannels.length === 0) {
-                     startScan();
-                } else {
-                    statusDiv.style.display = 'none';
-                }
+                // On sauvegarde les sources en cas de coupure future
+                localStorage.setItem('mybox_sources', JSON.stringify(DYNAMIC_PLAYLISTS));
+            } else {
+                throw new Error("Format invalide");
             }
         } catch(e) {
-            console.log("Erreur chargement sources, utilisation par défaut");
-            // Sources de secours si Google plante
-            DYNAMIC_PLAYLISTS = ["https://iptv-org.github.io/iptv/index.m3u"];
+            console.log("Mode Hors Ligne : Utilisation des sources locales");
+            const savedSources = localStorage.getItem('mybox_sources');
+            if(savedSources) {
+                DYNAMIC_PLAYLISTS = JSON.parse(savedSources);
+            } else {
+                // Secours ultime
+                DYNAMIC_PLAYLISTS = ["https://iptv-org.github.io/iptv/index.m3u"];
+            }
+        }
+
+        // 3. On lance le scan immédiatement
+        startScan();
+    }
+
+    function manualRescan() {
+        if(isScanning) return; // Évite le double clic
+        if(confirm("Recharger toute la liste des chaînes ?")) {
+            startScan();
         }
     }
 
@@ -202,76 +230,56 @@
         location.reload();
     }
 
-    // --- IPTV LOGIC ---
+    // --- 3. MOTEUR DE SCAN "ANTI-COUPURE" ---
     const video = document.getElementById('video');
     const listContainer = document.getElementById('channel-list');
     const statusDiv = document.getElementById('status');
-    const searchInput = document.getElementById('searchInput');
     const countDiv = document.getElementById('channel-count');
     const scanBar = document.getElementById('scan-bar');
     const scanProgress = document.getElementById('scan-progress');
     let hls = null, allChannels = [], loadedUrls = new Set(), currentUrl = "";
 
-    function loadCache() {
-        const cached = localStorage.getItem('mybox_channels_v5');
-        if (cached) {
-            try {
-                const parsed = JSON.parse(cached);
-                allChannels = parsed;
-                parsed.forEach(c => loadedUrls.add(c.url));
-                countDiv.innerText = `${allChannels.length} chaînes (Mémoire)`;
-                renderBatch(allChannels.slice(0, 100));
-                setTimeout(() => renderBatch(allChannels.slice(100)), 500);
-            } catch (e) {}
-        }
-    }
-    function saveCache() { try { localStorage.setItem('mybox_channels_v5', JSON.stringify(allChannels)); } catch(e) {} }
-    function renderBatch(newChannels) {
-        if (newChannels.length === 0) return;
-        const fragment = document.createDocumentFragment();
-        newChannels.forEach(ch => {
-            const div = document.createElement('div');
-            div.className = 'channel-item';
-            const imgUrl = ch.logo || 'https://via.placeholder.com/40/333/fff?text=TV';
-            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" loading="lazy" onerror="this.src='https://via.placeholder.com/40/333/fff?text=TV'"><div class="tv-name">${ch.name}</div>`;
-            div.onclick = () => {
-                playStream(ch);
-                document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-                div.classList.add('active');
-            };
-            fragment.appendChild(div);
-        });
-        listContainer.appendChild(fragment);
-        countDiv.innerText = `${allChannels.length} chaînes disponibles`;
-    }
-    
     async function startScan() {
-        // On vide la liste pour rafraichir
+        if(isScanning) return;
+        isScanning = true;
+
+        // Reset visuel
         allChannels = [];
         loadedUrls = new Set();
         listContainer.innerHTML = "";
+        countDiv.innerText = "Recherche en cours...";
         
         statusDiv.style.display = 'block';
-        statusDiv.innerText = "Téléchargement des listes...";
+        statusDiv.innerText = "Scan démarré...";
         scanProgress.style.display = 'block';
         scanBar.style.width = "5%";
         
-        // On utilise la liste venue de Google Sheet
-        const sourcesToScan = DYNAMIC_PLAYLISTS.length > 0 ? DYNAMIC_PLAYLISTS : ["https://iptv-org.github.io/iptv/index.m3u"];
+        const sources = DYNAMIC_PLAYLISTS.length > 0 ? DYNAMIC_PLAYLISTS : ["https://iptv-org.github.io/iptv/index.m3u"];
 
-        for (let i = 0; i < sourcesToScan.length; i++) {
-            await crawlAndAdd(sourcesToScan[i]);
-            scanBar.style.width = ((i+1)/sourcesToScan.length * 90) + "%";
+        // Boucle sur chaque source Excel
+        for (let i = 0; i < sources.length; i++) {
+            statusDiv.innerText = `Source ${i+1}/${sources.length}...`;
+            try {
+                await crawlAndAdd(sources[i]);
+            } catch(e) {
+                console.error("Erreur sur source " + i, e);
+            }
+            scanBar.style.width = ((i+1)/sources.length * 100) + "%";
         }
+
         statusDiv.innerText = "Scan Terminé !";
         scanBar.style.width = "100%";
+        isScanning = false;
         setTimeout(() => { statusDiv.style.display = 'none'; scanProgress.style.display = 'none'; }, 3000);
     }
 
     async function crawlAndAdd(url) {
-        if(!url || url.length < 5) return; // Sécurité liens vides
-        const text = await fetchUrl(url);
+        if(!url || url.length < 5) return;
+        
+        // Utilisation de la fonction fetchWithRetry pour éviter les coupures
+        const text = await fetchWithRetry(url, 2); 
         if(!text) return;
+
         const lines = text.split('\n');
         let foldersToScan = [], newChannelsBatch = [], currentInfo = {}, baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
         
@@ -301,28 +309,78 @@
             }
         }
 
-        if(newChannelsBatch.length > 0) { renderBatch(newChannelsBatch); saveCache(); }
+        // AFFICHAGE IMMEDIAT (STREAMING)
+        if(newChannelsBatch.length > 0) { 
+            renderBatch(newChannelsBatch); 
+            saveCache(); 
+        }
 
+        // Recursion pour les dossiers (avec protection anti-bug)
         if (foldersToScan.length > 0) {
-            const BATCH_SIZE = 10; 
+            const BATCH_SIZE = 5; 
             for(let i=0; i<foldersToScan.length; i+=BATCH_SIZE) {
                 const batch = foldersToScan.slice(i, i+BATCH_SIZE);
-                await Promise.all(batch.map(folderUrl => crawlAndAdd(folderUrl)));
-                await new Promise(r => setTimeout(r, 20)); 
+                // On scanne les sous-dossiers en parallèle, mais avec tolérance d'erreur
+                await Promise.all(batch.map(folderUrl => crawlAndAdd(folderUrl).catch(e => console.log("Skip dossier HS"))));
+                await new Promise(r => setTimeout(r, 10)); 
             }
         }
     }
 
-    async function fetchUrl(url) {
+    // --- FONCTION MAGIQUE : RETRY (ESSAYE ENCORE SI CA RATE) ---
+    async function fetchWithRetry(url, retries) {
         const proxies = ["https://api.allorigins.win/raw?url=", "https://corsproxy.io/?"];
-        for(let proxy of proxies) {
-            try {
-                const r = await fetch(proxy + encodeURIComponent(url));
-                if(r.ok) return await r.text();
-            } catch(e) { continue; }
+        
+        for(let attempt = 0; attempt <= retries; attempt++) {
+            for(let proxy of proxies) {
+                try {
+                    const r = await fetch(proxy + encodeURIComponent(url));
+                    if(r.ok) return await r.text();
+                } catch(e) { 
+                    // Si ça rate, on attend un peu et on réessaie
+                }
+            }
+            if(attempt < retries) await new Promise(r => setTimeout(r, 1000)); // Attendre 1s avant retry
         }
-        return null;
+        return null; // Abandon après tous les essais
     }
+
+    // --- VISUEL ---
+    function renderBatch(newChannels) {
+        if (newChannels.length === 0) return;
+        const fragment = document.createDocumentFragment();
+        newChannels.forEach(ch => {
+            const div = document.createElement('div');
+            div.className = 'channel-item';
+            const imgUrl = ch.logo || 'https://via.placeholder.com/40/333/fff?text=TV';
+            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" loading="lazy" onerror="this.src='https://via.placeholder.com/40/333/fff?text=TV'"><div class="tv-name">${ch.name}</div>`;
+            div.onclick = () => {
+                playStream(ch);
+                document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+            };
+            fragment.appendChild(div);
+        });
+        listContainer.appendChild(fragment);
+        countDiv.innerText = `${allChannels.length} chaînes trouvées`;
+    }
+
+    function loadCache() {
+        const cached = localStorage.getItem('mybox_channels_v5');
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                allChannels = parsed;
+                parsed.forEach(c => loadedUrls.add(c.url));
+                countDiv.innerText = `${allChannels.length} chaînes (Mémoire)`;
+                renderBatch(allChannels.slice(0, 50)); // Affiche vite les 50 premières
+                setTimeout(() => renderBatch(allChannels.slice(50)), 200); // Le reste après
+            } catch (e) {}
+        }
+    }
+    
+    function saveCache() { try { localStorage.setItem('mybox_channels_v5', JSON.stringify(allChannels)); } catch(e) {} }
+
     function playStream(channel) {
         if(channel.url === currentUrl) return;
         currentUrl = channel.url;
@@ -342,6 +400,9 @@
         }
         if(window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // Recherche instantanée
+    const searchInput = document.getElementById('searchInput');
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         listContainer.innerHTML = "";
