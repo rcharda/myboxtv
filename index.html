@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Fusion 3 Sources</title>
+    <title>My Box TV - VLC Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -20,11 +20,16 @@
         .brand-logo { max-width: 80px; height: auto; margin-bottom: 5px; }
         .app-title { font-weight: 700; font-size: 1.2em; color: #fff; letter-spacing: 1px; }
 
+        /* BOUTONS ET BARRES */
         .refresh-btn {
             background: #333; color: #aaa; border: 1px solid #444;
-            padding: 8px 15px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 5px; width: 100%; font-weight: bold;
+            padding: 8px 15px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 5px; width: 100%; font-weight: bold;
         }
         .refresh-btn:hover { background: #e50914; color: white; border-color: #e50914; }
+
+        #loader-container { width: 100%; background: #333; height: 16px; border-radius: 8px; margin-top: 10px; overflow: hidden; position: relative; display: none; }
+        #loader-bar { height: 100%; width: 0%; background: #e50914; transition: width 0.3s; }
+        #loader-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; font-size: 10px; text-align: center; line-height: 16px; color: white; text-shadow: 1px 1px 2px black; }
 
         .search-box { padding: 10px; background: #1a1a1a; }
         #searchInput { width: 100%; padding: 10px; border-radius: 20px; border: 1px solid #444; background: #2a2a2a; color: white; text-align: center; outline: none; }
@@ -43,9 +48,6 @@
         .whatsapp-link { display: inline-flex; background: #25D366; color: white; text-decoration: none; padding: 4px 10px; border-radius: 15px; margin-top: 5px; font-weight: bold; }
 
         #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
-        
-        #loader { width: 100%; height: 5px; background: #333; display: none; margin-top:5px; }
-        #loader-bar { height: 100%; width: 0%; background: #e50914; transition: width 0.3s; }
 
         @media screen and (max-width: 900px) {
             body { flex-direction: column; }
@@ -54,7 +56,7 @@
             .brand-header { flex-direction: row; justify-content: flex-start; padding: 10px; flex-wrap: wrap;}
             .brand-logo { max-width: 50px; margin: 0 10px 0 0; }
             .refresh-btn { width: auto; margin-left: auto;}
-            #loader { width: 100%; order: 3; margin-top: 10px;}
+            #loader-container { width: 100%; order: 3; margin-top: 10px;}
         }
     </style>
 </head>
@@ -71,12 +73,16 @@
         <div>
             <div class="app-title">My Box TV</div>
         </div>
-        <button onclick="forceReload()" class="refresh-btn">🔄 ACTUALISER LES 3 LISTES</button>
-        <div id="loader"><div id="loader-bar"></div></div>
+        <button onclick="forceReload()" class="refresh-btn">🔄 LANCER LE SCAN (14K+)</button>
+        
+        <div id="loader-container">
+            <div id="loader-bar"></div>
+            <div id="loader-text">0%</div>
+        </div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: TF1, Sport...)">
+        <input type="text" id="searchInput" placeholder="🔍 Ex: TF1, Sport, Canal...">
     </div>
 
     <div id="channel-count">...</div>
@@ -95,39 +101,32 @@
     const statusDiv = document.getElementById('status');
     const searchInput = document.getElementById('searchInput');
     const countDiv = document.getElementById('channel-count');
-    const loader = document.getElementById('loader');
+    const loaderContainer = document.getElementById('loader-container');
     const loaderBar = document.getElementById('loader-bar');
+    const loaderText = document.getElementById('loader-text');
     
     let hls = null;
     let allChannels = [];
     let currentUrl = "";
 
-    // --- VOS 3 LIENS A FUSIONNER ---
+    // VOS 3 LIENS A FUSIONNER
     const PLAYLISTS = [
-        // Lien 1 : FreeIPTV
+        "https://iptv-org.github.io/iptv/index.m3u", // Le fameux lien avec dossier
         "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
-        
-        // Lien 2 : Free-TV (Playlist principale)
-        "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
-        
-        // Lien 3 : IPTV-ORG (Version CORRIGÉE "Country" car "index" est vide)
-        "https://iptv-org.github.io/iptv/index.country.m3u"
+        "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"
     ];
 
-    // --- SYSTEME DE CACHE (Mémoire) ---
+    // --- SYSTEME DE CACHE ---
     function saveToCache(data) {
         try {
-            // On ne garde que l'essentiel pour économiser la mémoire
             const minified = data.map(c => ({n: c.name, u: c.url, l: c.logo}));
-            localStorage.setItem('mybox_fusion_v1', JSON.stringify(minified));
-            console.log("Liste sauvegardée !");
-        } catch (e) {
-            console.log("Mémoire pleine, pas de cache.");
-        }
+            localStorage.setItem('mybox_vlc_cache', JSON.stringify(minified));
+            console.log("Sauvegardé : " + minified.length);
+        } catch (e) { console.log("Mémoire pleine"); }
     }
 
     function loadFromCache() {
-        const cached = localStorage.getItem('mybox_fusion_v1');
+        const cached = localStorage.getItem('mybox_vlc_cache');
         if (cached) {
             const minified = JSON.parse(cached);
             return minified.map(c => ({name: c.n, url: c.u, logo: c.l}));
@@ -137,21 +136,31 @@
 
     // --- MOTEUR DE TÉLÉCHARGEMENT ---
     async function fetchUrl(url) {
-        // On utilise un proxy puissant pour gérer les gros fichiers
-        const proxy = "https://api.allorigins.win/raw?url=";
-        try {
-            const r = await fetch(proxy + encodeURIComponent(url));
-            if(r.ok) return await r.text();
-        } catch(e) { return null; }
+        const proxies = ["https://api.allorigins.win/raw?url=", "https://corsproxy.io/?"];
+        for(let proxy of proxies) {
+            try {
+                const r = await fetch(proxy + encodeURIComponent(url));
+                if(r.ok) return await r.text();
+            } catch(e) { continue; }
+        }
         return null;
     }
 
-    function parseM3U(text) {
+    // --- LE ROBOT SCANNEUR (C'est ici que la magie opère) ---
+    async function crawlAndParse(url) {
+        const text = await fetchUrl(url);
         if(!text) return [];
+
         const lines = text.split('\n');
         const items = [];
+        let folders = [];
         let currentInfo = {};
+        
+        // On récupère la base de l'URL pour reconstruire les liens relatifs
+        // Ex: si l'url est .../iptv/index.m3u, la base est .../iptv/
+        let baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
 
+        // 1. Première passe : On lit le fichier
         for(let line of lines) {
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
@@ -160,8 +169,70 @@
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
                 currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
             } else if (line.length > 0 && !line.startsWith('#')) {
-                // On accepte les liens http et https
-                if(currentInfo.name && line.startsWith('http')) {
+                
+                // RECONSTRUCTION DU LIEN (Le secret de VLC)
+                let fullUrl = line;
+                if (!line.startsWith('http')) {
+                    fullUrl = baseUrl + line;
+                }
+
+                // Est-ce un dossier ? (fini par .m3u et n'est pas un flux .m3u8)
+                // Pour iptv-org, "channels/fr.m3u" est un dossier.
+                const isFolder = fullUrl.endsWith('.m3u');
+
+                if(isFolder) {
+                    folders.push({url: fullUrl, name: currentInfo.name || "Dossier"});
+                } else if (currentInfo.name) {
+                    items.push({name: currentInfo.name, url: fullUrl, logo: currentInfo.logo});
+                }
+                currentInfo = {};
+            }
+        }
+
+        // 2. Si on a trouvé des dossiers, on doit aller les chercher (RECURSIVITÉ)
+        // C'est ça qui prend du temps mais qui donne les 14.000 chaines
+        if (folders.length > 0) {
+            console.log(`Dossiers trouvés dans ${url}: ${folders.length}`);
+            
+            // On traite par paquet de 5 pour ne pas bloquer
+            const BATCH = 5;
+            for(let i=0; i<folders.length; i+=BATCH) {
+                const batch = folders.slice(i, i+BATCH);
+                
+                // Mise à jour interface
+                if(url.includes('index.m3u')) { // Seulement pour la liste principale
+                    const pct = Math.round((i / folders.length) * 100);
+                    updateLoader(pct, `Scan dossier: ${i}/${folders.length}`);
+                    renderList(allChannels.concat(items)); // Affiche ce qu'on a déjà
+                }
+
+                await Promise.all(batch.map(async (folder) => {
+                    // On scanne le sous-dossier
+                    const subItems = await crawlSubFolder(folder.url);
+                    items.push(...subItems);
+                }));
+            }
+        }
+
+        return items;
+    }
+
+    // Fonction légère pour les sous-dossiers (ne cherche pas de sous-sous-dossiers pour éviter boucle infinie)
+    async function crawlSubFolder(url) {
+        const text = await fetchUrl(url);
+        if(!text) return [];
+        const lines = text.split('\n');
+        const items = [];
+        let currentInfo = {};
+        for(let line of lines) {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
+                currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
+            } else if (line.length > 0 && !line.startsWith('#') && currentInfo.name) {
+                if(line.startsWith('http')) {
                     items.push({name:currentInfo.name, url:line, logo:currentInfo.logo});
                 }
                 currentInfo = {};
@@ -170,12 +241,16 @@
         return items;
     }
 
-    // --- AFFICHAGE DE LA LISTE ---
+    function updateLoader(pct, text) {
+        loaderBar.style.width = pct + "%";
+        loaderText.innerText = `${pct}% - ${text}`;
+    }
+
+    // --- AFFICHAGE ---
     function renderList(channels) {
         listContainer.innerHTML = "";
-        countDiv.innerText = `${channels.length} chaînes au total`;
+        countDiv.innerText = `${channels.length} chaînes trouvées`;
         
-        // On affiche les 200 premières pour que ça s'ouvre vite
         const limit = channels.length > 200 ? 200 : channels.length;
         const fragment = document.createDocumentFragment();
 
@@ -227,11 +302,10 @@
         renderList(filtered);
     });
 
-    // --- INITIALISATION (Le Cerveau) ---
+    // --- LE CERVEAU ---
     async function init(forceUpdate = false) {
         statusDiv.style.display = 'block';
         
-        // 1. Essai de charger depuis la mémoire (Rapide)
         if (!forceUpdate) {
             const cachedData = loadFromCache();
             if (cachedData && cachedData.length > 5000) {
@@ -243,51 +317,45 @@
             }
         }
 
-        // 2. Si pas de mémoire, on télécharge les 3 listes
-        statusDiv.innerText = "Téléchargement des 3 listes... (Patientez)";
-        loader.style.display = 'block';
-        loaderBar.style.width = '0%';
-        countDiv.innerText = "Connexion...";
+        statusDiv.innerText = "Scan complet... (1 à 2 min)";
+        loaderContainer.style.display = 'block';
+        updateLoader(0, "Démarrage...");
         
         let tempChannels = [];
 
-        // Boucle sur les 3 liens
+        // ON SCANNE LES 3 SOURCES
         for (let i = 0; i < PLAYLISTS.length; i++) {
             const url = PLAYLISTS[i];
-            const txt = await fetchUrl(url);
+            // On appelle notre Robot Scanneur
+            const items = await crawlAndParse(url);
             
-            if(txt) {
-                const items = parseM3U(txt);
-                tempChannels = tempChannels.concat(items);
-            }
-            
-            // Barre de progression (33% -> 66% -> 100%)
-            const pct = Math.round(((i+1) / PLAYLISTS.length) * 100);
-            loaderBar.style.width = pct + '%';
-            countDiv.innerText = `${tempChannels.length} chaînes trouvées...`;
+            // On filtre les doublons éventuels
+            tempChannels = tempChannels.concat(items);
+            allChannels = tempChannels; // Mise à jour globale pour l'affichage en temps réel
         }
 
-        allChannels = tempChannels;
+        // FIN
+        updateLoader(100, "Terminé !");
         
-        // Sauvegarde si on a trouvé des chaînes
-        if(allChannels.length > 1000) {
+        if(allChannels.length > 2000) {
              saveToCache(allChannels);
-             statusDiv.innerText = "Fusion Réussie !";
+             statusDiv.innerText = "Succès !";
         } else {
-             statusDiv.innerText = "Erreur de connexion";
+             statusDiv.innerText = "Erreur partielle";
         }
         
-        loader.style.display = 'none';
-        setTimeout(() => statusDiv.style.display = 'none', 2000);
-        renderList(allChannels);
+        setTimeout(() => {
+            loaderContainer.style.display = 'none';
+            statusDiv.style.display = 'none';
+        }, 2000);
         
-        // Lancer la première chaîne si dispo
+        renderList(allChannels);
         if(allChannels.length > 0) playStream(allChannels[0]);
     }
 
     function forceReload() {
-        if(confirm("Mettre à jour les listes ? (Prend ~1 minute)")) {
-            localStorage.removeItem('mybox_fusion_v1');
+        if(confirm("Lancer le scan complet des dossiers ? (Prend 1 à 2 minutes)")) {
+            localStorage.removeItem('mybox_vlc_cache');
             init(true);
         }
     }
