@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - 20K Edition</title>
+    <title>My Box TV - 30K Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -51,7 +51,7 @@
             .brand-header { flex-direction: row; justify-content: flex-start; padding: 10px; }
             .brand-logo { max-width: 50px; margin: 0 10px 0 0; }
             .progress-container { position: absolute; bottom: 0; left: 0; width: 100%; margin: 0; height: 3px;}
-            #scan-log { display: none; } /* On cache les logs sur mobile pour gagner de la place */
+            #scan-log { display: none; }
         }
     </style>
 </head>
@@ -65,9 +65,9 @@
 <div id="sidebar">
     <div class="brand-header">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo" alt="Logo">
-        <div>
+        <div style="width: 100%;">
             <div class="app-title">My Box TV</div>
-            <div id="scan-log">Initialisation...</div>
+            <div id="scan-log">En attente...</div>
         </div>
         <div class="progress-container"><div id="progress-bar"></div></div>
     </div>
@@ -102,10 +102,10 @@
     // CONFIGURATION DU SCANNER
     const MAIN_LISTS = [
         "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u", // ~3000 chaines
-        "https://iptv-org.github.io/iptv/index.category.m3u" // Le sommaire des dossiers (Sport, Movies, etc.)
+        "https://iptv-org.github.io/iptv/index.category.m3u" // Le sommaire des dossiers
     ];
 
-    // Fonctions Proxy (On en utilise 2 au cas où l'un bloque)
+    // Proxies pour éviter les blocages
     const PROXY_1 = "https://api.allorigins.win/raw?url=";
     const PROXY_2 = "https://corsproxy.io/?";
 
@@ -116,12 +116,9 @@
             throw new Error("Proxy 1 fail");
         } catch (e) {
             try {
-                // Fallback sur le Proxy 2 si le premier échoue
                 const res2 = await fetch(PROXY_2 + encodeURIComponent(url));
                 if (res2.ok) return await res2.text();
-            } catch (err) {
-                return null; // Abandon
-            }
+            } catch (err) { return null; }
         }
         return null;
     }
@@ -140,19 +137,18 @@
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
                 currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
             } else if (line.length > 0 && !line.startsWith('#')) {
-                // C'est un lien
-                // Si le lien est relatif (ne commence pas par http), on le reconstruit
+                // Reconstruction lien relatif
                 if (!line.startsWith('http')) {
-                    // Logique complexe pour reconstruire l'URL (pour iptv-org)
                     const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf('/') + 1);
                     line = baseUrl + line;
                 }
                 
-                const isFolder = line.endsWith('.m3u') || line.endsWith('.m3u8') === false; // Detection simple
+                // --- CORRECTION DU BUG ICI ---
+                // On détecte si c'est un dossier (.m3u) SANS vérifier le mot "iptv-org"
+                const isFolder = line.endsWith('.m3u'); 
                 
-                // Correction pour iptv-org : index.category contient des liens vers des .m3u
-                if(line.includes('iptv-org') && line.endsWith('.m3u')) {
-                    items.push({ type: 'folder', url: line, name: currentInfo.name });
+                if(isFolder) {
+                    items.push({ type: 'folder', url: line, name: currentInfo.name || "Dossier" });
                 } else if(currentInfo.name) {
                     items.push({ type: 'video', url: line, name: currentInfo.name, logo: currentInfo.logo });
                 }
@@ -166,7 +162,7 @@
         listContainer.innerHTML = "";
         countDiv.innerText = `${channels.length} chaînes (Total)`;
 
-        // Limite visuelle pour la fluidité (300 premiers éléments)
+        // On affiche les 300 premiers pour la fluidité
         const limit = channels.length > 300 ? 300 : channels.length;
         if(limit === 0) { listContainer.innerHTML = "<div style='padding:20px;text-align:center'>Liste vide</div>"; return; }
 
@@ -216,21 +212,17 @@
         renderList(allChannels.filter(c => c.name.toLowerCase().includes(term)));
     });
 
-    // --- MOTEUR TURBO SCANNER (PARALLELE) ---
     async function startTurboScan() {
-        let queue = [...MAIN_LISTS]; // File d'attente des URLs à scanner
-        let seen = new Set(); // Pour éviter les doublons
+        let queue = [...MAIN_LISTS];
+        let seen = new Set();
         
-        // 1. Scan initial des listes principales
-        statusDiv.innerText = "Scan initial...";
-        
+        // 1. Scan Initial
+        statusDiv.innerText = "Analyse des listes principales...";
         let foldersToScan = [];
         
         for (let url of queue) {
             const text = await fetchWithFallback(url);
             const items = parseContent(text, url);
-            
-            // On sépare vidéos et dossiers
             const vids = items.filter(i => i.type === 'video');
             const folds = items.filter(i => i.type === 'folder');
             
@@ -238,25 +230,30 @@
             foldersToScan = foldersToScan.concat(folds);
         }
         
-        renderList(allChannels); // Affiche déjà les ~3000 premières
+        renderList(allChannels);
         
-        // 2. SCAN PARALLELE DES DOSSIERS (Batch de 5)
-        const BATCH_SIZE = 5;
+        // 2. Scan Profond (Turbo)
+        const BATCH_SIZE = 5; // 5 téléchargements simultanés
         let total = foldersToScan.length;
         let completed = 0;
 
-        statusDiv.innerText = `Scan profond: ${total} dossiers...`;
+        // Si aucun dossier trouvé, on arrête
+        if(total === 0) {
+            statusDiv.innerText = "Terminé (Pas de dossiers trouvés)";
+            setTimeout(() => statusDiv.style.display = 'none', 2000);
+            return;
+        }
+
+        statusDiv.innerText = `Scan profond: ${total} catégories...`;
         
         for (let i = 0; i < total; i += BATCH_SIZE) {
-            // On prend 5 dossiers à la fois
             const batch = foldersToScan.slice(i, i + BATCH_SIZE);
             
-            // On lance les 5 téléchargements en même temps (Promise.all)
             await Promise.all(batch.map(async (folder) => {
                 if(seen.has(folder.url)) return;
                 seen.add(folder.url);
                 
-                scanLog.innerText = "Scan: " + folder.name;
+                scanLog.innerText = ">>> " + folder.name;
                 const text = await fetchWithFallback(folder.url);
                 const items = parseContent(text, folder.url);
                 const newVids = items.filter(it => it.type === 'video');
@@ -271,17 +268,20 @@
             progressBar.style.width = pct + "%";
             countDiv.innerText = `${allChannels.length} chaînes...`;
             
-            // Mise à jour visuelle tous les 20 dossiers
-            if(i % 20 === 0) renderList(allChannels);
+            // Rafraîchir l'affichage tous les 10%
+            if(completed % 10 === 0) renderList(allChannels);
             
-            // Petite pause pour ne pas tuer le navigateur
-            await new Promise(r => setTimeout(r, 100));
+            // Petite pause pour respirer
+            await new Promise(r => setTimeout(r, 50));
         }
 
-        statusDiv.innerText = "Scan 100% Terminé";
+        statusDiv.innerText = "Scan 100% Terminé !";
         scanLog.innerText = "Prêt.";
         setTimeout(() => statusDiv.style.display = 'none', 3000);
-        renderList(allChannels); // Affichage final complet
+        renderList(allChannels);
+        
+        // Lancer la première chaîne
+        if(allChannels.length > 0) playStream(allChannels[0]);
     }
 
     startTurboScan();
