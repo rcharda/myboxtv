@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - 15K Edition</title>
+    <title>My Box TV - Fusion 3 Sources</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -71,12 +71,12 @@
         <div>
             <div class="app-title">My Box TV</div>
         </div>
-        <button onclick="forceReload()" class="refresh-btn">🔄 ACTUALISER LISTE</button>
+        <button onclick="forceReload()" class="refresh-btn">🔄 ACTUALISER LES 3 LISTES</button>
         <div id="loader"><div id="loader-bar"></div></div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: France, Sport...)">
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: TF1, Sport...)">
     </div>
 
     <div id="channel-count">...</div>
@@ -102,33 +102,32 @@
     let allChannels = [];
     let currentUrl = "";
 
-    // --- LA STRATEGIE DU DECOUPAGE (12 FICHIERS MOYENS AU LIEU D'UN GEANT) ---
-    // Cela garantit que le proxy ne plante pas.
+    // --- VOS 3 LIENS A FUSIONNER ---
     const PLAYLISTS = [
-        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u", // Base (3000)
-        "https://iptv-org.github.io/iptv/countries/bj.m3u", // Benin
-        "https://iptv-org.github.io/iptv/languages/fra.m3u", // Français (Gros fichier)
-        "https://iptv-org.github.io/iptv/categories/sport.m3u", // Sport
-        "https://iptv-org.github.io/iptv/categories/movies.m3u", // Films
-        "https://iptv-org.github.io/iptv/categories/music.m3u", // Musique
-        "https://iptv-org.github.io/iptv/categories/news.m3u", // News
-        "https://iptv-org.github.io/iptv/categories/kids.m3u", // Enfants
-        "https://iptv-org.github.io/iptv/categories/documentary.m3u", // Docu
-        "https://iptv-org.github.io/iptv/categories/comedy.m3u", // Comédie
-        "https://iptv-org.github.io/iptv/categories/auto.m3u", // Auto
-        "https://iptv-org.github.io/iptv/categories/business.m3u" // Business
+        // Lien 1 : FreeIPTV
+        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
+        
+        // Lien 2 : Free-TV (Playlist principale)
+        "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
+        
+        // Lien 3 : IPTV-ORG (Version CORRIGÉE "Country" car "index" est vide)
+        "https://iptv-org.github.io/iptv/index.country.m3u"
     ];
 
-    // --- CACHE SYSTEM ---
+    // --- SYSTEME DE CACHE (Mémoire) ---
     function saveToCache(data) {
         try {
+            // On ne garde que l'essentiel pour économiser la mémoire
             const minified = data.map(c => ({n: c.name, u: c.url, l: c.logo}));
-            localStorage.setItem('mybox_channels_v4', JSON.stringify(minified));
-        } catch (e) { console.log("Mémoire pleine"); }
+            localStorage.setItem('mybox_fusion_v1', JSON.stringify(minified));
+            console.log("Liste sauvegardée !");
+        } catch (e) {
+            console.log("Mémoire pleine, pas de cache.");
+        }
     }
 
     function loadFromCache() {
-        const cached = localStorage.getItem('mybox_channels_v4');
+        const cached = localStorage.getItem('mybox_fusion_v1');
         if (cached) {
             const minified = JSON.parse(cached);
             return minified.map(c => ({name: c.n, url: c.u, logo: c.l}));
@@ -136,8 +135,9 @@
         return null;
     }
 
-    // --- FETCH ENGINE ---
+    // --- MOTEUR DE TÉLÉCHARGEMENT ---
     async function fetchUrl(url) {
+        // On utilise un proxy puissant pour gérer les gros fichiers
         const proxy = "https://api.allorigins.win/raw?url=";
         try {
             const r = await fetch(proxy + encodeURIComponent(url));
@@ -160,6 +160,7 @@
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
                 currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
             } else if (line.length > 0 && !line.startsWith('#')) {
+                // On accepte les liens http et https
                 if(currentInfo.name && line.startsWith('http')) {
                     items.push({name:currentInfo.name, url:line, logo:currentInfo.logo});
                 }
@@ -169,11 +170,12 @@
         return items;
     }
 
-    // --- AFFICHAGE ---
+    // --- AFFICHAGE DE LA LISTE ---
     function renderList(channels) {
         listContainer.innerHTML = "";
-        countDiv.innerText = `${channels.length} chaînes chargées`;
+        countDiv.innerText = `${channels.length} chaînes au total`;
         
+        // On affiche les 200 premières pour que ça s'ouvre vite
         const limit = channels.length > 200 ? 200 : channels.length;
         const fragment = document.createDocumentFragment();
 
@@ -225,10 +227,11 @@
         renderList(filtered);
     });
 
-    // --- LE CERVEAU ---
+    // --- INITIALISATION (Le Cerveau) ---
     async function init(forceUpdate = false) {
         statusDiv.style.display = 'block';
         
+        // 1. Essai de charger depuis la mémoire (Rapide)
         if (!forceUpdate) {
             const cachedData = loadFromCache();
             if (cachedData && cachedData.length > 5000) {
@@ -240,45 +243,51 @@
             }
         }
 
-        statusDiv.innerText = "Téléchargement des listes...";
+        // 2. Si pas de mémoire, on télécharge les 3 listes
+        statusDiv.innerText = "Téléchargement des 3 listes... (Patientez)";
         loader.style.display = 'block';
         loaderBar.style.width = '0%';
         countDiv.innerText = "Connexion...";
         
         let tempChannels = [];
 
-        // ON TELECHARGE LES 12 LISTES UNE PAR UNE
+        // Boucle sur les 3 liens
         for (let i = 0; i < PLAYLISTS.length; i++) {
             const url = PLAYLISTS[i];
             const txt = await fetchUrl(url);
+            
             if(txt) {
                 const items = parseM3U(txt);
                 tempChannels = tempChannels.concat(items);
             }
             
-            // Mise à jour de la barre
+            // Barre de progression (33% -> 66% -> 100%)
             const pct = Math.round(((i+1) / PLAYLISTS.length) * 100);
             loaderBar.style.width = pct + '%';
-            countDiv.innerText = `${tempChannels.length} chaînes...`;
+            countDiv.innerText = `${tempChannels.length} chaînes trouvées...`;
         }
 
         allChannels = tempChannels;
         
-        if(allChannels.length > 5000) {
+        // Sauvegarde si on a trouvé des chaînes
+        if(allChannels.length > 1000) {
              saveToCache(allChannels);
-             statusDiv.innerText = "Succès !";
+             statusDiv.innerText = "Fusion Réussie !";
         } else {
-             statusDiv.innerText = "Erreur partielle (Réessayez)";
+             statusDiv.innerText = "Erreur de connexion";
         }
         
         loader.style.display = 'none';
         setTimeout(() => statusDiv.style.display = 'none', 2000);
         renderList(allChannels);
+        
+        // Lancer la première chaîne si dispo
+        if(allChannels.length > 0) playStream(allChannels[0]);
     }
 
     function forceReload() {
-        if(confirm("Recharger toutes les listes ?")) {
-            localStorage.removeItem('mybox_channels_v4');
+        if(confirm("Mettre à jour les listes ? (Prend ~1 minute)")) {
+            localStorage.removeItem('mybox_fusion_v1');
             init(true);
         }
     }
