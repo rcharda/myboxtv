@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Box TV - Player En Ligne</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS: STYLES GENERAUX --- */
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
+
+        /* --- ZONE GAUCHE : LE LECTEUR VIDEO --- */
+        #player-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #000;
+            position: relative;
+        }
+        video { width: 100%; height: 100%; object-fit: contain; }
+
+        /* --- ZONE DROITE : LA SIDEBAR --- */
+        #sidebar {
+            width: 350px;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #333;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* 1. HEADER (Logo + Nom) */
+        .brand-header {
+            padding: 20px 20px; /* Réduit légèrement le padding */
+            background: #222;
+            border-bottom: 2px solid #e50914;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .brand-logo {
+            /* --- CORRECTION ICI (Taille PC) --- */
+            max-width: 100px; /* Passé de 180px à 100px */
+            height: auto;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .app-title {
+            font-weight: 700;
+            font-size: 1.4em;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        /* 2. RECHERCHE */
+        .search-box { padding: 15px; background: #1a1a1a; border-bottom: 1px solid #333;}
+        #searchInput {
+            width: 100%; padding: 12px; border-radius: 25px;
+            border: 1px solid #444; background: #2a2a2a; color: white;
+            font-size: 14px; outline: none; text-align: center; transition: 0.3s;
+        }
+        #searchInput:focus { border-color: #e50914; background: #333;}
+
+        /* 3. LISTE DES CHAINES (Scrollable) */
+        #channel-list {
+            flex: 1; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: #444 #1a1a1a;
+        }
+        /* Style des items */
+        .channel-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #252525;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+        }
+        .channel-item:hover { background: #333; padding-left: 20px;}
+        /* Item actif (celui qui joue) */
+        .channel-item.active { background: #e50914 !important; color: white; border-left: 5px solid white; }
+        
+        /* Icones des chaînes */
+        .tv-icon {
+            width: 45px; height: 45px; object-fit: contain;
+            margin-right: 15px; background: #fff; border-radius: 8px; padding: 3px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .tv-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* 4. FOOTER (Développeur) */
+        .dev-footer {
+            padding: 15px; background: #111; border-top: 1px solid #333;
+            font-size: 12px; text-align: center; color: #999;
+        }
+        .dev-name { color: #ddd; font-weight: bold; display: block; margin-bottom: 8px;}
+        .whatsapp-link {
+            display: inline-flex; align-items: center;
+            background: #25D366; color: white; text-decoration: none;
+            padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 13px; transition: 0.3s;
+        }
+        .whatsapp-link:hover { background: #1ebd59; transform: scale(1.05); }
+
+        /* Status Overlay (sur la vidéo) */
+        #status {
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(229, 9, 20, 0.8); color: #fff;
+            padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20;
+        }
+
+        /* --- RESPONSIVE MOBILE --- */
+        @media screen and (max-width: 900px) {
+            body { flex-direction: column; }
+            #player-container { height: 40vh; flex: none; border-bottom: 2px solid #e50914;}
+            #sidebar { width: 100%; height: 60vh; box-shadow: none; }
+            
+            /* Header mobile simplifié */
+            .brand-header { 
+                padding: 10px 15px; 
+                flex-direction: row; 
+                justify-content: flex-start; 
+                border-bottom: 1px solid #333;
+            }
+            /* --- CORRECTION ICI (Taille Mobile) --- */
+            .brand-logo { max-width: 60px; margin-bottom: 0; margin-right: 15px;} /* Passé de 80px à 60px */
+            .app-title { font-size: 1.2em; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="player-container">
+    <div id="status">Initialisation de My Box TV...</div>
+    <video id="video" controls playsinline></video>
+</div>
+
+<div id="sidebar">
+    <div class="brand-header">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo" alt="Logo">
+        <div class="app-title">My Box TV</div>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
+    </div>
+
+    <div id="channel-list">
+        <div style="padding:20px; text-align:center; color:#666;">Chargement de la playlist...</div>
+    </div>
+
+    <div class="dev-footer">
+        <span class="dev-name">Développé par : GBOHOUNME Richard Chiriaque</span>
+        <a href="https://wa.me/22963828767" target="_blank" class="whatsapp-link">
+            <span style="margin-right: 5px;">📞</span> Contact WhatsApp
+        </a>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const listContainer = document.getElementById('channel-list');
+    const statusDiv = document.getElementById('status');
+    const searchInput = document.getElementById('searchInput');
+    
+    let hls = null;
+    let allChannels = [];
+    let currentUrl = "";
+
+    // Playlist GitHub via proxy AllOrigins
+    const M3U_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u");
+
+    // 1. Parser le fichier M3U pour extraire Nom, Logo et URL
+    function parseM3U(content) {
+        const lines = content.split('\n');
+        const channels = [];
+        let currentInfo = {};
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                const name = parts.length > 1 ? parts[1].trim() : "Chaîne sans nom";
+                
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                const logoMatchAlt = line.match(/ logo="([^"]*)"/);
+                
+                let logoUrl = null;
+                if(logoMatch) logoUrl = logoMatch[1];
+                else if(logoMatchAlt) logoUrl = logoMatchAlt[1];
+
+                currentInfo = { name: name, logo: logoUrl };
+
+            } else if (line.length > 0 && !line.startsWith('#')) {
+                if(currentInfo.name) {
+                    channels.push({ 
+                        name: currentInfo.name, 
+                        logo: currentInfo.logo,
+                        url: line 
+                    });
+                    currentInfo = {}; 
+                }
+            }
+        });
+        return channels;
+    }
+
+    // 2. Afficher la liste HTML
+    function renderList(channelsToDisplay) {
+        listContainer.innerHTML = "";
+        const limit = channelsToDisplay.length > 250 ? 250 : channelsToDisplay.length;
+
+        if(limit === 0) {
+            listContainer.innerHTML = "<div style='padding:30px; text-align:center; color:#888;'>Aucune chaîne ne correspond à votre recherche.</div>";
+            return;
+        }
+
+        for(let i=0; i<limit; i++) {
+            const channel = channelsToDisplay[i];
+            const div = document.createElement('div');
+            div.className = 'channel-item';
+            if(channel.url === currentUrl) div.classList.add('active');
+
+            const imgUrl = channel.logo && channel.logo.startsWith('http') ? channel.logo : 'https://via.placeholder.com/45x45/cccccc/000000?text=TV';
+            const imgHtml = `<img src="${imgUrl}" class="tv-icon" onerror="this.src='https://via.placeholder.com/45x45/cccccc/000000?text=Error'">`;
+
+            div.innerHTML = `${imgHtml}<div class="tv-name">${channel.name}</div>`;
+
+            div.onclick = () => {
+                document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+                playStream(channel);
+            };
+            listContainer.appendChild(div);
+        }
+    }
+
+    // 3. Moteur du lecteur vidéo (HLS.js)
+    function playStream(channel) {
+        if(channel.url === currentUrl) return;
+        currentUrl = channel.url;
+        
+        statusDiv.style.background = "rgba(229, 9, 20, 0.8)";
+        statusDiv.innerText = "Chargement : " + channel.name + "...";
+
+        if (Hls.isSupported()) {
+            if (hls) hls.destroy();
+            hls = new Hls({ EnableWorker: true, lowLatencyMode: true });
+            hls.loadSource(channel.url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                 statusDiv.style.display = 'none';
+                 video.play().catch(e => {});
+            });
+            hls.on(Hls.Events.ERROR, (e, data) => {
+                if (data.fatal) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = "rgba(200, 0, 0, 0.9)";
+                    statusDiv.innerText = "⚠️ Erreur : Chaîne indisponible ou hors ligne.";
+                }
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = channel.url;
+            video.addEventListener('loadedmetadata', () => {
+                statusDiv.style.display = 'none';
+                video.play()
+            });
+             video.addEventListener('error', () => {
+                 statusDiv.style.display = 'block';
+                 statusDiv.innerText = "⚠️ Erreur Safari.";
+             });
+        }
+        
+        if(window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 4. Écouteur de recherche
+    searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
+        renderList(filtered);
+    });
+
+    // 5. Démarrage de l'application
+    async function init() {
+        try {
+            const response = await fetch(M3U_URL);
+            if (!response.ok) throw new Error("Erreur réseau");
+            const text = await response.text();
+            allChannels = parseM3U(text);
+            
+            statusDiv.innerText = `Playlist chargée : ${allChannels.length} chaînes.`;
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
+
+            renderList(allChannels);
+            if (allChannels.length > 0) playStream(allChannels[0]);
+
+        } catch (error) {
+            console.error(error);
+            statusDiv.innerText = "❌ Erreur critique : Impossible de charger la playlist IPTV.";
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
