@@ -3,143 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Liste Complète</title>
+    <title>My Box TV - Fusion</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CSS: STYLES GENERAUX --- */
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
 
-        /* --- ZONE GAUCHE : LE LECTEUR VIDEO --- */
-        #player-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background: #000;
-            position: relative;
-        }
+        #player-container { flex: 1; display: flex; flex-direction: column; justify-content: center; background: #000; position: relative; }
         video { width: 100%; height: 100%; object-fit: contain; }
 
-        /* --- ZONE DROITE : LA SIDEBAR --- */
-        #sidebar {
-            width: 350px;
-            background: #1a1a1a;
-            display: flex;
-            flex-direction: column;
-            border-left: 1px solid #333;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            z-index: 10;
-        }
+        #sidebar { width: 350px; background: #1a1a1a; display: flex; flex-direction: column; border-left: 1px solid #333; z-index: 10; }
 
-        /* 1. HEADER (Logo + Nom) */
-        .brand-header {
-            padding: 20px 20px;
-            background: #222;
-            border-bottom: 2px solid #e50914;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .brand-logo {
-            max-width: 100px;
-            height: auto;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-        }
-        .app-title {
-            font-weight: 700;
-            font-size: 1.4em;
-            color: #fff;
-            letter-spacing: 1px;
-        }
+        .brand-header { padding: 20px; background: #222; border-bottom: 2px solid #e50914; display: flex; flex-direction: column; align-items: center; }
+        .brand-logo { max-width: 100px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .app-title { font-weight: 700; font-size: 1.4em; color: #fff; letter-spacing: 1px; }
 
-        /* 2. RECHERCHE */
         .search-box { padding: 15px; background: #1a1a1a; }
-        #searchInput {
-            width: 100%; padding: 12px; border-radius: 25px;
-            border: 1px solid #444; background: #2a2a2a; color: white;
-            font-size: 14px; outline: none; text-align: center; transition: 0.3s;
-        }
-        #searchInput:focus { border-color: #e50914; background: #333;}
+        #searchInput { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 14px; outline: none; text-align: center; }
+        
+        #channel-count { text-align: center; font-size: 12px; color: #888; padding-bottom: 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
 
-        /* COMPTEUR */
-        #channel-count {
-            text-align: center;
-            font-size: 12px;
-            color: #888;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-            background: #1a1a1a;
-        }
-
-        /* 3. LISTE DES CHAINES (Scrollable) */
-        #channel-list {
-            flex: 1; overflow-y: auto;
-            scrollbar-width: thin; scrollbar-color: #444 #1a1a1a;
-        }
-        .channel-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid #252525;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s ease-in-out;
-        }
-        .channel-item:hover { background: #333; padding-left: 20px;}
+        #channel-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #444 #1a1a1a; }
+        .channel-item { padding: 10px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; }
+        .channel-item:hover { background: #333; }
         .channel-item.active { background: #e50914 !important; color: white; border-left: 5px solid white; }
         
-        .tv-icon {
-            width: 45px; height: 45px; object-fit: contain;
-            margin-right: 15px; background: #fff; border-radius: 8px; padding: 3px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        .tv-icon { width: 45px; height: 45px; object-fit: contain; margin-right: 15px; background: #fff; border-radius: 8px; padding: 3px; }
         .tv-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* 4. FOOTER (Développeur) */
-        .dev-footer {
-            padding: 15px; background: #111; border-top: 1px solid #333;
-            font-size: 12px; text-align: center; color: #999;
-        }
-        .dev-name { color: #ddd; font-weight: bold; display: block; margin-bottom: 8px;}
-        .whatsapp-link {
-            display: inline-flex; align-items: center;
-            background: #25D366; color: white; text-decoration: none;
-            padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 13px; transition: 0.3s;
-        }
-        .whatsapp-link:hover { background: #1ebd59; transform: scale(1.05); }
+        .dev-footer { padding: 15px; background: #111; border-top: 1px solid #333; font-size: 12px; text-align: center; color: #999; }
+        .whatsapp-link { display: inline-flex; align-items: center; background: #25D366; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 13px; }
 
-        #status {
-            position: absolute; top: 15px; left: 15px;
-            background: rgba(229, 9, 20, 0.8); color: #fff;
-            padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20;
-        }
+        #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.8); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
 
-        /* --- RESPONSIVE MOBILE --- */
         @media screen and (max-width: 900px) {
             body { flex-direction: column; }
             #player-container { height: 40vh; flex: none; border-bottom: 2px solid #e50914;}
-            #sidebar { width: 100%; height: 60vh; box-shadow: none; }
-            
-            .brand-header { 
-                padding: 10px 15px; 
-                flex-direction: row; 
-                justify-content: flex-start; 
-                border-bottom: 1px solid #333;
-            }
-            .brand-logo { max-width: 60px; margin-bottom: 0; margin-right: 15px;}
-            .app-title { font-size: 1.2em; }
+            #sidebar { width: 100%; height: 60vh; }
+            .brand-header { padding: 10px 15px; flex-direction: row; justify-content: flex-start; border-bottom: 1px solid #333; }
+            .brand-logo { max-width: 60px; margin: 0 15px 0 0;}
         }
     </style>
 </head>
 <body>
 
 <div id="player-container">
-    <div id="status">Initialisation de My Box TV...</div>
+    <div id="status">Initialisation...</div>
     <video id="video" controls playsinline></video>
 </div>
 
@@ -150,20 +61,18 @@
     </div>
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
     </div>
 
     <div id="channel-count">0 chaînes</div>
 
     <div id="channel-list">
-        <div style="padding:20px; text-align:center; color:#666;">Chargement des listes...</div>
+        <div style="padding:20px; text-align:center; color:#666;">Chargement des playlists...</div>
     </div>
 
     <div class="dev-footer">
-        <span class="dev-name">Développé par : GBOHOUNME Richard Chiriaque</span>
-        <a href="https://wa.me/22963828767" target="_blank" class="whatsapp-link">
-            <span style="margin-right: 5px;">📞</span> Contact WhatsApp
-        </a>
+        <div>Dev: GBOHOUNME Richard Chiriaque</div>
+        <a href="https://wa.me/22963828767" target="_blank" class="whatsapp-link">WhatsApp</a>
     </div>
 </div>
 
@@ -178,10 +87,13 @@
     let allChannels = [];
     let currentUrl = "";
 
-    // LISTE DE TOUTES VOS SOURCES (VOUS POUVEZ EN AJOUTER D'AUTRES ICI)
+    // --- C'EST ICI QUE J'AI CORRIGÉ LES LIENS ---
+    // J'ai mis des liens de catégories directes (Movies, News, Sport) au lieu du lien "index" qui ne marchait pas.
     const PLAYLISTS = [
         "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
-        "https://iptv-org.github.io/iptv/index.m3u"
+        "https://iptv-org.github.io/iptv/categories/movies.m3u",
+        "https://iptv-org.github.io/iptv/categories/news.m3u",
+        "https://iptv-org.github.io/iptv/categories/sport.m3u"
     ];
 
     function parseM3U(content) {
@@ -193,15 +105,15 @@
             line = line.trim();
             if (line.startsWith('#EXTINF:')) {
                 const parts = line.split(',');
-                const name = parts.length > 1 ? parts[1].trim() : "Chaîne sans nom";
+                const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/);
                 const logoMatchAlt = line.match(/ logo="([^"]*)"/);
-                let logoUrl = null;
-                if(logoMatch) logoUrl = logoMatch[1];
-                else if(logoMatchAlt) logoUrl = logoMatchAlt[1];
-                currentInfo = { name: name, logo: logoUrl };
+                currentInfo = { 
+                    name: name, 
+                    logo: logoMatch ? logoMatch[1] : (logoMatchAlt ? logoMatchAlt[1] : null) 
+                };
             } else if (line.length > 0 && !line.startsWith('#')) {
-                // On s'assure que c'est bien une URL
+                // On vérifie que c'est bien un lien http (vidéo) et pas autre chose
                 if(currentInfo.name && line.startsWith('http')) {
                     channels.push({ name: currentInfo.name, logo: currentInfo.logo, url: line });
                     currentInfo = {}; 
@@ -211,34 +123,28 @@
         return channels;
     }
 
-    function renderList(channelsToDisplay) {
+    function renderList(channels) {
         listContainer.innerHTML = "";
-        countDiv.innerText = `${channelsToDisplay.length} chaînes trouvées`;
+        countDiv.innerText = `${channels.length} chaînes trouvées (Total)`;
 
-        // On limite l'affichage initial à 300 pour éviter de faire planter le navigateur
-        // (car il y aura des milliers de chaînes au total)
-        const limit = channelsToDisplay.length > 300 ? 300 : channelsToDisplay.length;
-
-        if(limit === 0) {
-            listContainer.innerHTML = "<div style='padding:30px; text-align:center; color:#888;'>Aucune chaîne ne correspond à votre recherche.</div>";
-            return;
-        }
+        // Limite visuelle pour ne pas faire laguer le navigateur
+        const limit = channels.length > 500 ? 500 : channels.length;
+        
+        if(limit === 0) { listContainer.innerHTML = "<div style='padding:20px;text-align:center'>Aucune chaîne.</div>"; return; }
 
         for(let i=0; i<limit; i++) {
-            const channel = channelsToDisplay[i];
+            const ch = channels[i];
             const div = document.createElement('div');
             div.className = 'channel-item';
-            if(channel.url === currentUrl) div.classList.add('active');
+            if(ch.url === currentUrl) div.classList.add('active');
 
-            const imgUrl = channel.logo && channel.logo.startsWith('http') ? channel.logo : 'https://via.placeholder.com/45x45/cccccc/000000?text=TV';
-            const imgHtml = `<img src="${imgUrl}" class="tv-icon" onerror="this.src='https://via.placeholder.com/45x45/cccccc/000000?text=Error'">`;
-
-            div.innerHTML = `${imgHtml}<div class="tv-name">${channel.name}</div>`;
+            const imgUrl = ch.logo || 'https://via.placeholder.com/45x45/cccccc/000000?text=TV';
+            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" onerror="this.src='https://via.placeholder.com/45x45/cccccc/000000?text=TV'"><div class="tv-name">${ch.name}</div>`;
 
             div.onclick = () => {
                 document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
                 div.classList.add('active');
-                playStream(channel);
+                playStream(ch);
             };
             listContainer.appendChild(div);
         }
@@ -247,88 +153,70 @@
     function playStream(channel) {
         if(channel.url === currentUrl) return;
         currentUrl = channel.url;
-        
-        statusDiv.style.background = "rgba(229, 9, 20, 0.8)";
-        statusDiv.innerText = "Chargement : " + channel.name + "...";
         statusDiv.style.display = 'block';
+        statusDiv.innerText = "Chargement : " + channel.name;
 
         if (Hls.isSupported()) {
             if (hls) hls.destroy();
-            hls = new Hls({ EnableWorker: true, lowLatencyMode: true });
+            hls = new Hls({backBufferLength: 90});
             hls.loadSource(channel.url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                 statusDiv.style.display = 'none';
-                 video.play().catch(e => {});
+                statusDiv.style.display = 'none';
+                video.play().catch(e => console.log("Clic requis pour le son"));
             });
             hls.on(Hls.Events.ERROR, (e, data) => {
-                if (data.fatal) {
-                    statusDiv.style.display = 'block';
-                    statusDiv.style.background = "rgba(200, 0, 0, 0.9)";
-                    statusDiv.innerText = "⚠️ Erreur : Chaîne indisponible ou hors ligne.";
-                }
+                if(data.fatal) statusDiv.innerText = "⚠️ Flux indisponible";
             });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = channel.url;
-            video.addEventListener('loadedmetadata', () => {
-                statusDiv.style.display = 'none';
-                video.play()
-            });
-             video.addEventListener('error', () => {
-                 statusDiv.style.display = 'block';
-                 statusDiv.innerText = "⚠️ Erreur Safari.";
-             });
+            video.play();
+            statusDiv.style.display = 'none';
         }
-        
         if(window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
-        renderList(filtered);
+        renderList(allChannels.filter(c => c.name.toLowerCase().includes(term)));
     });
 
-    // FONCTION POUR CHARGER TOUTES LES SOURCES EN MEME TEMPS
+    // MOTEUR DE FUSION
     async function init() {
         try {
             statusDiv.style.display = 'block';
-            statusDiv.innerText = "Téléchargement des playlists...";
-            countDiv.innerText = "Fusion des listes...";
-
+            statusDiv.innerText = "Téléchargement...";
+            
             let combinedList = [];
-
-            // On boucle sur chaque lien de la liste PLAYLISTS
+            
+            // On charge chaque lien un par un
             for (let url of PLAYLISTS) {
                 try {
-                    // AllOrigins Proxy pour éviter CORS
+                    // On affiche quelle liste charge pour patienter
+                    countDiv.innerText = `Chargement liste ${PLAYLISTS.indexOf(url) + 1}/${PLAYLISTS.length}...`;
+                    
                     const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
                     const response = await fetch(proxyUrl);
-                    if (response.ok) {
+                    if(response.ok) {
                         const text = await response.text();
-                        const channels = parseM3U(text);
-                        // On ajoute les chaines trouvées à la liste principale
-                        combinedList = combinedList.concat(channels);
-                        statusDiv.innerText = `${combinedList.length} chaînes trouvées...`;
+                        const newChannels = parseM3U(text);
+                        combinedList = combinedList.concat(newChannels);
                     }
                 } catch (err) {
-                    console.log("Erreur sur une liste : " + url);
+                    console.warn("Echec chargement liste: " + url);
                 }
             }
-            
-            allChannels = combinedList;
-            
-            statusDiv.innerText = `Fusion terminée : ${allChannels.length} chaînes.`;
-            setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
 
+            allChannels = combinedList;
+            statusDiv.innerText = "Terminé !";
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
+            
             renderList(allChannels);
             
-            // Lancer la première chaîne automatiquement
-            if (allChannels.length > 0) playStream(allChannels[0]);
+            if(allChannels.length > 0) playStream(allChannels[0]);
 
         } catch (error) {
-            console.error(error);
-            statusDiv.innerText = "❌ Erreur critique de chargement.";
+            statusDiv.innerText = "Erreur Chargement";
         }
     }
 
