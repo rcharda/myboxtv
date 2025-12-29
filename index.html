@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - 20K Edition</title>
+    <title>My Box TV - Ultimate</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- DESIGN (Garde le style Netflix) --- */
+        /* STYLES (Identiques pour garder votre design) */
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #0a0a0a; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
 
@@ -17,68 +17,64 @@
 
         #sidebar { width: 350px; background: #1a1a1a; display: flex; flex-direction: column; border-left: 1px solid #333; z-index: 10; }
 
-        .brand-header { padding: 15px; background: #222; border-bottom: 2px solid #e50914; display: flex; flex-direction: column; align-items: center; position: relative; }
-        .brand-logo { max-width: 100px; height: auto; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-        .app-title { font-weight: 700; font-size: 1.2em; color: #fff; letter-spacing: 1px; }
+        .brand-header { padding: 20px; background: #222; border-bottom: 2px solid #e50914; display: flex; flex-direction: column; align-items: center; }
+        .brand-logo { max-width: 100px; height: auto; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        .app-title { font-weight: 700; font-size: 1.4em; color: #fff; letter-spacing: 1px; }
 
-        /* BARRE DE CHARGEMENT TURBO */
-        .progress-container { width: 100%; height: 4px; background: #333; margin-top: 10px; border-radius: 2px; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: #e50914; transition: width 0.3s; }
-        #scan-log { font-size: 10px; color: #888; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-
-        .search-box { padding: 10px; background: #1a1a1a; }
-        #searchInput { width: 100%; padding: 10px; border-radius: 20px; border: 1px solid #444; background: #2a2a2a; color: white; text-align: center; outline: none; }
+        .search-box { padding: 15px; background: #1a1a1a; }
+        #searchInput { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 14px; outline: none; text-align: center; }
         
-        #channel-count { text-align: center; font-size: 12px; color: #aaa; padding: 5px; border-bottom: 1px solid #333; background: #1a1a1a; font-weight: bold; }
+        #channel-count { text-align: center; font-size: 12px; color: #888; padding-bottom: 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
 
         #channel-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #444 #1a1a1a; }
-        .channel-item { padding: 8px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; }
+        .channel-item { padding: 10px 15px; border-bottom: 1px solid #252525; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; }
         .channel-item:hover { background: #333; }
         .channel-item.active { background: #e50914 !important; color: white; border-left: 5px solid white; }
         
-        .tv-icon { width: 40px; height: 40px; object-fit: contain; margin-right: 12px; background: #fff; border-radius: 4px; padding: 2px; }
-        .tv-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tv-icon { width: 45px; height: 45px; object-fit: contain; margin-right: 15px; background: #fff; border-radius: 8px; padding: 3px; }
+        .tv-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .dev-footer { padding: 10px; background: #111; border-top: 1px solid #333; font-size: 11px; text-align: center; color: #777; }
-        .whatsapp-link { display: inline-flex; background: #25D366; color: white; text-decoration: none; padding: 4px 10px; border-radius: 15px; margin-top: 5px; font-weight: bold; }
+        .dev-footer { padding: 15px; background: #111; border-top: 1px solid #333; font-size: 12px; text-align: center; color: #999; }
+        .whatsapp-link { display: inline-flex; align-items: center; background: #25D366; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 13px; }
 
-        #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
+        #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.8); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
+        
+        /* Barre de progression pour le chargement des dossiers */
+        #loading-bar { height: 3px; background: #333; width: 100%; position: absolute; bottom: 0; left: 0; }
+        #loading-progress { height: 100%; background: #e50914; width: 0%; transition: width 0.2s; }
 
         @media screen and (max-width: 900px) {
             body { flex-direction: column; }
-            #player-container { height: 35vh; flex: none; border-bottom: 2px solid #e50914;}
-            #sidebar { width: 100%; height: 65vh; }
-            .brand-header { flex-direction: row; justify-content: flex-start; padding: 10px; }
-            .brand-logo { max-width: 50px; margin: 0 10px 0 0; }
-            .progress-container { position: absolute; bottom: 0; left: 0; width: 100%; margin: 0; height: 3px;}
-            #scan-log { display: none; } /* On cache les logs sur mobile pour gagner de la place */
+            #player-container { height: 40vh; flex: none; border-bottom: 2px solid #e50914;}
+            #sidebar { width: 100%; height: 60vh; }
+            .brand-header { padding: 10px 15px; flex-direction: row; justify-content: flex-start; border-bottom: 1px solid #333; }
+            .brand-logo { max-width: 60px; margin: 0 15px 0 0;}
         }
     </style>
 </head>
 <body>
 
 <div id="player-container">
-    <div id="status">Démarrage du Turbo Scanner...</div>
+    <div id="status">Démarrage du scanner...</div>
     <video id="video" controls playsinline></video>
 </div>
 
 <div id="sidebar">
     <div class="brand-header">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo" alt="Logo">
-        <div>
-            <div class="app-title">My Box TV</div>
-            <div id="scan-log">Initialisation...</div>
-        </div>
-        <div class="progress-container"><div id="progress-bar"></div></div>
+        <div class="app-title">My Box TV</div>
+        <div id="loading-bar"><div id="loading-progress"></div></div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Filtrer les chaînes...">
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
     </div>
 
     <div id="channel-count">0 chaînes</div>
 
-    <div id="channel-list"></div>
+    <div id="channel-list">
+        <div style="padding:20px; text-align:center; color:#666;">Scan en cours...</div>
+    </div>
 
     <div class="dev-footer">
         <div>Dev: GBOHOUNME Richard Chiriaque</div>
@@ -92,82 +88,71 @@
     const statusDiv = document.getElementById('status');
     const searchInput = document.getElementById('searchInput');
     const countDiv = document.getElementById('channel-count');
-    const progressBar = document.getElementById('progress-bar');
-    const scanLog = document.getElementById('scan-log');
+    const progressBar = document.getElementById('loading-progress');
     
     let hls = null;
     let allChannels = [];
     let currentUrl = "";
 
-    // CONFIGURATION DU SCANNER
-    const MAIN_LISTS = [
-        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u", // ~3000 chaines
-        "https://iptv-org.github.io/iptv/index.category.m3u" // Le sommaire des dossiers (Sport, Movies, etc.)
+    // VOS DEUX LIENS PRINCIPAUX
+    const ROOT_PLAYLISTS = [
+        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
+        "https://iptv-org.github.io/iptv/index.m3u"
     ];
 
-    // Fonctions Proxy (On en utilise 2 au cas où l'un bloque)
-    const PROXY_1 = "https://api.allorigins.win/raw?url=";
-    const PROXY_2 = "https://corsproxy.io/?";
-
-    async function fetchWithFallback(url) {
+    // Fonction intelligente qui télécharge ET détecte les sous-dossiers
+    async function fetchPlaylistContent(url) {
         try {
-            const res1 = await fetch(PROXY_1 + encodeURIComponent(url));
-            if (res1.ok) return await res1.text();
-            throw new Error("Proxy 1 fail");
+            // Proxy pour contourner la sécurité
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+            const response = await fetch(proxyUrl);
+            if (!response.ok) return []; // Si erreur, on retourne liste vide
+            const text = await response.text();
+            
+            // On analyse le texte
+            const lines = text.split('\n');
+            const items = [];
+            let currentInfo = {};
+
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const parts = line.split(',');
+                    const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
+                    const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                    const logoMatchAlt = line.match(/ logo="([^"]*)"/);
+                    let logoUrl = logoMatch ? logoMatch[1] : (logoMatchAlt ? logoMatchAlt[1] : null);
+                    currentInfo = { name: name, logo: logoUrl };
+                } else if (line.length > 0 && !line.startsWith('#')) {
+                    // C'EST ICI LA LOGIQUE IMPORTANTE
+                    // Si le lien finit par .m3u, c'est un DOSSIER (Sous-playlist)
+                    const isFolder = line.endsWith('.m3u');
+                    
+                    if (currentInfo.name) {
+                        items.push({
+                            name: currentInfo.name,
+                            logo: currentInfo.logo,
+                            url: line,
+                            isFolder: isFolder // On marque si c'est un dossier
+                        });
+                        currentInfo = {};
+                    }
+                }
+            }
+            return items;
         } catch (e) {
-            try {
-                // Fallback sur le Proxy 2 si le premier échoue
-                const res2 = await fetch(PROXY_2 + encodeURIComponent(url));
-                if (res2.ok) return await res2.text();
-            } catch (err) {
-                return null; // Abandon
-            }
+            console.warn("Erreur chargement: " + url);
+            return [];
         }
-        return null;
-    }
-
-    function parseContent(text, sourceUrl) {
-        if(!text) return [];
-        const lines = text.split('\n');
-        const items = [];
-        let currentInfo = {};
-
-        for(let line of lines) {
-            line = line.trim();
-            if (line.startsWith('#EXTINF:')) {
-                const parts = line.split(',');
-                const name = parts.length > 1 ? parts[1].trim() : "Chaîne";
-                const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
-                currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
-            } else if (line.length > 0 && !line.startsWith('#')) {
-                // C'est un lien
-                // Si le lien est relatif (ne commence pas par http), on le reconstruit
-                if (!line.startsWith('http')) {
-                    // Logique complexe pour reconstruire l'URL (pour iptv-org)
-                    const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf('/') + 1);
-                    line = baseUrl + line;
-                }
-                
-                const isFolder = line.endsWith('.m3u') || line.endsWith('.m3u8') === false; // Detection simple
-                
-                // Correction pour iptv-org : index.category contient des liens vers des .m3u
-                if(line.includes('iptv-org') && line.endsWith('.m3u')) {
-                    items.push({ type: 'folder', url: line, name: currentInfo.name });
-                } else if(currentInfo.name) {
-                    items.push({ type: 'video', url: line, name: currentInfo.name, logo: currentInfo.logo });
-                }
-                currentInfo = {};
-            }
-        }
-        return items;
     }
 
     function renderList(channels) {
         listContainer.innerHTML = "";
-        countDiv.innerText = `${channels.length} chaînes (Total)`;
+        countDiv.innerText = `${channels.length} chaînes trouvées`;
 
-        // Limite visuelle pour la fluidité (300 premiers éléments)
+        // Optimisation : On affiche max 300 chaînes au début pour pas bloquer le PC
         const limit = channels.length > 300 ? 300 : channels.length;
+        
         if(limit === 0) { listContainer.innerHTML = "<div style='padding:20px;text-align:center'>Liste vide</div>"; return; }
 
         for(let i=0; i<limit; i++) {
@@ -175,9 +160,10 @@
             const div = document.createElement('div');
             div.className = 'channel-item';
             if(ch.url === currentUrl) div.classList.add('active');
-            const imgUrl = ch.logo || 'https://via.placeholder.com/40/333/fff?text=TV';
-            
-            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" loading="lazy" onerror="this.src='https://via.placeholder.com/40/333/fff?text=TV'"><div class="tv-name">${ch.name}</div>`;
+
+            const imgUrl = ch.logo || 'https://via.placeholder.com/45x45/cccccc/000000?text=TV';
+            div.innerHTML = `<img src="${imgUrl}" class="tv-icon" onerror="this.src='https://via.placeholder.com/45x45/cccccc/000000?text=TV'"><div class="tv-name">${ch.name}</div>`;
+
             div.onclick = () => {
                 document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
                 div.classList.add('active');
@@ -202,7 +188,7 @@
                 statusDiv.style.display = 'none';
                 video.play().catch(e => {});
             });
-            hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) statusDiv.innerText = "Erreur Flux"; });
+            hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) statusDiv.innerText = "Flux HS"; });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = channel.url;
             video.play();
@@ -216,76 +202,63 @@
         renderList(allChannels.filter(c => c.name.toLowerCase().includes(term)));
     });
 
-    // --- MOTEUR TURBO SCANNER (PARALLELE) ---
-    async function startTurboScan() {
-        let queue = [...MAIN_LISTS]; // File d'attente des URLs à scanner
-        let seen = new Set(); // Pour éviter les doublons
+    // --- MOTEUR DE SCAN RECURSIF ---
+    async function init() {
+        statusDiv.innerText = "Scan des playlists...";
         
-        // 1. Scan initial des listes principales
-        statusDiv.innerText = "Scan initial...";
-        
-        let foldersToScan = [];
-        
-        for (let url of queue) {
-            const text = await fetchWithFallback(url);
-            const items = parseContent(text, url);
-            
-            // On sépare vidéos et dossiers
-            const vids = items.filter(i => i.type === 'video');
-            const folds = items.filter(i => i.type === 'folder');
-            
-            allChannels = allChannels.concat(vids);
-            foldersToScan = foldersToScan.concat(folds);
-        }
-        
-        renderList(allChannels); // Affiche déjà les ~3000 premières
-        
-        // 2. SCAN PARALLELE DES DOSSIERS (Batch de 5)
-        const BATCH_SIZE = 5;
-        let total = foldersToScan.length;
-        let completed = 0;
-
-        statusDiv.innerText = `Scan profond: ${total} dossiers...`;
-        
-        for (let i = 0; i < total; i += BATCH_SIZE) {
-            // On prend 5 dossiers à la fois
-            const batch = foldersToScan.slice(i, i + BATCH_SIZE);
-            
-            // On lance les 5 téléchargements en même temps (Promise.all)
-            await Promise.all(batch.map(async (folder) => {
-                if(seen.has(folder.url)) return;
-                seen.add(folder.url);
-                
-                scanLog.innerText = "Scan: " + folder.name;
-                const text = await fetchWithFallback(folder.url);
-                const items = parseContent(text, folder.url);
-                const newVids = items.filter(it => it.type === 'video');
-                
-                if(newVids.length > 0) {
-                    allChannels = allChannels.concat(newVids);
-                }
-            }));
-            
-            completed += batch.length;
-            const pct = Math.round((completed / total) * 100);
-            progressBar.style.width = pct + "%";
-            countDiv.innerText = `${allChannels.length} chaînes...`;
-            
-            // Mise à jour visuelle tous les 20 dossiers
-            if(i % 20 === 0) renderList(allChannels);
-            
-            // Petite pause pour ne pas tuer le navigateur
-            await new Promise(r => setTimeout(r, 100));
+        // 1. On charge les liens principaux
+        let itemsToProcess = [];
+        for (let url of ROOT_PLAYLISTS) {
+            const items = await fetchPlaylistContent(url);
+            itemsToProcess = itemsToProcess.concat(items);
         }
 
-        statusDiv.innerText = "Scan 100% Terminé";
-        scanLog.innerText = "Prêt.";
-        setTimeout(() => statusDiv.style.display = 'none', 3000);
-        renderList(allChannels); // Affichage final complet
+        // 2. On sépare les VRAIES chaînes des DOSSIERS
+        let finalChannels = itemsToProcess.filter(i => !i.isFolder);
+        let folders = itemsToProcess.filter(i => i.isFolder);
+
+        // On affiche déjà ce qu'on a (les 3030 chaines du premier lien)
+        allChannels = finalChannels;
+        renderList(allChannels);
+
+        // 3. ON OUVRE LES DOSSIERS (Le second lien contient plein de dossiers)
+        if (folders.length > 0) {
+            statusDiv.innerText = `Ouverture de ${folders.length} dossiers...`;
+            
+            // On traite les dossiers un par un
+            for (let i = 0; i < folders.length; i++) {
+                const folder = folders[i];
+                
+                // Mise à jour de la barre de progression
+                const percent = Math.round((i / folders.length) * 100);
+                progressBar.style.width = percent + "%";
+                countDiv.innerText = `Scan: ${folder.name} (${allChannels.length} total)`;
+                
+                // On télécharge le contenu du dossier
+                const subItems = await fetchPlaylistContent(folder.url);
+                
+                // On ajoute les nouvelles chaînes à la liste principale
+                // (On suppose que les sous-dossiers contiennent des vidéos, pas d'autres dossiers, pour éviter l'infini)
+                const newVideos = subItems.filter(x => !x.isFolder); 
+                allChannels = allChannels.concat(newVideos);
+                
+                // On rafraîchit l'affichage toutes les 5 dossiers pour pas bloquer
+                if (i % 5 === 0) renderList(allChannels);
+            }
+        }
+
+        statusDiv.innerText = "Scan Terminé !";
+        progressBar.style.width = "100%";
+        setTimeout(() => { 
+            statusDiv.style.display = 'none'; 
+            progressBar.style.backgroundColor = 'transparent';
+        }, 2000);
+        
+        renderList(allChannels); // Affichage final
+        if(allChannels.length > 0 && !currentUrl) playStream(allChannels[0]);
     }
 
-    startTurboScan();
-
+    init();
 </script>
 </body>
 </html>
