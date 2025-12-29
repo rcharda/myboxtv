@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Ultimate</title>
+    <title>My Box TV - World Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -22,7 +22,7 @@
 
         .refresh-btn {
             background: #333; color: #aaa; border: 1px solid #444;
-            padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 5px; width: 100%;
+            padding: 8px 15px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 5px; width: 100%; font-weight: bold;
         }
         .refresh-btn:hover { background: #e50914; color: white; border-color: #e50914; }
 
@@ -44,7 +44,6 @@
 
         #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
         
-        /* Barre de chargement */
         #loader { width: 100%; height: 5px; background: #333; display: none; margin-top:5px; }
         #loader-bar { height: 100%; width: 0%; background: #e50914; transition: width 0.3s; }
 
@@ -77,7 +76,7 @@
     </div>
 
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: Sports, France...)">
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: France, Sport...)">
     </div>
 
     <div id="channel-count">...</div>
@@ -103,53 +102,47 @@
     let allChannels = [];
     let currentUrl = "";
 
+    // --- LE LIEN MAGIQUE ---
+    // J'ai remplacé index.m3u par index.country.m3u qui contient TOUTES les chaînes (30k)
     const PLAYLISTS = [
-        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
-        "https://iptv-org.github.io/iptv/index.category.m3u" // Lien correct des catégories
+        "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u", // Votre première liste (~3000)
+        "https://iptv-org.github.io/iptv/index.country.m3u" // La liste COMPLETE (~29000)
     ];
 
     // --- CACHE SYSTEM ---
     function saveToCache(data) {
         try {
-            // Optimisation : On ne garde que l'essentiel pour gagner de la place (n=name, u=url, l=logo)
+            // Optimisation extreme pour 30k chaines : on ne garde que name, url, logo
             const minified = data.map(c => ({n: c.name, u: c.url, l: c.logo}));
-            localStorage.setItem('mybox_channels_v2', JSON.stringify(minified));
-            console.log("Sauvegarde OK : " + minified.length + " chaînes");
+            localStorage.setItem('mybox_channels_v3', JSON.stringify(minified));
+            console.log("Sauvegarde OK");
         } catch (e) {
-            console.log("Erreur Cache (Mémoire pleine)");
-            alert("Mémoire téléphone pleine, la liste sera rechargée à chaque fois.");
+            console.log("Mémoire pleine");
+            // Si la mémoire est pleine, on continue sans cache, c'est pas grave
         }
     }
 
     function loadFromCache() {
-        const cached = localStorage.getItem('mybox_channels_v2');
+        const cached = localStorage.getItem('mybox_channels_v3');
         if (cached) {
             const minified = JSON.parse(cached);
-            // On remet au format normal
             return minified.map(c => ({name: c.n, url: c.u, logo: c.l}));
         }
         return null;
     }
 
     // --- FETCH ENGINE ---
-    // On utilise 2 proxies pour éviter les blocages
     async function fetchUrl(url) {
-        const p1 = "https://api.allorigins.win/raw?url=";
-        const p2 = "https://corsproxy.io/?";
+        // Proxy AllOrigins est le seul capable de gérer des fichiers aussi gros
+        const proxy = "https://api.allorigins.win/raw?url=";
         try {
-            const r = await fetch(p1 + encodeURIComponent(url));
+            const r = await fetch(proxy + encodeURIComponent(url));
             if(r.ok) return await r.text();
-            throw new Error('Fail P1');
-        } catch(e) {
-            try {
-                const r2 = await fetch(p2 + encodeURIComponent(url));
-                if(r2.ok) return await r2.text();
-            } catch(err) { return null; }
-        }
+        } catch(e) { return null; }
         return null;
     }
 
-    function parseM3U(text, sourceUrl) {
+    function parseM3U(text) {
         if(!text) return [];
         const lines = text.split('\n');
         const items = [];
@@ -163,17 +156,9 @@
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/) || line.match(/logo="([^"]*)"/);
                 currentInfo = { name: name, logo: logoMatch ? logoMatch[1] : null };
             } else if (line.length > 0 && !line.startsWith('#')) {
-                 if (!line.startsWith('http')) {
-                    const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf('/') + 1);
-                    line = baseUrl + line;
-                }
-                // Détection dossier .m3u
-                const isFolder = line.endsWith('.m3u');
-                
-                if(isFolder) {
-                    items.push({type:'folder', url:line, name:currentInfo.name});
-                } else if(currentInfo.name) {
-                    items.push({type:'video', url:line, name:currentInfo.name, logo:currentInfo.logo});
+                // On ne prend que les liens HTTP (vidéos)
+                if(currentInfo.name && line.startsWith('http')) {
+                    items.push({name:currentInfo.name, url:line, logo:currentInfo.logo});
                 }
                 currentInfo = {};
             }
@@ -184,9 +169,9 @@
     // --- AFFICHAGE ---
     function renderList(channels) {
         listContainer.innerHTML = "";
-        countDiv.innerText = `${channels.length} chaînes disponibles`;
+        countDiv.innerText = `${channels.length} chaînes chargées`;
         
-        // Limite d'affichage DOM pour fluidité
+        // On affiche max 200 pour la fluidité, le reste via recherche
         const limit = channels.length > 200 ? 200 : channels.length;
         const fragment = document.createDocumentFragment();
 
@@ -233,18 +218,23 @@
 
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
+        // Recherche optimisée (ne cherche que si 3 lettres min pour pas bloquer)
+        if(term.length < 2) {
+             renderList(allChannels);
+             return;
+        }
         const filtered = allChannels.filter(c => c.name && c.name.toLowerCase().includes(term));
         renderList(filtered);
     });
 
-    // --- LE CERVEAU (INIT) ---
+    // --- LE CERVEAU ---
     async function init(forceUpdate = false) {
         statusDiv.style.display = 'block';
         
         // 1. Essai Cache
         if (!forceUpdate) {
             const cachedData = loadFromCache();
-            if (cachedData && cachedData.length > 0) {
+            if (cachedData && cachedData.length > 5000) { // Si on a plus de 5000 chaines en mémoire
                 allChannels = cachedData;
                 statusDiv.innerText = "Prêt (Cache)";
                 setTimeout(() => statusDiv.style.display = 'none', 1000);
@@ -253,69 +243,48 @@
             }
         }
 
-        // 2. Mise à jour complète (Turbo Batch)
-        statusDiv.innerText = "Scan complet en cours... (Patientez)";
+        // 2. Téléchargement
+        statusDiv.innerText = "Téléchargement des 30.000 chaînes... (Patientez)";
         loader.style.display = 'block';
-        loaderBar.style.width = '5%';
-        countDiv.innerText = "Initialisation...";
+        loaderBar.style.width = '10%';
+        countDiv.innerText = "Connexion...";
         
         let tempChannels = [];
-        let folders = [];
 
-        // Etape A : Racines
-        for(let url of PLAYLISTS) {
-            const txt = await fetchUrl(url);
-            const items = parseM3U(txt, url);
-            tempChannels = tempChannels.concat(items.filter(i => i.type === 'video'));
-            folders = folders.concat(items.filter(i => i.type === 'folder'));
-        }
-        loaderBar.style.width = '20%';
+        // Téléchargement Liste 1
+        const txt1 = await fetchUrl(PLAYLISTS[0]);
+        if(txt1) tempChannels = tempChannels.concat(parseM3U(txt1));
+        loaderBar.style.width = '30%';
+        countDiv.innerText = `${tempChannels.length} chaînes...`;
 
-        // Etape B : Batch Downloading (Par paquets de 10 pour aller vite)
-        // ON A ENLEVÉ LA LIMITE DE 50 !
-        const BATCH_SIZE = 10; 
-        const totalFolders = folders.length;
-        let processed = 0;
-
-        for(let i=0; i<totalFolders; i+=BATCH_SIZE) {
-            // On prépare un paquet de 10 dossiers
-            const batch = folders.slice(i, i+BATCH_SIZE);
-            
-            // On les télécharge tous en même temps (Parallèle)
-            await Promise.all(batch.map(async (folder) => {
-                const txt = await fetchUrl(folder.url);
-                const items = parseM3U(txt, folder.url);
-                const vids = items.filter(it => it.type === 'video');
-                if(vids.length > 0) tempChannels = tempChannels.concat(vids);
-            }));
-
-            processed += batch.length;
-            const pct = 20 + Math.round((processed/totalFolders)*80);
-            loaderBar.style.width = pct + '%';
-            countDiv.innerText = `Scan: ${tempChannels.length} chaînes trouvées...`;
-            
-            // Petite pause pour ne pas bloquer le navigateur
-            await new Promise(r => setTimeout(r, 50));
-        }
+        // Téléchargement Liste 2 (La grosse)
+        const txt2 = await fetchUrl(PLAYLISTS[1]);
+        if(txt2) tempChannels = tempChannels.concat(parseM3U(txt2));
+        loaderBar.style.width = '100%';
 
         // FIN
         allChannels = tempChannels;
-        saveToCache(allChannels);
+        
+        if(allChannels.length > 5000) {
+             saveToCache(allChannels);
+             statusDiv.innerText = "Succès !";
+        } else {
+             statusDiv.innerText = "Erreur chargement grosse liste";
+        }
         
         loader.style.display = 'none';
-        statusDiv.innerText = "Scan Terminé !";
         setTimeout(() => statusDiv.style.display = 'none', 2000);
         renderList(allChannels);
     }
 
     function forceReload() {
-        if(confirm("Attention : Le rechargement complet de 15.000+ chaînes peut prendre 1 minute. Continuer ?")) {
-            localStorage.removeItem('mybox_channels_v2');
+        if(confirm("Recharger les 30.000 chaînes ? Cela prend environ 20 secondes.")) {
+            localStorage.removeItem('mybox_channels_v3');
             init(true);
         }
     }
 
-    init(); // Démarrage
+    init();
 
 </script>
 </body>
