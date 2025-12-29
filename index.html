@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Éclair</title>
+    <title>My Box TV - Ultimate</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -20,12 +20,11 @@
         .brand-logo { max-width: 80px; height: auto; margin-bottom: 5px; }
         .app-title { font-weight: 700; font-size: 1.2em; color: #fff; letter-spacing: 1px; }
 
-        /* BOUTON ACTUALISER */
         .refresh-btn {
             background: #333; color: #aaa; border: 1px solid #444;
-            padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 5px;
+            padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 5px; width: 100%;
         }
-        .refresh-btn:hover { background: #444; color: white; }
+        .refresh-btn:hover { background: #e50914; color: white; border-color: #e50914; }
 
         .search-box { padding: 10px; background: #1a1a1a; }
         #searchInput { width: 100%; padding: 10px; border-radius: 20px; border: 1px solid #444; background: #2a2a2a; color: white; text-align: center; outline: none; }
@@ -45,16 +44,18 @@
 
         #status { position: absolute; top: 15px; left: 15px; background: rgba(229, 9, 20, 0.9); color: #fff; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; pointer-events: none; z-index: 20; }
         
-        /* Barre de chargement discrète */
-        #loader { width: 100%; height: 3px; background: #333; display: none; }
-        #loader-bar { height: 100%; width: 0%; background: #e50914; transition: width 0.2s; }
+        /* Barre de chargement */
+        #loader { width: 100%; height: 5px; background: #333; display: none; margin-top:5px; }
+        #loader-bar { height: 100%; width: 0%; background: #e50914; transition: width 0.3s; }
 
         @media screen and (max-width: 900px) {
             body { flex-direction: column; }
             #player-container { height: 35vh; flex: none; border-bottom: 2px solid #e50914;}
             #sidebar { width: 100%; height: 65vh; }
-            .brand-header { flex-direction: row; justify-content: flex-start; padding: 10px; }
+            .brand-header { flex-direction: row; justify-content: flex-start; padding: 10px; flex-wrap: wrap;}
             .brand-logo { max-width: 50px; margin: 0 10px 0 0; }
+            .refresh-btn { width: auto; margin-left: auto;}
+            #loader { width: 100%; order: 3; margin-top: 10px;}
         }
     </style>
 </head>
@@ -70,10 +71,10 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo" alt="Logo">
         <div>
             <div class="app-title">My Box TV</div>
-            <button onclick="forceReload()" class="refresh-btn">🔄 Mettre à jour la liste</button>
         </div>
+        <button onclick="forceReload()" class="refresh-btn">🔄 ACTUALISER LISTE</button>
+        <div id="loader"><div id="loader-bar"></div></div>
     </div>
-    <div id="loader"><div id="loader-bar"></div></div>
 
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="🔍 Rechercher (Ex: Sports, France...)">
@@ -102,39 +103,49 @@
     let allChannels = [];
     let currentUrl = "";
 
-    // LISTE COMPLETE A FUSIONNER
     const PLAYLISTS = [
         "https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u",
-        "https://iptv-org.github.io/iptv/index.m3u" // On garde le lien index, on a le scanner auto
+        "https://iptv-org.github.io/iptv/index.category.m3u" // Lien correct des catégories
     ];
 
-    // --- SYSTEME DE CACHE ---
+    // --- CACHE SYSTEM ---
     function saveToCache(data) {
         try {
-            // On sauvegarde la liste format texte (plus léger que JSON)
-            localStorage.setItem('mybox_channels', JSON.stringify(data));
-            localStorage.setItem('mybox_date', new Date().getTime());
-            console.log("Liste sauvegardée en mémoire !");
+            // Optimisation : On ne garde que l'essentiel pour gagner de la place (n=name, u=url, l=logo)
+            const minified = data.map(c => ({n: c.name, u: c.url, l: c.logo}));
+            localStorage.setItem('mybox_channels_v2', JSON.stringify(minified));
+            console.log("Sauvegarde OK : " + minified.length + " chaînes");
         } catch (e) {
-            console.log("Mémoire pleine ou erreur cache");
+            console.log("Erreur Cache (Mémoire pleine)");
+            alert("Mémoire téléphone pleine, la liste sera rechargée à chaque fois.");
         }
     }
 
     function loadFromCache() {
-        const cached = localStorage.getItem('mybox_channels');
+        const cached = localStorage.getItem('mybox_channels_v2');
         if (cached) {
-            return JSON.parse(cached);
+            const minified = JSON.parse(cached);
+            // On remet au format normal
+            return minified.map(c => ({name: c.n, url: c.u, logo: c.l}));
         }
         return null;
     }
 
-    // --- LOGIQUE DE SCAN ---
+    // --- FETCH ENGINE ---
+    // On utilise 2 proxies pour éviter les blocages
     async function fetchUrl(url) {
-        const proxy = "https://api.allorigins.win/raw?url=";
+        const p1 = "https://api.allorigins.win/raw?url=";
+        const p2 = "https://corsproxy.io/?";
         try {
-            const res = await fetch(proxy + encodeURIComponent(url));
-            if(res.ok) return await res.text();
-        } catch(e) { return null; }
+            const r = await fetch(p1 + encodeURIComponent(url));
+            if(r.ok) return await r.text();
+            throw new Error('Fail P1');
+        } catch(e) {
+            try {
+                const r2 = await fetch(p2 + encodeURIComponent(url));
+                if(r2.ok) return await r2.text();
+            } catch(err) { return null; }
+        }
         return null;
     }
 
@@ -156,6 +167,7 @@
                     const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf('/') + 1);
                     line = baseUrl + line;
                 }
+                // Détection dossier .m3u
                 const isFolder = line.endsWith('.m3u');
                 
                 if(isFolder) {
@@ -172,12 +184,10 @@
     // --- AFFICHAGE ---
     function renderList(channels) {
         listContainer.innerHTML = "";
-        countDiv.innerText = `${channels.length} chaînes (Mémoire Cache)`;
+        countDiv.innerText = `${channels.length} chaînes disponibles`;
         
-        // On affiche les 200 premiers pour que le DOM soit instantané
+        // Limite d'affichage DOM pour fluidité
         const limit = channels.length > 200 ? 200 : channels.length;
-        
-        // Utilisation de DocumentFragment pour accélérer l'affichage x10
         const fragment = document.createDocumentFragment();
 
         for(let i=0; i<limit; i++) {
@@ -223,76 +233,89 @@
 
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        // Recherche optimisée
         const filtered = allChannels.filter(c => c.name && c.name.toLowerCase().includes(term));
         renderList(filtered);
     });
 
-    // --- LE CERVEAU ---
+    // --- LE CERVEAU (INIT) ---
     async function init(forceUpdate = false) {
         statusDiv.style.display = 'block';
         
-        // 1. On vérifie le CACHE (Si on ne force pas la mise à jour)
+        // 1. Essai Cache
         if (!forceUpdate) {
             const cachedData = loadFromCache();
             if (cachedData && cachedData.length > 0) {
-                console.log("Chargement depuis le cache (0s)");
                 allChannels = cachedData;
                 statusDiv.innerText = "Prêt (Cache)";
                 setTimeout(() => statusDiv.style.display = 'none', 1000);
                 renderList(allChannels);
-                return; // ON S'ARRETE LA, PAS BESOIN DE TELECHARGER !
+                return; 
             }
         }
 
-        // 2. Si pas de cache ou mise à jour forcée, on télécharge tout
-        statusDiv.innerText = "Mise à jour des listes...";
+        // 2. Mise à jour complète (Turbo Batch)
+        statusDiv.innerText = "Scan complet en cours... (Patientez)";
         loader.style.display = 'block';
-        loaderBar.style.width = '10%';
+        loaderBar.style.width = '5%';
+        countDiv.innerText = "Initialisation...";
         
         let tempChannels = [];
         let folders = [];
 
-        // Etape A : Listes principales
+        // Etape A : Racines
         for(let url of PLAYLISTS) {
             const txt = await fetchUrl(url);
             const items = parseM3U(txt, url);
             tempChannels = tempChannels.concat(items.filter(i => i.type === 'video'));
             folders = folders.concat(items.filter(i => i.type === 'folder'));
         }
-        loaderBar.style.width = '30%';
+        loaderBar.style.width = '20%';
 
-        // Etape B : Scan des dossiers (limité pour pas y passer la nuit)
-        // On ne prend que les 20 premiers dossiers pour aller vite, sinon c'est infini
-        const maxFolders = folders.length > 50 ? 50 : folders.length;
-        
-        for(let i=0; i<maxFolders; i++) {
-            const txt = await fetchUrl(folders[i].url);
-            const items = parseM3U(txt, folders[i].url);
-            tempChannels = tempChannels.concat(items.filter(it => it.type === 'video'));
+        // Etape B : Batch Downloading (Par paquets de 10 pour aller vite)
+        // ON A ENLEVÉ LA LIMITE DE 50 !
+        const BATCH_SIZE = 10; 
+        const totalFolders = folders.length;
+        let processed = 0;
+
+        for(let i=0; i<totalFolders; i+=BATCH_SIZE) {
+            // On prépare un paquet de 10 dossiers
+            const batch = folders.slice(i, i+BATCH_SIZE);
             
-            // Barre de progression
-            const pct = 30 + Math.round((i/maxFolders)*70);
+            // On les télécharge tous en même temps (Parallèle)
+            await Promise.all(batch.map(async (folder) => {
+                const txt = await fetchUrl(folder.url);
+                const items = parseM3U(txt, folder.url);
+                const vids = items.filter(it => it.type === 'video');
+                if(vids.length > 0) tempChannels = tempChannels.concat(vids);
+            }));
+
+            processed += batch.length;
+            const pct = 20 + Math.round((processed/totalFolders)*80);
             loaderBar.style.width = pct + '%';
-            countDiv.innerText = `Téléchargement: ${tempChannels.length} chaînes...`;
+            countDiv.innerText = `Scan: ${tempChannels.length} chaînes trouvées...`;
+            
+            // Petite pause pour ne pas bloquer le navigateur
+            await new Promise(r => setTimeout(r, 50));
         }
 
         // FIN
         allChannels = tempChannels;
-        saveToCache(allChannels); // ON SAUVEGARDE POUR LA PROCHAINE FOIS
+        saveToCache(allChannels);
         
         loader.style.display = 'none';
-        statusDiv.innerText = "Mise à jour terminée !";
+        statusDiv.innerText = "Scan Terminé !";
         setTimeout(() => statusDiv.style.display = 'none', 2000);
         renderList(allChannels);
     }
 
     function forceReload() {
-        localStorage.removeItem('mybox_channels');
-        init(true);
+        if(confirm("Attention : Le rechargement complet de 15.000+ chaînes peut prendre 1 minute. Continuer ?")) {
+            localStorage.removeItem('mybox_channels_v2');
+            init(true);
+        }
     }
 
-    init(); // Démarrage auto
+    init(); // Démarrage
 
 </script>
 </body>
