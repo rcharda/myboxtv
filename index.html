@@ -36,7 +36,7 @@
 
         /* 1. HEADER (Logo + Nom) */
         .brand-header {
-            padding: 20px 20px; /* Réduit légèrement le padding */
+            padding: 20px 20px;
             background: #222;
             border-bottom: 2px solid #e50914;
             display: flex;
@@ -44,8 +44,7 @@
             align-items: center;
         }
         .brand-logo {
-            /* --- CORRECTION ICI (Taille PC) --- */
-            max-width: 100px; /* Passé de 180px à 100px */
+            max-width: 100px;
             height: auto;
             margin-bottom: 10px;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
@@ -58,7 +57,7 @@
         }
 
         /* 2. RECHERCHE */
-        .search-box { padding: 15px; background: #1a1a1a; border-bottom: 1px solid #333;}
+        .search-box { padding: 15px; background: #1a1a1a; }
         #searchInput {
             width: 100%; padding: 12px; border-radius: 25px;
             border: 1px solid #444; background: #2a2a2a; color: white;
@@ -66,12 +65,21 @@
         }
         #searchInput:focus { border-color: #e50914; background: #333;}
 
+        /* NOUVEAU : LE COMPTEUR */
+        #channel-count {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+            background: #1a1a1a;
+        }
+
         /* 3. LISTE DES CHAINES (Scrollable) */
         #channel-list {
             flex: 1; overflow-y: auto;
             scrollbar-width: thin; scrollbar-color: #444 #1a1a1a;
         }
-        /* Style des items */
         .channel-item {
             padding: 10px 15px;
             border-bottom: 1px solid #252525;
@@ -83,10 +91,8 @@
             transition: all 0.2s ease-in-out;
         }
         .channel-item:hover { background: #333; padding-left: 20px;}
-        /* Item actif (celui qui joue) */
         .channel-item.active { background: #e50914 !important; color: white; border-left: 5px solid white; }
         
-        /* Icones des chaînes */
         .tv-icon {
             width: 45px; height: 45px; object-fit: contain;
             margin-right: 15px; background: #fff; border-radius: 8px; padding: 3px;
@@ -107,7 +113,6 @@
         }
         .whatsapp-link:hover { background: #1ebd59; transform: scale(1.05); }
 
-        /* Status Overlay (sur la vidéo) */
         #status {
             position: absolute; top: 15px; left: 15px;
             background: rgba(229, 9, 20, 0.8); color: #fff;
@@ -120,15 +125,13 @@
             #player-container { height: 40vh; flex: none; border-bottom: 2px solid #e50914;}
             #sidebar { width: 100%; height: 60vh; box-shadow: none; }
             
-            /* Header mobile simplifié */
             .brand-header { 
                 padding: 10px 15px; 
                 flex-direction: row; 
                 justify-content: flex-start; 
                 border-bottom: 1px solid #333;
             }
-            /* --- CORRECTION ICI (Taille Mobile) --- */
-            .brand-logo { max-width: 60px; margin-bottom: 0; margin-right: 15px;} /* Passé de 80px à 60px */
+            .brand-logo { max-width: 60px; margin-bottom: 0; margin-right: 15px;}
             .app-title { font-size: 1.2em; }
         }
     </style>
@@ -150,6 +153,8 @@
         <input type="text" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
     </div>
 
+    <div id="channel-count">0 chaînes</div>
+
     <div id="channel-list">
         <div style="padding:20px; text-align:center; color:#666;">Chargement de la playlist...</div>
     </div>
@@ -167,15 +172,14 @@
     const listContainer = document.getElementById('channel-list');
     const statusDiv = document.getElementById('status');
     const searchInput = document.getElementById('searchInput');
+    const countDiv = document.getElementById('channel-count'); // On récupère la zone compteur
     
     let hls = null;
     let allChannels = [];
     let currentUrl = "";
 
-    // Playlist GitHub via proxy AllOrigins
     const M3U_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://raw.githubusercontent.com/ipstreet312/freeiptv/master/all.m3u");
 
-    // 1. Parser le fichier M3U pour extraire Nom, Logo et URL
     function parseM3U(content) {
         const lines = content.split('\n');
         const channels = [];
@@ -186,23 +190,15 @@
             if (line.startsWith('#EXTINF:')) {
                 const parts = line.split(',');
                 const name = parts.length > 1 ? parts[1].trim() : "Chaîne sans nom";
-                
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/);
                 const logoMatchAlt = line.match(/ logo="([^"]*)"/);
-                
                 let logoUrl = null;
                 if(logoMatch) logoUrl = logoMatch[1];
                 else if(logoMatchAlt) logoUrl = logoMatchAlt[1];
-
                 currentInfo = { name: name, logo: logoUrl };
-
             } else if (line.length > 0 && !line.startsWith('#')) {
                 if(currentInfo.name) {
-                    channels.push({ 
-                        name: currentInfo.name, 
-                        logo: currentInfo.logo,
-                        url: line 
-                    });
+                    channels.push({ name: currentInfo.name, logo: currentInfo.logo, url: line });
                     currentInfo = {}; 
                 }
             }
@@ -210,9 +206,13 @@
         return channels;
     }
 
-    // 2. Afficher la liste HTML
+    // Fonction d'affichage mise à jour avec le compteur
     function renderList(channelsToDisplay) {
         listContainer.innerHTML = "";
+        
+        // MISE A JOUR DU COMPTEUR
+        countDiv.innerText = `${channelsToDisplay.length} chaînes trouvées`;
+
         const limit = channelsToDisplay.length > 250 ? 250 : channelsToDisplay.length;
 
         if(limit === 0) {
@@ -240,7 +240,6 @@
         }
     }
 
-    // 3. Moteur du lecteur vidéo (HLS.js)
     function playStream(channel) {
         if(channel.url === currentUrl) return;
         currentUrl = channel.url;
@@ -279,14 +278,12 @@
         if(window.innerWidth < 900) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 4. Écouteur de recherche
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
         renderList(filtered);
     });
 
-    // 5. Démarrage de l'application
     async function init() {
         try {
             const response = await fetch(M3U_URL);
@@ -294,7 +291,8 @@
             const text = await response.text();
             allChannels = parseM3U(text);
             
-            statusDiv.innerText = `Playlist chargée : ${allChannels.length} chaînes.`;
+            // Le statusDiv disparaît après 2 secondes, mais le compteur reste
+            statusDiv.innerText = `Playlist chargée.`;
             setTimeout(() => { statusDiv.style.display = 'none'; }, 2000);
 
             renderList(allChannels);
@@ -309,5 +307,4 @@
     init();
 </script>
 </body>
-
 </html>
