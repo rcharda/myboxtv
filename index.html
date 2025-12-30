@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V59 Control Master</title>
+    <title>My Box TV - V60 Auto-Start</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -16,15 +15,23 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- V59 : GESTION DES COUCHES (LAYERS) --- */
+        /* --- V60 : OPTIMISATION WEB --- */
         #player-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         
         video { width: 100%; height: 100%; object-fit: contain; display: block; }
-        iframe { width: 100%; height: 100%; border: none; display: none; background: #000; position: absolute; top:0; left:0; z-index: 1; }
         
-        /* LE BOUCLIER INVISIBLE (Pour garder le contrôle) */
-        #touch-shield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; background: transparent; cursor: pointer; }
-        /* ------------------------------------------- */
+        iframe { 
+            width: 100%; height: 100%; border: none; display: none; background: #000; 
+            position: absolute; top:0; left:0; z-index: 1;
+            pointer-events: none; /* Désactive les clics sur l'iframe pour laisser passer au Shield */
+        }
+        
+        /* LE BOUCLIER DE CONTROLE */
+        #touch-shield { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; 
+            background: transparent; cursor: pointer; display: none; /* Caché par défaut */
+        }
+        /* ------------------------------ */
 
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
@@ -164,7 +171,7 @@
 <div id="player-layer">
     <video id="video" playsinline crossorigin="anonymous"></video>
     
-    <iframe id="web-player" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    <iframe id="web-player" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"></iframe>
     
     <div id="touch-shield" onclick="toggleMenu()"></div>
 </div>
@@ -216,7 +223,7 @@
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V59_Ctrl"; 
+    const DB_NAME = "MyBoxTV_V60_Auto"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -233,7 +240,8 @@
     let isScanning = false;
 
     const video = document.getElementById('video');
-    const iframe = document.getElementById('web-player'); 
+    const iframe = document.getElementById('web-player');
+    const shield = document.getElementById('touch-shield'); // V60
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
@@ -463,7 +471,7 @@
     function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
-    // --- PLAY CHANNEL V59 (Bouclier & Autoplay) ---
+    // --- PLAY CHANNEL V60 (Force Autoplay + Shield) ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -471,24 +479,28 @@
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
-        // 1. SI WEB
+        // 1. MODE WEB (Avec injection de démarrage forcé)
         if(ch.isWeb) {
             video.style.display = "none";
             video.pause();
             if(hls) hls.destroy(); 
             
-            // AUTOPLAY INJECTION
+            // INJECTION INTELLIGENTE DES PARAMETRES D'AUTOPLAY
+            // On ajoute tout ce qui peut déclencher la vidéo + le mode muet (obligatoire)
             let separator = ch.url.includes('?') ? '&' : '?';
-            // On force le son coupé (muted) sinon les navigateurs bloquent l'autoplay
-            iframe.src = ch.url + separator + "autoplay=1&muted=1&playsinline=1";
+            let extraParams = "autoplay=1&autoPlay=1&muted=1&mute=1&playsinline=1&controls=0";
+            
+            iframe.src = ch.url + separator + extraParams;
             
             iframe.style.display = "block";
+            shield.style.display = "block"; // Active le bouclier contre les clics parasites
             led.className = "green";
             return;
         }
 
-        // 2. SI VIDEO
+        // 2. MODE VIDEO
         iframe.style.display = "none";
+        shield.style.display = "none"; // Désactive le bouclier pour la vidéo normale
         iframe.src = ""; 
         video.style.display = "block";
 
