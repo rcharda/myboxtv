@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V56 Hybrid</title>
+    <title>My Box TV - V57 Smart Hybrid</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -16,11 +15,11 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- MODIF V56 : DOUBLE MOTEUR D'AFFICHAGE --- */
-        #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
+        /* --- ZONE HYBRIDE (VIDEO + WEB) --- */
+        #player-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: contain; display: block; }
         iframe { width: 100%; height: 100%; border: none; display: none; background: #000; }
-        /* --------------------------------------------- */
+        /* ---------------------------------- */
 
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
@@ -49,8 +48,7 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 5px; font-size: 14px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
         
-        /* STYLE BADGE WEB */
-        .web-badge { font-size: 9px; background: #e50914; color: white; padding: 2px 5px; border-radius: 3px; margin-left: 8px; font-weight: bold; vertical-align: middle; }
+        .web-tag { font-size: 9px; background: #222; border:1px solid #555; padding: 2px 4px; border-radius: 3px; margin-left: 5px; color: #ccc; }
 
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; }
         .btn-ctrl { width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
@@ -158,7 +156,7 @@
     </div>
 </div>
 
-<div id="video-layer">
+<div id="player-layer">
     <video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous"></video>
     <iframe id="web-player" onclick="toggleMenu()" allowfullscreen allow="autoplay; encrypted-media"></iframe>
 </div>
@@ -204,13 +202,11 @@
 </div>
 
 <script>
-    // =======================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    // =======================================================
-
+    
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V56_Hybrid"; 
+    const DB_NAME = "MyBoxTV_V57_Smart"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -227,7 +223,7 @@
     let isScanning = false;
 
     const video = document.getElementById('video');
-    const iframe = document.getElementById('web-player'); // NOUVEAU
+    const iframe = document.getElementById('web-player'); // MOTEUR WEB
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
@@ -264,7 +260,6 @@
         
         const cached = await loadChannelsFromDB();
         if(cached.length > 5) {
-            console.log("DB Loaded");
             const ext = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
             allChannels = [DEFAULT_CHANNEL, ...ext];
             allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
@@ -287,7 +282,6 @@
             const json = await res.json();
             availableTransponders = json;
             renderTranspondersUI();
-            
             if(allChannels.length < 5) {
                 availableTransponders.forEach((tp, i) => {
                     setTimeout(() => fetchPlaylistWithWatchdog(tp.url), i * 1000);
@@ -315,9 +309,7 @@
         document.getElementById('scan-info').style.display = "flex";
         isScanning = true;
         for (let i = 0; i < checkboxes.length; i++) {
-            const url = checkboxes[i].value;
-            document.getElementById('scan-text').innerText = `Balayage TP ${i+1}/${checkboxes.length}...`;
-            await fetchPlaylistWithWatchdog(url);
+            await fetchPlaylistWithWatchdog(checkboxes[i].value);
         }
         isScanning = false;
         document.getElementById('scan-info').style.display = "none";
@@ -331,7 +323,6 @@
         document.getElementById('scan-info').style.display = "flex";
         isScanning = true;
         for(let tp of availableTransponders) {
-            document.getElementById('scan-text').innerText = "Recherche Rapide...";
             await fetchPlaylistWithWatchdog(tp.url);
         }
         isScanning = false;
@@ -359,6 +350,7 @@
         } catch (e) { console.log("Skip"); }
     }
 
+    // --- DETECTION INTELLIGENTE V57 ---
     function processLines(lines, batch) {
         let currentInfo = null;
         for (let line of lines) {
@@ -375,12 +367,14 @@
                 currentInfo = { name: name, logo: logo, category: cat }; allCategories.add(cat);
             } else if (line.startsWith('http')) {
                 if (currentInfo) {
-                    // DETECTION LIEN WEB (V56)
-                    let isWeb = false;
-                    if(line.includes('infomaniak') || line.includes('dailymotion') || line.includes('youtube') || line.includes('iframe') || line.includes('.html')) {
-                        isWeb = true;
-                    }
+                    // LOGIQUE DE DETECTION VIDEO vs WEB
+                    let isWeb = true; // Par défaut, on suppose que c'est du web (plus sûr)
                     
+                    // Si ça contient une extension vidéo claire, c'est de l'IPTV
+                    if(line.includes('.m3u8') || line.includes('.ts') || line.includes('.mp4')) {
+                        isWeb = false;
+                    }
+
                     const ch = { ...currentInfo, url: line, isWeb: isWeb };
                     
                     if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
@@ -422,16 +416,13 @@
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             
             // BADGE WEB
-            const badge = ch.isWeb ? '<span class="web-badge">WEB</span>' : '';
+            const badge = ch.isWeb ? '<span class="web-tag">WEB</span>' : '';
             
             const div = document.createElement('div');
             div.className = 'channel-row ' + (isPlaying ? 'active' : '');
             div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                              <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
-                             <div>
-                                <div style="font-weight:600; font-size:14px;">${ch.name} ${badge}</div>
-                                <div style="font-size:10px; color:#888;">${ch.category}</div>
-                             </div>`;
+                             <div><div style="font-weight:600; font-size:14px;">${ch.name} ${badge}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`;
             div.onclick = () => tryPlayChannel(ch);
             frag.appendChild(div);
         });
@@ -465,7 +456,7 @@
     function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
-    // --- PLAY CHANNEL V56 (HYBRIDE) ---
+    // --- PLAY CHANNEL HYBRIDE INTELLIGENT ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -473,20 +464,20 @@
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
-        // --- 1. MODE WEB ---
+        // 1. SI WEB
         if(ch.isWeb) {
             video.style.display = "none";
             video.pause();
-            if(hls) hls.destroy(); // Arrêt flux
+            if(hls) hls.destroy();
             iframe.src = ch.url;
             iframe.style.display = "block";
             led.className = "green";
             return;
         }
 
-        // --- 2. MODE VIDEO (HLS) ---
+        // 2. SI VIDEO IPTV
         iframe.style.display = "none";
-        iframe.src = ""; // Stop iframe
+        iframe.src = ""; 
         video.style.display = "block";
 
         if(Hls.isSupported()) {
