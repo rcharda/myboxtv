@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V36 Fusion</title>
+    <title>My Box TV - V37 Final</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -20,6 +20,17 @@
         /* UI LAYER */
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
+        /* STATUS PILL (RETOUR) */
+        #status-pill {
+            position: absolute; top: 20px; right: 20px; 
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            padding: 8px 15px; border-radius: 20px; border: 1px solid #444;
+            font-size: 12px; color: #fff; z-index: 60; 
+            display: flex; align-items: center; gap: 8px; pointer-events: none;
+        }
+        #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
+        #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
+
         /* MENU LATERAL */
         #channel-menu {
             position: fixed; top: 0; left: 0; width: 350px; height: 100%; 
@@ -41,66 +52,49 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 5px; font-size: 14px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
-        /* BARRE DE CONTROLE MOBILE OPTIMISÉE */
+        /* BARRE DE CONTROLE */
         #bottom-bar {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px);
             padding: 8px 15px; border-radius: 40px; border: 1px solid #333;
-            display: flex; gap: 15px; align-items: center; z-index: 90;
-            pointer-events: auto; width: auto; max-width: 95%;
-            justify-content: space-between;
+            display: flex; gap: 10px; align-items: center; z-index: 90;
+            pointer-events: auto; width: auto; max-width: 98%;
+            justify-content: space-between; flex-wrap: nowrap;
         }
         .btn-ctrl {
             width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white;
             border: none; display: flex; align-items: center; justify-content: center;
-            font-size: 18px; cursor: pointer; flex-shrink: 0;
+            font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s;
         }
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
+        .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); }
         .btn-large { width: 55px; height: 55px; font-size: 22px; background: var(--primary); border: 2px solid white; box-shadow: 0 0 10px rgba(229,9,20,0.5); }
 
         /* ELEMENTS CACHÉS SUR MOBILE */
         .desktop-only { display: flex; }
         @media (max-width: 600px) {
             .desktop-only { display: none; }
-            #bottom-bar { gap: 8px; padding: 8px; width: 95%; justify-content: space-between; }
-            .btn-ctrl { width: 42px; height: 42px; font-size: 16px; }
-            .btn-large { width: 50px; height: 50px; font-size: 20px; }
+            #bottom-bar { gap: 5px; padding: 5px 10px; }
+            .btn-ctrl { width: 40px; height: 40px; font-size: 16px; }
+            .btn-large { width: 48px; height: 48px; font-size: 20px; }
             #channel-menu { width: 85%; }
         }
 
-        /* --- SETTINGS MODAL (STYLE LOGICIEL) --- */
-        #settings-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 200;
-            align-items: center; justify-content: center; pointer-events: auto;
-        }
-        
-        .settings-panel {
-            background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh;
-            border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-        
-        .settings-sidebar { width: 200px; background: #111; padding: 20px; border-right: 1px solid #333; }
-        .settings-tab { padding: 15px; cursor: pointer; color: #888; font-weight: 600; border-radius: 8px; margin-bottom: 5px; transition: 0.2s; }
-        .settings-tab:hover, .settings-tab.active { background: #222; color: white; }
-        .settings-content { flex: 1; padding: 20px; overflow-y: auto; }
-        
-        .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
-        .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
-        .chip.selected { background: var(--primary); color: white; }
-        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
-
-        @media (max-width: 700px) {
-            .settings-panel { flex-direction: column; }
-            .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; padding: 10px; }
-            .settings-tab { white-space: nowrap; margin-right: 10px; padding: 10px; }
-        }
-
-        /* MODAL PIN & LOGIN */
+        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .pin-input { font-size: 30px; letter-spacing: 10px; width: 150px; text-align: center; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; margin: 20px 0; }
+
+        /* SETTINGS STYLE */
+        .settings-panel { background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh; border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden; }
+        .settings-sidebar { width: 200px; background: #111; padding: 20px; border-right: 1px solid #333; }
+        .settings-tab { padding: 15px; cursor: pointer; color: #888; font-weight: 600; border-radius: 8px; margin-bottom: 5px; }
+        .settings-tab.active { background: #222; color: white; }
+        .settings-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+        .chip.selected { background: var(--primary); color: white; }
+        @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
 
         /* MESSAGE ADMIN */
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
@@ -123,7 +117,7 @@
     </div>
 </div>
 
-<div id="settings-modal">
+<div id="settings-modal" class="modal">
     <div class="settings-panel">
         <div class="settings-sidebar">
             <div style="font-weight:bold; margin-bottom:20px; color:var(--primary)">RÉGLAGES</div>
@@ -132,7 +126,6 @@
             <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
             <div class="settings-tab" onclick="closeSettings()" style="color:#ff4444; margin-top:10px;">Fermer ✕</div>
         </div>
-        
         <div class="settings-content">
             <div id="tab-cat" class="tab-content">
                 <h3>Filtrer les chaînes</h3>
@@ -141,21 +134,16 @@
                 <br><br>
                 <button onclick="restoreHidden()" style="background:#444; border:none; color:white; padding:10px; border-radius:5px;">Restaurer chaînes supprimées</button>
             </div>
-
             <div id="tab-source" class="tab-content" style="display:none;">
-                <h3>Ajouter une source</h3>
-                <input type="text" id="custom-source" class="input-dark" placeholder="http://liens-iptv...">
+                <h3>Ajouter source</h3>
+                <input type="text" id="custom-source" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white;" placeholder="http://...">
                 <button onclick="addSource()" style="margin-top:10px; background:#28a745; border:none; color:white; padding:10px; border-radius:5px;">Ajouter</button>
-                <button onclick="resetSources()" style="margin-top:10px; background:#444; border:none; color:white; padding:10px; border-radius:5px;">Réinitialiser</button>
+                <button onclick="resetSources()" style="margin-top:10px; background:#444; border:none; color:white; padding:10px; border-radius:5px;">Reset</button>
             </div>
-
             <div id="tab-sub" class="tab-content" style="display:none;">
-                <h3>Mon Abonnement</h3>
-                <div style="background:#222; padding:15px; border-radius:5px; margin-bottom:15px;">
-                    Statut: <span style="color:#0f0;">Actif</span><br>
-                    ID: <span id="sub-id">...</span>
-                </div>
-                <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; background:#25D366; color:white; padding:10px; text-align:center; border-radius:5px; text-decoration:none;">Contacter Support WhatsApp</a>
+                <h3>Abonnement</h3>
+                <div style="background:#222; padding:15px; margin-bottom:15px;">Statut: <span style="color:#0f0;">Actif</span><br>ID: <span id="sub-id">...</span></div>
+                <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; background:#25D366; color:white; padding:10px; text-align:center; border-radius:5px; text-decoration:none;">Support WhatsApp</a>
             </div>
         </div>
     </div>
@@ -176,6 +164,11 @@
 
 <div id="ui-layer">
     
+    <div id="status-pill">
+        <div id="led"></div>
+        <span id="status-text">Prêt</span>
+    </div>
+
     <div id="channel-menu">
         <div class="menu-header">
             <div>
@@ -185,28 +178,24 @@
             <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
         </div>
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
-        
         <div style="padding:10px; border-bottom:1px solid #333;">
             <button onclick="toggleOnlyFavorites()" id="btn-fav-filter" style="width:100%; background:#222; color:white; border:1px solid #444; padding:8px; border-radius:5px;">
                 <i class="fas fa-star" style="color:gold;"></i> Voir mes Favoris
             </button>
         </div>
-
         <div id="channel-list"></div>
     </div>
 
     <div id="bottom-bar">
         <button class="btn-ctrl" onclick="prevChannel()"><i class="fas fa-step-backward"></i></button>
-        
         <button class="btn-ctrl desktop-only" onclick="adjustVol(-0.1)"><i class="fas fa-minus"></i></button>
         
         <button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
         
         <button class="btn-ctrl desktop-only" onclick="adjustVol(0.1)"><i class="fas fa-plus"></i></button>
-        
         <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
         
-        <button class="btn-ctrl" id="btn-mute" onclick="toggleMute()"><i class="fas fa-volume-up"></i></button>
+        <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
         
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
@@ -230,9 +219,14 @@
     let isFavFilter = false;
     let hls = null;
     let pendingChannelIndex = -1;
+    let isAutoZap = false; // Par défaut désactivé
     let allCategories = new Set(['Favoris']);
     let selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
+
+    const video = document.getElementById('video');
+    const statusText = document.getElementById('status-text');
+    const led = document.getElementById('led');
 
     // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
@@ -260,31 +254,19 @@
 
     async function initApp() {
         checkAdminMessage();
-        
-        // 1. CHARGEMENT RAPIDE DU CACHE
         loadCache();
-        
-        // 2. AJOUTER LA CHAINE PAR DEFAUT EN PREMIER (Logique V32)
         addChannelToFront(DEFAULT_CHANNEL);
-        
-        // 3. LANCEMENT IMMEDIAT
         if(allChannels.length > 0) playChannel(0);
 
-        // 4. SCAN ADDITIF (Ne supprime jamais, ajoute seulement)
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
             const text = await res.text();
             let sources = text.startsWith("PLAYLISTS:") ? text.replace("PLAYLISTS:","").split(",,,") : ["https://iptv-org.github.io/iptv/index.m3u"];
-            
-            // Priorité : Petits fichiers d'abord
             sources.sort((a,b) => a.includes("index.m3u") ? 1 : -1);
-            
             for(let s of sources) await fetchPlaylist(s);
-            
         } catch(e) { console.log("Offline"); }
     }
 
-    // --- LOGIQUE D'AJOUT INTELLIGENTE (V32) ---
     function addChannelToFront(ch) {
         if(!loadedUrls.has(ch.url)) {
             allChannels.unshift(ch);
@@ -300,7 +282,6 @@
             const text = await res.text();
             const lines = text.split('\n');
             let info = {}, count = 0;
-            
             for(let line of lines) {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
@@ -312,7 +293,6 @@
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
-                        // ON NE RAJOUTE QUE SI C'EST NOUVEAU
                         if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                             allChannels.push(ch);
                             loadedUrls.add(ch.url);
@@ -322,11 +302,7 @@
                     }
                 }
             }
-            if(count > 0) {
-                updateCategoryChips();
-                renderList();
-                saveCache();
-            }
+            if(count > 0) { updateCategoryChips(); renderList(); saveCache(); }
         } catch(e){}
     }
 
@@ -343,7 +319,7 @@
         } catch(e){}
     }
 
-    // --- RENDERING & FAVORIS ---
+    // --- RENDERING ---
     function toggleFavorite(url, e) {
         e.stopPropagation(); 
         if(favorites.includes(url)) favorites = favorites.filter(u => u !== url);
@@ -360,18 +336,14 @@
 
     function renderList() {
         const term = document.getElementById('searchInput').value.toLowerCase();
-        
         displayedChannels = allChannels.filter(ch => {
-            // Filtre Catégorie (Si activé)
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
-            
             const matchSearch = ch.name.toLowerCase().includes(term);
             const matchFav = isFavFilter ? favorites.includes(ch.url) : true;
             return catOK && matchSearch && matchFav;
         });
 
-        // Trier : Favoris en haut
         displayedChannels.sort((a,b) => {
             const favA = favorites.includes(a.url);
             const favB = favorites.includes(b.url);
@@ -402,11 +374,10 @@
 
     document.getElementById('searchInput').addEventListener('input', renderList);
 
-    // --- PARENTAL & PLAYER ---
+    // --- PLAYER & ERROR HANDLING ---
     function tryPlayChannel(ch) {
         const name = ch.name.toLowerCase();
-        const sensitive = ['adult', 'xxx', '18+', 'porn'];
-        if(sensitive.some(kw => name.includes(kw))) {
+        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) {
             pendingChannelIndex = allChannels.indexOf(ch);
             document.getElementById('pin-modal').style.display = 'flex';
         } else {
@@ -430,16 +401,40 @@
         if(window.innerWidth < 900) document.body.classList.remove('menu-open');
         renderList(); 
 
-        const video = document.getElementById('video');
+        statusText.innerText = ch.name;
+        led.className = ""; // Rouge
+
         if(Hls.isSupported()) {
             if(hls) hls.destroy();
             hls = new Hls();
             hls.loadSource(ch.url);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play().catch(()=>{});
+                led.className = "green";
+                clearTimeout(autoZapTimeout);
+            });
+            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handleError(); });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = ch.url;
             video.play();
+        }
+        
+        if(isAutoZap) {
+            autoZapTimeout = setTimeout(() => {
+                if(video.paused || video.readyState < 2) handleError();
+            }, 6000);
+        }
+    }
+
+    let autoZapTimeout;
+    function handleError() {
+        led.className = "";
+        if(isAutoZap) { 
+            statusText.innerText = "Zap Auto..."; 
+            setTimeout(nextChannel, 500); 
+        } else { 
+            statusText.innerText = "Erreur Flux"; 
         }
     }
 
@@ -455,22 +450,22 @@
         if(prevIdx < 0) prevIdx = allChannels.length - 1;
         tryPlayChannel(allChannels[prevIdx]);
     }
-    function toggleMute() {
-        const v = document.getElementById('video');
-        v.muted = !v.muted;
-        document.getElementById('btn-mute').innerHTML = v.muted ? '<i class="fas fa-volume-mute" style="color:red"></i>' : '<i class="fas fa-volume-up"></i>';
-    }
-    function adjustVol(d) {
-        const v = document.getElementById('video');
-        v.volume = Math.min(1, Math.max(0, v.volume + d));
-        v.muted = false;
-    }
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else if (document.exitFullscreen) document.exitFullscreen();
+    function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
+    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
+
+    function toggleAutoZap() {
+        isAutoZap = !isAutoZap;
+        const btn = document.getElementById('btn-autozap');
+        if(isAutoZap) {
+            btn.classList.add('active-mode');
+            statusText.innerText = "Auto-Zap ON";
+        } else {
+            btn.classList.remove('active-mode');
+            statusText.innerText = "Auto-Zap OFF";
+        }
     }
 
-    // --- REGLAGES ---
+    // --- SETTINGS ---
     function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) {
@@ -478,7 +473,6 @@
         document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active'));
         document.getElementById(id).style.display = 'block';
     }
-    
     function updateCategoryChips() {
         const container = document.getElementById('chips-area');
         if(selectedCategories.length === 0) selectedCategories = Array.from(allCategories);
@@ -490,24 +484,13 @@
         });
         container.innerHTML = html;
     }
-    
     function toggleCat(cat) {
         if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat);
         else selectedCategories.push(cat);
         updateCategoryChips();
     }
-    
-    function applyFilters() {
-        localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories));
-        renderList();
-        closeSettings();
-    }
-    
-    function restoreHidden() {
-        localStorage.removeItem('mybox_hidden');
-        location.reload();
-    }
-
+    function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
+    function restoreHidden() { localStorage.removeItem('mybox_hidden'); location.reload(); }
     function addSource() {
         const url = document.getElementById('custom-source').value.trim();
         if(url) {
@@ -517,13 +500,8 @@
             alert("Ajouté !"); location.reload();
         }
     }
-    
-    function resetSources() {
-        localStorage.removeItem('mybox_custom_sources');
-        location.reload();
-    }
+    function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
 
-    // --- CACHE ---
     function saveCache() { localStorage.setItem('mybox_cache_v35', JSON.stringify(allChannels.slice(0,1000))); }
     function loadCache() {
         const c = localStorage.getItem('mybox_cache_v35');
