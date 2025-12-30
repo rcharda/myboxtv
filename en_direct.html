@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- DESIGN SYSTEM PRO --- */
         :root { --primary: #e50914; --bg: #141414; --card-bg: #1f1f1f; --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         
@@ -18,103 +17,68 @@
             display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
-        /* HEADER FIXE */
+        /* HEADER */
         .header { 
-            padding: 15px 20px; 
-            background: rgba(20, 20, 20, 0.95); 
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #333; 
+            padding: 15px 20px; background: #111; border-bottom: 1px solid #333; 
             display: flex; justify-content: space-between; align-items: center; 
-            z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            flex-shrink: 0; /* Ne rétrécit pas */
         }
         .app-title { font-weight: 800; font-size: 18px; display: flex; align-items: center; gap: 10px; }
         .app-title i { color: var(--primary); }
-        
-        .btn-back { 
-            background: #333; color: white; border: 1px solid #555; 
-            padding: 8px 16px; border-radius: 20px; text-decoration: none; 
-            font-size: 12px; font-weight: bold; transition: 0.3s;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .btn-back:hover { background: var(--primary); border-color: var(--primary); }
+        .btn-back { background: #333; color: white; border: 1px solid #555; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: bold; }
 
-        /* GRILLE RESPONSIVE INTELLIGENTE */
+        /* ZONE LISTE */
         .content-area { flex: 1; overflow-y: auto; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding-bottom: 50px; }
         
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-            gap: 15px; 
-            padding-bottom: 50px;
-        }
-
-        /* STYLE MOBILE (2 COLONNES) */
         @media (max-width: 600px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
-            .card { min-height: 120px; }
         }
 
-        /* CARTE CHAINE */
+        /* CARTE */
         .card { 
-            background: var(--card-bg); border-radius: 12px; 
+            background: var(--card-bg); border-radius: 12px; padding: 15px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 15px; cursor: pointer; transition: all 0.2s ease;
-            border: 2px solid transparent; position: relative; overflow: hidden;
+            cursor: pointer; position: relative; border: 2px solid transparent; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); aspect-ratio: 16/10;
         }
-        
-        .card:hover { 
-            transform: translateY(-5px); 
-            border-color: var(--primary); 
-            background: #2a2a2a;
-            box-shadow: 0 10px 20px rgba(229, 9, 20, 0.2);
-        }
-        
-        .card:active { transform: scale(0.95); }
-
-        .card img { 
-            width: 60px; height: 60px; object-fit: contain; 
-            margin-bottom: 10px; 
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
-        }
-        
-        .card h3 { 
-            font-size: 13px; margin: 0; text-align: center; 
-            color: #ddd; font-weight: 600; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
-        }
-        
-        .badge-web {
-            position: absolute; top: 5px; right: 5px;
-            background: var(--primary); font-size: 9px; 
-            padding: 2px 6px; border-radius: 4px; font-weight: bold;
-        }
-
-        /* LOADING */
+        .card:hover { border-color: var(--primary); background: #2a2a2a; }
+        .card img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; }
+        .card h3 { font-size: 13px; margin: 0; text-align: center; color: #ddd; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge-web { position: absolute; top: 5px; right: 5px; background: var(--primary); font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         .loader { text-align: center; color: #666; margin-top: 50px; font-size: 14px; }
 
-        /* LECTEUR PLEIN ECRAN */
+        /* --- CORRECTION V63 : LECTEUR SÉCURISÉ --- */
         #web-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: black; z-index: 1000; display: none; flex-direction: column; 
+            background: black; z-index: 1000; 
+            display: none; 
+            flex-direction: column; /* Empilement Vertical */
         }
         
         .player-bar { 
-            height: 60px; background: rgba(0,0,0,0.8); 
+            height: 50px; background: #111; border-bottom: 1px solid #333;
             display: flex; align-items: center; justify-content: space-between; 
-            padding: 0 20px; position: absolute; top: 0; left: 0; width: 100%; z-index: 10;
+            padding: 0 15px; flex-shrink: 0; /* Reste fixe en haut */
         }
         
-        .channel-name { font-weight: bold; font-size: 16px; }
-        
-        .close-btn { 
-            background: rgba(255,255,255,0.1); color: white; border: none; 
-            width: 40px; height: 40px; border-radius: 50%; font-size: 20px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        /* CADRE VIDEO AVEC MARGE EN BAS */
+        .video-container {
+            flex: 1; /* Prend tout l'espace restant */
+            width: 100%;
+            background: #000;
+            position: relative;
+            padding-bottom: 40px; /* ASTUCE : On laisse 40px vide en bas pour remonter les contrôles */
+            display: flex; align-items: center; justify-content: center;
         }
-        .close-btn:active { background: var(--primary); }
 
-        iframe { width: 100%; height: 100%; border: none; flex: 1; background: #000; }
+        iframe { 
+            width: 100%; height: 100%; 
+            border: none; 
+        }
+
+        .channel-name { font-weight: bold; font-size: 16px; color: white; }
+        .close-btn { background: #333; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -126,51 +90,46 @@
 
     <div class="content-area">
         <div class="grid" id="grid">
-            <div class="loader"><i class="fas fa-spinner fa-spin"></i> Chargement des sources...</div>
+            <div class="loader"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>
         </div>
     </div>
 
     <div id="web-overlay">
         <div class="player-bar">
-            <span class="channel-name" id="overlay-title">En Direct</span>
+            <span class="channel-name" id="overlay-title">Direct</span>
             <button class="close-btn" onclick="closePlayer()">×</button>
         </div>
-        <iframe id="web-frame" allow="autoplay; encrypted-media; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"></iframe>
+        
+        <div class="video-container">
+            <iframe id="web-frame" allow="autoplay; encrypted-media; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"></iframe>
+        </div>
     </div>
 
     <script>
-        // --- LIEN GITHUB ---
         const M3U_URL = "https://raw.githubusercontent.com/rcharda/mes-listes-iptv/main/bouquet_benin.m3u";
 
         async function loadWebChannels() {
             try {
-                // Utilisation d'un cache buster pour éviter que le navigateur garde une vieille liste
                 const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(M3U_URL) + "&t=" + Date.now());
                 const data = await response.text();
-                
                 const lines = data.split('\n');
                 const grid = document.getElementById('grid');
-                grid.innerHTML = ""; // Clear loader
+                grid.innerHTML = "";
                 
                 let currentInfo = null;
                 let count = 0;
 
                 for (let line of lines) {
                     line = line.trim();
-                    if(!line) continue;
-
                     if (line.startsWith('#EXTINF:')) {
                         const parts = line.split(',');
                         let name = parts[1] || "Chaîne";
-                        // Extraction propre du logo
                         let logo = (line.match(/tvg-logo=["']?([^"']*)["']?/) || [])[1];
                         if(!logo) logo = "https://via.placeholder.com/100x100?text=" + name[0];
-                        
                         currentInfo = { name: name, logo: logo };
                     } 
                     else if (line.startsWith('http')) {
                         if (currentInfo) {
-                            // FILTRE : On garde UNIQUEMENT ce qui N'EST PAS du .m3u8/.ts
                             if(!line.includes('.m3u8') && !line.includes('.ts') && !line.includes('.mp4')) {
                                 createCard(currentInfo, line);
                                 count++;
@@ -179,24 +138,16 @@
                         }
                     }
                 }
-
-                if(count === 0) {
-                    grid.innerHTML = "<div class='loader'>Aucune chaîne Web détectée.<br>Vérifiez votre fichier GitHub.</div>";
-                }
-
+                if(count === 0) grid.innerHTML = "<div class='loader'>Aucune chaîne Web détectée.</div>";
             } catch (e) {
-                document.getElementById('grid').innerHTML = "<div class='loader' style='color:red'>Erreur de chargement.</div>";
+                document.getElementById('grid').innerHTML = "<div class='loader'>Erreur de chargement.</div>";
             }
         }
 
         function createCard(info, url) {
             const div = document.createElement('div');
             div.className = 'card';
-            div.innerHTML = `
-                <span class="badge-web">WEB</span>
-                <img src="${info.logo}" onerror="this.src='https://via.placeholder.com/60?text=TV'">
-                <h3>${info.name}</h3>
-            `;
+            div.innerHTML = `<span class="badge-web">WEB</span><img src="${info.logo}" onerror="this.src='https://via.placeholder.com/60'"><h3>${info.name}</h3>`;
             div.onclick = () => openPlayer(info.name, url);
             document.getElementById('grid').appendChild(div);
         }
@@ -204,25 +155,19 @@
         function openPlayer(name, url) {
             document.getElementById('overlay-title').innerText = name;
             const frame = document.getElementById('web-frame');
-            const overlay = document.getElementById('web-overlay');
-            
-            // Injection des paramètres pour forcer la lecture et le plein écran
             let separator = url.includes('?') ? '&' : '?';
-            // playsinline=0 aide sur mobile pour passer en plein écran natif parfois
-            let params = "autoplay=1&muted=1&controls=1&playsinline=1"; 
             
-            frame.src = url + separator + params;
-            overlay.style.display = 'flex';
+            // Paramètres spéciaux pour Infomaniak et autres
+            frame.src = url + separator + "autoplay=1&muted=1&controls=1&playsinline=1";
+            
+            document.getElementById('web-overlay').style.display = 'flex';
         }
 
         function closePlayer() {
-            const overlay = document.getElementById('web-overlay');
-            const frame = document.getElementById('web-frame');
-            overlay.style.display = 'none';
-            frame.src = ""; // Stop la lecture et vide la mémoire
+            document.getElementById('web-overlay').style.display = 'none';
+            document.getElementById('web-frame').src = "";
         }
 
-        // Lancer le chargement
         loadWebChannels();
     </script>
 
