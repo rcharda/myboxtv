@@ -3,257 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - My Box TV</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title>Admin Panel V40</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #eee; display: flex; justify-content: center; padding: 20px; }
-        .container { background: #2a2a2a; width: 100%; max-width: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #444; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; margin: 0; }
         
-        .tabs { display: flex; background: #333; }
-        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; color: #888; border-bottom: 3px solid transparent; }
-        .tab.active { color: white; border-bottom: 3px solid #e50914; background: #2a2a2a; }
+        /* LOGIN */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #1e1e1e; padding: 40px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        input { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; width: 200px; }
+        button { padding: 10px 20px; background: #e50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #ff0f1f; }
+
+        /* DASHBOARD */
+        #dashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        h1 { color: #e50914; margin: 0; }
         
-        .content { padding: 30px; display: none; }
-        .content.active { display: block; }
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { background: #333; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .tab-btn.active { background: #e50914; color: white; }
         
-        h2 { color: #e50914; margin-top: 0; display:flex; align-items:center; gap:10px; }
-        label { display: block; margin: 15px 0 5px; font-size: 13px; color: #aaa; }
-        input, select { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
-        input:focus, select:focus { border-color: #e50914; outline: none; }
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* TABLES */
+        table { width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #252525; color: #aaa; font-size: 12px; text-transform: uppercase; }
+        tr:hover { background: #2a2a2a; }
         
-        .btn { width: 100%; padding: 15px; background: #e50914; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 25px; transition: 0.3s; }
-        .btn:hover { background: #ff0f1f; }
-        .btn-blue { background: #007bff; } .btn-blue:hover { background: #0056b3; }
-        
-        .result-box { margin-top: 20px; padding: 15px; background: #111; border-left: 4px solid #0f0; display: none; }
-        .big-code { font-family: monospace; font-size: 24px; color: #fff; text-align: center; letter-spacing: 2px; margin: 10px 0; font-weight: bold; }
+        .action-btn { padding: 5px 10px; font-size: 12px; margin-right: 5px; }
+        .btn-edit { background: #007bff; }
+        .btn-del { background: #ff4444; }
+
+        /* MESSAGE BOX */
+        .msg-box { background: #222; padding: 20px; border-radius: 10px; }
+        .msg-input { width: 100%; padding: 15px; margin: 10px 0; font-size: 16px; }
+
+        /* ADD USER FORM */
+        .add-form { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="login-overlay">
+    <div class="login-box">
+        <h2 style="color:#e50914;">ADMINISTRATION V40</h2>
+        <input type="password" id="admin-pass" placeholder="Mot de passe Admin">
+        <button onclick="adminLogin()">ENTRER</button>
+        <div id="login-error" style="color:red; margin-top:10px;"></div>
+    </div>
+</div>
+
+<div id="dashboard">
+    <div class="header">
+        <h1>MY BOX TV <span style="font-size:14px; color:#aaa;">CONTROL PANEL</span></h1>
+        <button onclick="location.reload()" style="background:#444;">ACTUALISER</button>
+    </div>
+
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('new')"><i class="fas fa-plus-circle"></i> NOUVEAU</div>
-        <div class="tab" onclick="switchTab('edit')"><i class="fas fa-edit"></i> MODIFIER</div>
+        <div class="tab-btn active" onclick="showTab('users')"><i class="fas fa-users"></i> UTILISATEURS</div>
+        <div class="tab-btn" onclick="showTab('sources')"><i class="fas fa-link"></i> SOURCES IPTV</div>
+        <div class="tab-btn" onclick="showTab('message')"><i class="fas fa-bullhorn"></i> MESSAGE GLOBAL</div>
     </div>
 
-    <div id="new" class="content active">
-        <h2>Créer une Licence</h2>
-        
-        <label>Durée de l'abonnement</label>
-        <select id="duration-select" onchange="toggleCustomDays()">
-            <option value="30">1 Mois (30 Jours)</option>
-            <option value="90">3 Mois (90 Jours)</option>
-            <option value="180">6 Mois (180 Jours)</option>
-            <option value="365">1 An (365 Jours)</option>
-            <option value="VIE">Abonnement À VIE</option>
-            <option value="custom">Autre (Personnalisé)</option>
-        </select>
-        <input type="number" id="custom-days" placeholder="Nombre de jours (ex: 45)" style="display:none; margin-top:5px;">
-
-        <label>Nombre d'écrans simultanés</label>
-        <select id="screens">
-            <option value="1">1 Écran</option>
-            <option value="2">2 Écrans</option>
-            <option value="3">3 Écrans</option>
-            <option value="4">4 Écrans (Famille)</option>
-        </select>
-
-        <button class="btn" onclick="createKey()" id="btn-create">GÉNÉRER & TÉLÉCHARGER PDF 🖨️</button>
-        
-        <div id="result-create" class="result-box">
-            <div>Licence Créée :</div>
-            <div class="big-code" id="created-code">...</div>
-            <small style="color:#aaa;">Le PDF a été téléchargé.</small>
+    <div id="users" class="section active">
+        <div class="add-form">
+            <h3 style="margin:0; color:#aaa;">Ajouter :</h3>
+            <input type="text" id="new-key" placeholder="ID (ex: CLIENT-JEAN)" style="width:150px;">
+            <select id="new-days" style="padding:10px; background:#333; color:white; border:1px solid #444; border-radius:5px;">
+                <option value="30">30 Jours</option>
+                <option value="365">1 An</option>
+                <option value="VIE">À VIE</option>
+            </select>
+            <select id="new-screens" style="padding:10px; background:#333; color:white; border:1px solid #444; border-radius:5px;">
+                <option value="1">1 Écran</option>
+                <option value="2">2 Écrans</option>
+                <option value="4">4 Écrans</option>
+            </select>
+            <button onclick="addUser()">CRÉER</button>
         </div>
+
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>CLÉ / ID</th>
+                    <th>DURÉE</th>
+                    <th>ÉCRANS (Max)</th>
+                    <th>APPAREILS CONNECTÉS</th>
+                    <th>ACTIVÉ LE</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+        </table>
     </div>
 
-    <div id="edit" class="content">
-        <h2 style="color:#007bff;">Gérer un Client</h2>
+    <div id="sources" class="section">
+        <div class="add-form">
+            <h3 style="margin:0; color:#aaa;">Ajouter Source :</h3>
+            <input type="text" id="new-source-name" placeholder="Nom (ex: Canal+ Backup)" style="width:200px;">
+            <input type="text" id="new-source-link" placeholder="http://lien-m3u..." style="width:400px;">
+            <button onclick="addSource()">AJOUTER</button>
+        </div>
         
-        <label>Entrez l'ID du client (Licence)</label>
-        <input type="text" id="target-key" placeholder="BOX-XXXX-XXXX" style="text-transform:uppercase;">
+        <table id="sources-table">
+            <thead>
+                <tr><th>NOM</th><th>LIEN</th><th>ACTIONS</th></tr>
+            </thead>
+            <tbody id="sources-body"></tbody>
+        </table>
+    </div>
 
-        <label>Nouvelle Durée (Optionnel)</label>
-        <input type="number" id="edit-days" placeholder="Ex: 30 (laisser vide si inchangé)">
-
-        <label>Nouveaux Écrans (Optionnel)</label>
-        <select id="edit-screens">
-            <option value="">-- Ne pas changer --</option>
-            <option value="1">1 Écran</option>
-            <option value="2">2 Écrans</option>
-            <option value="4">4 Écrans</option>
-        </select>
-
-        <label style="display:flex; align-items:center; margin-top:15px; cursor:pointer;">
-            <input type="checkbox" id="reset-device" style="width:auto; margin-right:10px;">
-            Débloquer les appareils (Reset ID)
-        </label>
-
-        <button class="btn btn-blue" onclick="updateKey()" id="btn-update">METTRE À JOUR LE COMPTE</button>
+    <div id="message" class="section">
+        <div class="msg-box">
+            <h3>Message d'accueil (Popup)</h3>
+            <input type="text" id="global-msg-input" class="msg-input" placeholder="Bienvenue...">
+            <button onclick="saveMessage()" style="width:100%;">METTRE À JOUR LE MESSAGE</button>
+        </div>
     </div>
 </div>
 
 <script>
     // =========================================================
-    // NOUVEAU LIEN GOOGLE SCRIPT DEPLOYÉ (V39)
-    const API_URL = "https://script.google.com/macros/s/AKfycbxsj8vxAVwozzX339QAWTvy7sq4qP1nE8JWpeDXk57E27R9bf4kJ50DKR1aRFcbmG4RHw/exec";
+    // NOUVEAU LIEN GOOGLE SCRIPT DEPLOYÉ (V40)
+    const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
     // =========================================================
 
-    function switchTab(id) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+    async function adminLogin() {
+        const pass = document.getElementById('admin-pass').value;
+        const btn = document.querySelector('#login-overlay button');
+        btn.innerText = "Vérification...";
+        
+        try {
+            const res = await fetch(`${API_URL}?action=admin_login&pass=${encodeURIComponent(pass)}`);
+            const text = await res.text();
+            if(text === "AUTH:OK") {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadData();
+            } else {
+                document.getElementById('login-error').innerText = "Mot de passe incorrect";
+            }
+        } catch(e) { alert("Erreur connexion"); }
+        btn.innerText = "ENTRER";
+    }
+
+    async function loadData() {
+        const res = await fetch(`${API_URL}?action=get_admin_data`);
+        const data = await res.json();
+        
+        const usersBody = document.getElementById('users-body');
+        usersBody.innerHTML = "";
+        data.users.forEach(u => {
+            const key = u[0];
+            const duration = u[1];
+            const devices = u[2] ? u[2].split(',').length : 0;
+            const date = u[3] ? new Date(u[3]).toLocaleDateString() : "-";
+            const maxScreens = u[4] || 1;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold; color:white;">${key}</td>
+                <td>${duration}</td>
+                <td>${maxScreens}</td>
+                <td>${devices} / ${maxScreens} <button onclick="resetDevices('${key}')" style="font-size:9px; background:#444; padding:2px;">RESET</button></td>
+                <td>${date}</td>
+                <td>
+                    <button class="action-btn btn-edit" onclick="editUser('${key}', '${duration}', '${maxScreens}')"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-del" onclick="deleteUser('${key}')"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            usersBody.appendChild(tr);
+        });
+
+        const sourcesBody = document.getElementById('sources-body');
+        sourcesBody.innerHTML = "";
+        data.sources.forEach(s => {
+            const name = s[0];
+            const link = s[1];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:bold;">${name}</td>
+                <td style="color:#aaa; font-size:12px;">${link.substring(0, 50)}...</td>
+                <td><button class="action-btn btn-del" onclick="deleteSource('${link}')"><i class="fas fa-trash"></i></button></td>
+            `;
+            sourcesBody.appendChild(tr);
+        });
+
+        document.getElementById('global-msg-input').value = data.message;
+    }
+
+    async function addUser() {
+        const key = document.getElementById('new-key').value;
+        const days = document.getElementById('new-days').value;
+        const screens = document.getElementById('new-screens').value;
+        if(!key) return alert("Mettez un ID");
+        
+        await fetch(`${API_URL}?action=admin_user_action&type=add&key=${encodeURIComponent(key)}&days=${days}&screens=${screens}`);
+        loadData();
+        document.getElementById('new-key').value = "";
+    }
+
+    async function deleteUser(key) {
+        if(confirm("Supprimer " + key + " ?")) {
+            await fetch(`${API_URL}?action=admin_user_action&type=delete&key=${encodeURIComponent(key)}`);
+            loadData();
+        }
+    }
+
+    async function editUser(key, oldDays, oldScreens) {
+        const newDays = prompt("Nouvelle durée (laisser vide pour garder " + oldDays + ") :", oldDays);
+        const newScreens = prompt("Nouveaux écrans Max (laisser vide pour garder " + oldScreens + ") :", oldScreens);
+        
+        if(newDays !== null && newScreens !== null) {
+            await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&days=${newDays}&screens=${newScreens}`);
+            loadData();
+        }
+    }
+
+    async function resetDevices(key) {
+        if(confirm("Déconnecter tous les appareils de " + key + " ?")) {
+            await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&reset=yes`);
+            loadData();
+            alert("Appareils débloqués !");
+        }
+    }
+
+    async function addSource() {
+        const name = document.getElementById('new-source-name').value;
+        const link = document.getElementById('new-source-link').value;
+        if(!link) return;
+        await fetch(`${API_URL}?action=admin_source_action&type=add&name=${encodeURIComponent(name)}&link=${encodeURIComponent(link)}`);
+        loadData();
+    }
+
+    async function deleteSource(link) {
+        if(confirm("Supprimer cette source ?")) {
+            await fetch(`${API_URL}?action=admin_source_action&type=delete&link=${encodeURIComponent(link)}`);
+            loadData();
+        }
+    }
+
+    async function saveMessage() {
+        const msg = document.getElementById('global-msg-input').value;
+        await fetch(`${API_URL}?action=admin_set_message&msg=${encodeURIComponent(msg)}`);
+        alert("Message mis à jour !");
+    }
+
+    function showTab(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-    }
-
-    function toggleCustomDays() {
-        const val = document.getElementById('duration-select').value;
-        document.getElementById('custom-days').style.display = (val === 'custom') ? 'block' : 'none';
-    }
-
-    async function createKey() {
-        let days = document.getElementById('duration-select').value;
-        if(days === 'custom') days = document.getElementById('custom-days').value;
-        const screens = document.getElementById('screens').value;
-        
-        if(!days) return alert("Choisissez une durée");
-
-        const btn = document.getElementById('btn-create');
-        btn.innerText = "Génération..."; btn.disabled = true;
-
-        try {
-            const res = await fetch(`${API_URL}?action=create_key&days=${days}&screens=${screens}`);
-            const text = await res.text();
-
-            if (text.includes("CREATED:")) {
-                const newKey = text.split(':')[1];
-                document.getElementById('created-code').innerText = newKey;
-                document.getElementById('result-create').style.display = 'block';
-                generateProPDF(newKey, days, screens);
-            } else { alert("Erreur: " + text); }
-        } catch (e) { alert("Erreur Connexion"); }
-        
-        btn.innerText = "GÉNÉRER & TÉLÉCHARGER PDF 🖨️"; btn.disabled = false;
-    }
-
-    async function updateKey() {
-        const key = document.getElementById('target-key').value.trim();
-        const days = document.getElementById('edit-days').value;
-        const screens = document.getElementById('edit-screens').value;
-        const reset = document.getElementById('reset-device').checked ? "yes" : "no";
-
-        if(!key) return alert("Entrez l'ID Client");
-
-        const btn = document.getElementById('btn-update');
-        btn.innerText = "Mise à jour..."; btn.disabled = true;
-
-        try {
-            const url = `${API_URL}?action=update_key&target=${encodeURIComponent(key)}&new_days=${days}&new_screens=${screens}&reset=${reset}`;
-            const res = await fetch(url);
-            const text = await res.text();
-            if(text.includes("SUCCESS")) alert("✅ Client mis à jour avec succès !");
-            else alert("❌ Erreur : ID introuvable ou erreur serveur");
-        } catch(e) { alert("Erreur Connexion"); }
-
-        btn.innerText = "METTRE À JOUR LE COMPTE"; btn.disabled = false;
-    }
-
-    // --- GENERATEUR PDF PRO A4 ---
-    function generateProPDF(key, days, screens) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF(); // A4 Portrait
-
-        // COULEURS
-        const rouge = [229, 9, 20];
-        const noir = [20, 20, 20];
-        const gris = [100, 100, 100];
-
-        // 1. EN-TÊTE
-        doc.setFillColor(...noir);
-        doc.rect(0, 0, 210, 40, 'F'); 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(28);
-        doc.setFont("helvetica", "bold");
-        doc.text("MY BOX TV", 105, 20, null, null, "center");
-        doc.setFontSize(12);
-        doc.setTextColor(...rouge);
-        doc.text("CERTIFICAT D'ABONNEMENT OFFICIEL", 105, 30, null, null, "center");
-
-        // 2. LA CLÉ
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(14);
-        doc.text("VOTRE ID DE CONNEXION :", 105, 60, null, null, "center");
-        doc.setFillColor(240, 240, 240);
-        doc.setDrawColor(...rouge);
-        doc.rect(40, 65, 130, 25, 'FD');
-        doc.setFont("courier", "bold");
-        doc.setFontSize(30);
-        doc.setTextColor(...rouge);
-        doc.text(key, 105, 82, null, null, "center");
-
-        // 3. DETAILS
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(12);
-        doc.text(`DUREE : ${days === "VIE" ? "ABONNEMENT A VIE" : days + " Jours"}`, 50, 105);
-        doc.text(`ECRANS AUTORISES : ${screens}`, 120, 105);
-
-        // 4. README
-        doc.setDrawColor(200, 200, 200);
-        doc.line(20, 115, 190, 115);
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("COMMENT L'ACTIVER ?", 20, 125);
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        const steps = [
-            "1. Connectez votre appareil à Internet (Wifi ou 4G).",
-            "2. Ouvrez l'application MY BOX TV sur votre Téléphone ou Smart TV.",
-            "3. Sur l'écran d'accueil, entrez votre ID ci-dessus.",
-            "4. Cliquez sur ENTRER. C'est tout ! Profitez de vos chaînes."
-        ];
-        let y = 135;
-        steps.forEach(step => {
-            doc.text(step, 20, y);
-            y += 8;
-        });
-
-        // 5. FONCTIONNALITES
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("VOS AVANTAGES PREMIUM", 20, 175);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        const features = [
-            "• +14.000 Chaînes Monde & Afrique",
-            "• Technologie Auto-Zap (Anti-Coupure)",
-            "• Qualité HD & 4K Automatique",
-            "• Mode Famille (Contrôle Parental)"
-        ];
-        y = 185;
-        features.forEach(feat => {
-            doc.text(feat, 20, y);
-            y += 7;
-        });
-
-        // 6. SUPPORT & CONDITIONS
-        doc.setFillColor(245, 245, 245);
-        doc.rect(0, 240, 210, 60, 'F');
-        doc.setTextColor(...rouge);
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("BESOIN D'AIDE ?", 105, 255, null, null, "center");
-        doc.setTextColor(0,0,0);
-        doc.setFontSize(12);
-        doc.text("Support WhatsApp 7j/7 : 63 82 87 67", 105, 265, null, null, "center");
-        doc.setFontSize(8);
-        doc.setTextColor(...gris);
-        const terms = "CONDITIONS D'UTILISATION : Cet abonnement est strictement personnel. Le partage de cet ID avec plus de personnes que le nombre d'écrans autorisés entraînera le blocage immédiat du compte sans remboursement. L'utilisation nécessite une connexion internet stable.";
-        doc.text(terms, 105, 280, {align: "center", maxWidth: 180});
-
-        doc.save(`Licence_MyBoxTV_${key}.pdf`);
+        event.currentTarget.classList.add('active');
     }
 </script>
 
