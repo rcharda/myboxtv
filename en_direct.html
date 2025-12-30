@@ -2,92 +2,199 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV EN DIRECT - WEB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TV WEB - Direct</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { margin: 0; background: #121212; color: white; font-family: 'Montserrat', sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        /* --- DESIGN SYSTEM PRO --- */
+        :root { --primary: #e50914; --bg: #141414; --card-bg: #1f1f1f; --text: #fff; }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         
-        .header { padding: 20px; background: #1e1e1e; border-bottom: 2px solid #e50914; display: flex; justify-content: space-between; align-items: center; }
-        .title { font-weight: 800; font-size: 20px; color: #e50914; }
-        .btn-back { background: #333; color: white; border: 1px solid #555; padding: 10px 20px; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 14px; }
-        
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 20px; overflow-y: auto; flex: 1; }
-        
-        .card { background: #252525; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; border: 1px solid #333; }
-        .card:hover { transform: scale(1.05); border-color: #e50914; background: #333; }
-        .card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; background: white; border-radius: 50%; padding: 5px; }
-        .card h3 { font-size: 14px; margin: 0; }
+        body { 
+            margin: 0; background: var(--bg); color: var(--text); 
+            font-family: 'Montserrat', sans-serif; 
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+        }
 
-        /* IFRAME FULLSCREEN OVERLAY */
-        #web-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; display: none; flex-direction: column; }
-        iframe { flex: 1; width: 100%; border: none; }
-        .overlay-bar { height: 50px; background: #e50914; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-        .overlay-title { font-weight: bold; }
-        .close-btn { background: white; color: #e50914; border: none; padding: 5px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        /* HEADER FIXE */
+        .header { 
+            padding: 15px 20px; 
+            background: rgba(20, 20, 20, 0.95); 
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333; 
+            display: flex; justify-content: space-between; align-items: center; 
+            z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .app-title { font-weight: 800; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .app-title i { color: var(--primary); }
+        
+        .btn-back { 
+            background: #333; color: white; border: 1px solid #555; 
+            padding: 8px 16px; border-radius: 20px; text-decoration: none; 
+            font-size: 12px; font-weight: bold; transition: 0.3s;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .btn-back:hover { background: var(--primary); border-color: var(--primary); }
+
+        /* GRILLE RESPONSIVE INTELLIGENTE */
+        .content-area { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+            gap: 15px; 
+            padding-bottom: 50px;
+        }
+
+        /* STYLE MOBILE (2 COLONNES) */
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+            .card { min-height: 120px; }
+        }
+
+        /* CARTE CHAINE */
+        .card { 
+            background: var(--card-bg); border-radius: 12px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 15px; cursor: pointer; transition: all 0.2s ease;
+            border: 2px solid transparent; position: relative; overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); aspect-ratio: 16/10;
+        }
+        
+        .card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--primary); 
+            background: #2a2a2a;
+            box-shadow: 0 10px 20px rgba(229, 9, 20, 0.2);
+        }
+        
+        .card:active { transform: scale(0.95); }
+
+        .card img { 
+            width: 60px; height: 60px; object-fit: contain; 
+            margin-bottom: 10px; 
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
+        }
+        
+        .card h3 { 
+            font-size: 13px; margin: 0; text-align: center; 
+            color: #ddd; font-weight: 600; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+        }
+        
+        .badge-web {
+            position: absolute; top: 5px; right: 5px;
+            background: var(--primary); font-size: 9px; 
+            padding: 2px 6px; border-radius: 4px; font-weight: bold;
+        }
+
+        /* LOADING */
+        .loader { text-align: center; color: #666; margin-top: 50px; font-size: 14px; }
+
+        /* LECTEUR PLEIN ECRAN */
+        #web-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: black; z-index: 1000; display: none; flex-direction: column; 
+        }
+        
+        .player-bar { 
+            height: 60px; background: rgba(0,0,0,0.8); 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 0 20px; position: absolute; top: 0; left: 0; width: 100%; z-index: 10;
+        }
+        
+        .channel-name { font-weight: bold; font-size: 16px; }
+        
+        .close-btn { 
+            background: rgba(255,255,255,0.1); color: white; border: none; 
+            width: 40px; height: 40px; border-radius: 50%; font-size: 20px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .close-btn:active { background: var(--primary); }
+
+        iframe { width: 100%; height: 100%; border: none; flex: 1; background: #000; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="title"><i class="fas fa-globe"></i> TV WEB</div>
-        <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> RETOUR</a>
+        <div class="app-title"><i class="fas fa-globe-africa"></i> TV LOCALE</div>
+        <a href="index.html" class="btn-back"><i class="fas fa-chevron-left"></i> Retour</a>
     </div>
 
-    <div class="grid-container" id="grid">
-        <div style="color:#888;">Chargement des chaînes Web...</div>
+    <div class="content-area">
+        <div class="grid" id="grid">
+            <div class="loader"><i class="fas fa-spinner fa-spin"></i> Chargement des sources...</div>
+        </div>
     </div>
 
     <div id="web-overlay">
-        <div class="overlay-bar">
-            <span class="overlay-title" id="overlay-title">TV</span>
-            <button class="close-btn" onclick="closePlayer()">FERMER ✕</button>
+        <div class="player-bar">
+            <span class="channel-name" id="overlay-title">En Direct</span>
+            <button class="close-btn" onclick="closePlayer()">×</button>
         </div>
         <iframe id="web-frame" allow="autoplay; encrypted-media; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"></iframe>
     </div>
 
     <script>
-        // METTRE ICI LE LIEN DE TON FICHIER GITHUB "BOUQUET_BENIN.M3U"
+        // --- LIEN GITHUB ---
         const M3U_URL = "https://raw.githubusercontent.com/rcharda/mes-listes-iptv/main/bouquet_benin.m3u";
 
-        fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(M3U_URL))
-            .then(r => r.text())
-            .then(data => {
+        async function loadWebChannels() {
+            try {
+                // Utilisation d'un cache buster pour éviter que le navigateur garde une vieille liste
+                const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(M3U_URL) + "&t=" + Date.now());
+                const data = await response.text();
+                
                 const lines = data.split('\n');
                 const grid = document.getElementById('grid');
-                grid.innerHTML = "";
+                grid.innerHTML = ""; // Clear loader
+                
                 let currentInfo = null;
-                let found = 0;
+                let count = 0;
 
                 for (let line of lines) {
                     line = line.trim();
+                    if(!line) continue;
+
                     if (line.startsWith('#EXTINF:')) {
                         const parts = line.split(',');
-                        currentInfo = { 
-                            name: parts[1] || "TV", 
-                            logo: (line.match(/tvg-logo="([^"]*)"/) || [])[1] 
-                        };
-                    } else if (line.startsWith('http')) {
+                        let name = parts[1] || "Chaîne";
+                        // Extraction propre du logo
+                        let logo = (line.match(/tvg-logo=["']?([^"']*)["']?/) || [])[1];
+                        if(!logo) logo = "https://via.placeholder.com/100x100?text=" + name[0];
+                        
+                        currentInfo = { name: name, logo: logo };
+                    } 
+                    else if (line.startsWith('http')) {
                         if (currentInfo) {
-                            // FILTRE INVERSE : ON GARDE UNIQUEMENT LES LIENS WEB
-                            // Si ce n'est PAS un .m3u8, c'est pour nous !
-                            if(!line.includes('.m3u8') && !line.includes('.ts')) {
+                            // FILTRE : On garde UNIQUEMENT ce qui N'EST PAS du .m3u8/.ts
+                            if(!line.includes('.m3u8') && !line.includes('.ts') && !line.includes('.mp4')) {
                                 createCard(currentInfo, line);
-                                found++;
+                                count++;
                             }
                             currentInfo = null;
                         }
                     }
                 }
-                if(found === 0) grid.innerHTML = "<div style='padding:20px'>Aucune chaîne Web trouvée dans la liste.</div>";
-            });
+
+                if(count === 0) {
+                    grid.innerHTML = "<div class='loader'>Aucune chaîne Web détectée.<br>Vérifiez votre fichier GitHub.</div>";
+                }
+
+            } catch (e) {
+                document.getElementById('grid').innerHTML = "<div class='loader' style='color:red'>Erreur de chargement.</div>";
+            }
+        }
 
         function createCard(info, url) {
             const div = document.createElement('div');
             div.className = 'card';
             div.innerHTML = `
-                <img src="${info.logo || 'https://via.placeholder.com/80'}" loading="lazy">
+                <span class="badge-web">WEB</span>
+                <img src="${info.logo}" onerror="this.src='https://via.placeholder.com/60?text=TV'">
                 <h3>${info.name}</h3>
             `;
             div.onclick = () => openPlayer(info.name, url);
@@ -97,18 +204,26 @@
         function openPlayer(name, url) {
             document.getElementById('overlay-title').innerText = name;
             const frame = document.getElementById('web-frame');
+            const overlay = document.getElementById('web-overlay');
             
-            // Injection Autoplay
+            // Injection des paramètres pour forcer la lecture et le plein écran
             let separator = url.includes('?') ? '&' : '?';
-            frame.src = url + separator + "autoplay=1";
+            // playsinline=0 aide sur mobile pour passer en plein écran natif parfois
+            let params = "autoplay=1&muted=1&controls=1&playsinline=1"; 
             
-            document.getElementById('web-overlay').style.display = 'flex';
+            frame.src = url + separator + params;
+            overlay.style.display = 'flex';
         }
 
         function closePlayer() {
-            document.getElementById('web-overlay').style.display = 'none';
-            document.getElementById('web-frame').src = "";
+            const overlay = document.getElementById('web-overlay');
+            const frame = document.getElementById('web-frame');
+            overlay.style.display = 'none';
+            frame.src = ""; // Stop la lecture et vide la mémoire
         }
+
+        // Lancer le chargement
+        loadWebChannels();
     </script>
 
 </body>
