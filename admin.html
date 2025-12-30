@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - My Box TV</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #eee; display: flex; justify-content: center; padding: 20px; }
+        .container { background: #2a2a2a; width: 100%; max-width: 500px; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #444; }
+        
+        .tabs { display: flex; background: #333; }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; color: #888; border-bottom: 3px solid transparent; }
+        .tab.active { color: white; border-bottom: 3px solid #e50914; background: #2a2a2a; }
+        
+        .content { padding: 30px; display: none; }
+        .content.active { display: block; }
+        
+        h2 { color: #e50914; margin-top: 0; display:flex; align-items:center; gap:10px; }
+        label { display: block; margin: 15px 0 5px; font-size: 13px; color: #aaa; }
+        input, select { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        input:focus, select:focus { border-color: #e50914; outline: none; }
+        
+        .btn { width: 100%; padding: 15px; background: #e50914; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 25px; transition: 0.3s; }
+        .btn:hover { background: #ff0f1f; }
+        .btn-blue { background: #007bff; } .btn-blue:hover { background: #0056b3; }
+        
+        .result-box { margin-top: 20px; padding: 15px; background: #111; border-left: 4px solid #0f0; display: none; }
+        .big-code { font-family: monospace; font-size: 24px; color: #fff; text-align: center; letter-spacing: 2px; margin: 10px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('new')"><i class="fas fa-plus-circle"></i> NOUVEAU</div>
+        <div class="tab" onclick="switchTab('edit')"><i class="fas fa-edit"></i> MODIFIER</div>
+    </div>
+
+    <div id="new" class="content active">
+        <h2>Créer une Licence</h2>
+        
+        <label>Durée de l'abonnement</label>
+        <select id="duration-select" onchange="toggleCustomDays()">
+            <option value="30">1 Mois (30 Jours)</option>
+            <option value="90">3 Mois (90 Jours)</option>
+            <option value="180">6 Mois (180 Jours)</option>
+            <option value="365">1 An (365 Jours)</option>
+            <option value="VIE">Abonnement À VIE</option>
+            <option value="custom">Autre (Personnalisé)</option>
+        </select>
+        <input type="number" id="custom-days" placeholder="Nombre de jours (ex: 45)" style="display:none; margin-top:5px;">
+
+        <label>Nombre d'écrans simultanés</label>
+        <select id="screens">
+            <option value="1">1 Écran</option>
+            <option value="2">2 Écrans</option>
+            <option value="3">3 Écrans</option>
+            <option value="4">4 Écrans (Famille)</option>
+        </select>
+
+        <button class="btn" onclick="createKey()" id="btn-create">GÉNÉRER & TÉLÉCHARGER PDF 🖨️</button>
+        
+        <div id="result-create" class="result-box">
+            <div>Licence Créée :</div>
+            <div class="big-code" id="created-code">...</div>
+            <small style="color:#aaa;">Le PDF a été téléchargé.</small>
+        </div>
+    </div>
+
+    <div id="edit" class="content">
+        <h2 style="color:#007bff;">Gérer un Client</h2>
+        
+        <label>Entrez l'ID du client (Licence)</label>
+        <input type="text" id="target-key" placeholder="BOX-XXXX-XXXX" style="text-transform:uppercase;">
+
+        <label>Nouvelle Durée (Optionnel)</label>
+        <input type="number" id="edit-days" placeholder="Ex: 30 (laisser vide si inchangé)">
+
+        <label>Nouveaux Écrans (Optionnel)</label>
+        <select id="edit-screens">
+            <option value="">-- Ne pas changer --</option>
+            <option value="1">1 Écran</option>
+            <option value="2">2 Écrans</option>
+            <option value="4">4 Écrans</option>
+        </select>
+
+        <label style="display:flex; align-items:center; margin-top:15px; cursor:pointer;">
+            <input type="checkbox" id="reset-device" style="width:auto; margin-right:10px;">
+            Débloquer les appareils (Reset ID)
+        </label>
+
+        <button class="btn btn-blue" onclick="updateKey()" id="btn-update">METTRE À JOUR LE COMPTE</button>
+    </div>
+</div>
+
+<script>
+    // =========================================================
+    // NOUVEAU LIEN GOOGLE SCRIPT DEPLOYÉ (V39)
+    const API_URL = "https://script.google.com/macros/s/AKfycbxsj8vxAVwozzX339QAWTvy7sq4qP1nE8JWpeDXk57E27R9bf4kJ50DKR1aRFcbmG4RHw/exec";
+    // =========================================================
+
+    function switchTab(id) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        document.getElementById(id).classList.add('active');
+    }
+
+    function toggleCustomDays() {
+        const val = document.getElementById('duration-select').value;
+        document.getElementById('custom-days').style.display = (val === 'custom') ? 'block' : 'none';
+    }
+
+    async function createKey() {
+        let days = document.getElementById('duration-select').value;
+        if(days === 'custom') days = document.getElementById('custom-days').value;
+        const screens = document.getElementById('screens').value;
+        
+        if(!days) return alert("Choisissez une durée");
+
+        const btn = document.getElementById('btn-create');
+        btn.innerText = "Génération..."; btn.disabled = true;
+
+        try {
+            const res = await fetch(`${API_URL}?action=create_key&days=${days}&screens=${screens}`);
+            const text = await res.text();
+
+            if (text.includes("CREATED:")) {
+                const newKey = text.split(':')[1];
+                document.getElementById('created-code').innerText = newKey;
+                document.getElementById('result-create').style.display = 'block';
+                generateProPDF(newKey, days, screens);
+            } else { alert("Erreur: " + text); }
+        } catch (e) { alert("Erreur Connexion"); }
+        
+        btn.innerText = "GÉNÉRER & TÉLÉCHARGER PDF 🖨️"; btn.disabled = false;
+    }
+
+    async function updateKey() {
+        const key = document.getElementById('target-key').value.trim();
+        const days = document.getElementById('edit-days').value;
+        const screens = document.getElementById('edit-screens').value;
+        const reset = document.getElementById('reset-device').checked ? "yes" : "no";
+
+        if(!key) return alert("Entrez l'ID Client");
+
+        const btn = document.getElementById('btn-update');
+        btn.innerText = "Mise à jour..."; btn.disabled = true;
+
+        try {
+            const url = `${API_URL}?action=update_key&target=${encodeURIComponent(key)}&new_days=${days}&new_screens=${screens}&reset=${reset}`;
+            const res = await fetch(url);
+            const text = await res.text();
+            if(text.includes("SUCCESS")) alert("✅ Client mis à jour avec succès !");
+            else alert("❌ Erreur : ID introuvable ou erreur serveur");
+        } catch(e) { alert("Erreur Connexion"); }
+
+        btn.innerText = "METTRE À JOUR LE COMPTE"; btn.disabled = false;
+    }
+
+    // --- GENERATEUR PDF PRO A4 ---
+    function generateProPDF(key, days, screens) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF(); // A4 Portrait
+
+        // COULEURS
+        const rouge = [229, 9, 20];
+        const noir = [20, 20, 20];
+        const gris = [100, 100, 100];
+
+        // 1. EN-TÊTE
+        doc.setFillColor(...noir);
+        doc.rect(0, 0, 210, 40, 'F'); 
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(28);
+        doc.setFont("helvetica", "bold");
+        doc.text("MY BOX TV", 105, 20, null, null, "center");
+        doc.setFontSize(12);
+        doc.setTextColor(...rouge);
+        doc.text("CERTIFICAT D'ABONNEMENT OFFICIEL", 105, 30, null, null, "center");
+
+        // 2. LA CLÉ
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(14);
+        doc.text("VOTRE ID DE CONNEXION :", 105, 60, null, null, "center");
+        doc.setFillColor(240, 240, 240);
+        doc.setDrawColor(...rouge);
+        doc.rect(40, 65, 130, 25, 'FD');
+        doc.setFont("courier", "bold");
+        doc.setFontSize(30);
+        doc.setTextColor(...rouge);
+        doc.text(key, 105, 82, null, null, "center");
+
+        // 3. DETAILS
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text(`DUREE : ${days === "VIE" ? "ABONNEMENT A VIE" : days + " Jours"}`, 50, 105);
+        doc.text(`ECRANS AUTORISES : ${screens}`, 120, 105);
+
+        // 4. README
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, 115, 190, 115);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("COMMENT L'ACTIVER ?", 20, 125);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        const steps = [
+            "1. Connectez votre appareil à Internet (Wifi ou 4G).",
+            "2. Ouvrez l'application MY BOX TV sur votre Téléphone ou Smart TV.",
+            "3. Sur l'écran d'accueil, entrez votre ID ci-dessus.",
+            "4. Cliquez sur ENTRER. C'est tout ! Profitez de vos chaînes."
+        ];
+        let y = 135;
+        steps.forEach(step => {
+            doc.text(step, 20, y);
+            y += 8;
+        });
+
+        // 5. FONCTIONNALITES
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("VOS AVANTAGES PREMIUM", 20, 175);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        const features = [
+            "• +14.000 Chaînes Monde & Afrique",
+            "• Technologie Auto-Zap (Anti-Coupure)",
+            "• Qualité HD & 4K Automatique",
+            "• Mode Famille (Contrôle Parental)"
+        ];
+        y = 185;
+        features.forEach(feat => {
+            doc.text(feat, 20, y);
+            y += 7;
+        });
+
+        // 6. SUPPORT & CONDITIONS
+        doc.setFillColor(245, 245, 245);
+        doc.rect(0, 240, 210, 60, 'F');
+        doc.setTextColor(...rouge);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text("BESOIN D'AIDE ?", 105, 255, null, null, "center");
+        doc.setTextColor(0,0,0);
+        doc.setFontSize(12);
+        doc.text("Support WhatsApp 7j/7 : 63 82 87 67", 105, 265, null, null, "center");
+        doc.setFontSize(8);
+        doc.setTextColor(...gris);
+        const terms = "CONDITIONS D'UTILISATION : Cet abonnement est strictement personnel. Le partage de cet ID avec plus de personnes que le nombre d'écrans autorisés entraînera le blocage immédiat du compte sans remboursement. L'utilisation nécessite une connexion internet stable.";
+        doc.text(terms, 105, 280, {align: "center", maxWidth: 180});
+
+        doc.save(`Licence_MyBoxTV_${key}.pdf`);
+    }
+</script>
+
+</body>
+</html>
