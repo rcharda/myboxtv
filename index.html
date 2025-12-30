@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V30 Manager</title>
+    <title>My Box TV - V31 AutoStart</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -17,7 +17,6 @@
         #video-container { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         video { width: 100%; height: 100%; object-fit: contain; }
 
-        /* --- OVERLAYS --- */
         #brightness-overlay { pointer-events: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; z-index: 50; transition: opacity 0.2s; }
         
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -25,7 +24,6 @@
         .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 20px; text-align: center; text-transform: uppercase; }
         .btn-red { background: #e50914; color: white; padding: 15px; width: 100%; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer; }
         
-        /* --- SIDEBAR --- */
         #sidebar { width: 350px; background: #111; display: flex; flex-direction: column; border-left: 1px solid #333; z-index: 20; transition: transform 0.3s; }
         .brand-header { padding: 15px; background: #1a1a1a; border-bottom: 2px solid #e50914; display: flex; align-items: center; gap: 10px; }
         .brand-logo { width: 50px; }
@@ -39,7 +37,6 @@
         .channel-item.active { background: #e50914; color: white; }
         .tv-icon { width: 40px; height: 40px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; margin-right: 10px; }
 
-        /* --- CONTROL BAR --- */
         #control-bar {
             height: 70px; background: #111; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-around; padding: 0 5px;
         }
@@ -49,10 +46,8 @@
         }
         .ctrl-btn:active { transform: scale(0.9); background: #e50914; }
         .ctrl-btn.active-mode { background: #e50914; border-color: #fff; box-shadow: 0 0 10px #e50914; animation: pulse 2s infinite; }
-        
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
 
-        /* --- MENU MODAL --- */
         #menu-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; }
         .menu-content { background: #1a1a1a; width: 90%; max-width: 500px; border-radius: 10px; padding: 20px; border: 1px solid #444; }
         .menu-item { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
@@ -61,7 +56,6 @@
         .menu-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #e50914; border-radius: 50%; cursor: pointer; }
         .menu-btn-full { width: 100%; padding: 12px; margin-top: 5px; background: #333; border: none; color: white; border-radius: 5px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; }
 
-        /* --- STATUS --- */
         #status-pill { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 12px; pointer-events: none; z-index: 60; border: 1px solid #444; display: flex; align-items: center; gap: 8px;}
         #led { width: 10px; height: 10px; background: red; border-radius: 50%; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
@@ -79,7 +73,7 @@
 <div id="login-overlay">
     <div class="login-box">
         <h2 style="color:white; margin-bottom:5px;">MY BOX TV</h2>
-        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V30 MANAGER</div>
+        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V31 AUTOSTART</div>
         <input type="text" id="licenseKey" class="login-input" placeholder="ID ABONNEMENT">
         <button onclick="login()" class="btn-red" id="btnLogin">ENTRER</button>
         <div id="login-msg" style="margin-top:10px; color:red;"></div>
@@ -130,11 +124,8 @@
 
     <div id="control-bar">
         <div class="ctrl-btn" onclick="openMenu()"><i class="fas fa-bars"></i></div>
-        
         <div class="ctrl-btn" onclick="hideCurrentChannel()" style="color:#ff4444; border-color:#ff4444;"><i class="fas fa-trash"></i></div>
-        
         <div class="ctrl-btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></div>
-        
         <div class="ctrl-btn" onclick="prevChannel()"><i class="fas fa-step-backward"></i></div>
         <div class="ctrl-btn" id="btn-autozap" onclick="toggleAutoZap()" style="border: 2px solid #555;">
             <i class="fas fa-magic"></i>
@@ -163,6 +154,13 @@
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
     
+    // --- CHAINE PAR DEFAUT (STARTUP) ---
+    const DEFAULT_START_CHANNEL = {
+        name: "Novelas TV (Séries)",
+        url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8",
+        logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png"
+    };
+
     const video = document.getElementById('video');
     const listContainer = document.getElementById('channel-list');
     const statusText = document.getElementById('status-text');
@@ -177,9 +175,8 @@
     let deviceId = localStorage.getItem('mybox_device_id') || 'DEV-'+Math.random().toString(36).substr(2,9).toUpperCase();
     localStorage.setItem('mybox_device_id', deviceId);
     let dynamicSources = [];
-    
-    // NOUVEAU : Liste des chaines cachées (supprimées manuellement)
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
+    
     document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
 
     // --- INITIALISATION ---
@@ -218,7 +215,9 @@
     }
 
     async function initApp() {
-        loadCache();
+        // CHARGEMENT RAPIDE
+        startScan(true); // true = force reset pour mettre la chaine par défaut en premier
+
         statusText.innerText = "MAJ Sources...";
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
@@ -230,21 +229,33 @@
             serverSources.forEach(s => s.includes("index.m3u") ? big.push(s) : small.push(s));
             dynamicSources = [...localSources, ...small, ...big];
             
-            startScan();
+            continueScan(); // Continue de scanner les autres listes
         } catch(e) {
             console.log("Offline");
             dynamicSources = ["https://iptv-org.github.io/iptv/index.m3u"];
-            startScan();
+            continueScan();
         }
     }
 
     // --- SCAN ---
     async function startScan(force = false) {
-        if(force) { listContainer.innerHTML = ""; allChannels = []; }
-        statusText.innerText = "Scan en cours...";
+        if(force) { 
+            listContainer.innerHTML = ""; 
+            allChannels = [];
+            // AJOUT IMMEDIAT DE LA CHAINE PAR DEFAUT
+            allChannels.push(DEFAULT_START_CHANNEL);
+            renderChannels([DEFAULT_START_CHANNEL]);
+            
+            // LECTURE AUTOMATIQUE IMMEDIATE
+            setTimeout(() => playChannel(0), 500); 
+        }
+    }
+
+    async function continueScan() {
+        statusText.innerText = "Chargement liste...";
         led.className = "";
         for(let src of dynamicSources) await fetchPlaylist(src);
-        statusText.innerText = "Terminé";
+        statusText.innerText = DEFAULT_START_CHANNEL.name; // Remet le nom de la chaine en cours
         led.className = "green";
     }
 
@@ -263,7 +274,6 @@
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
-                        // Si la chaine n'est PAS dans la liste des supprimées, on l'ajoute
                         if(!hiddenChannels.includes(ch.url)) {
                             allChannels.push(ch);
                             batch.push(ch);
@@ -272,14 +282,15 @@
                     }
                 }
             }
-            if(batch.length > 0) { renderChannels(batch); saveCache(); }
+            if(batch.length > 0) { renderChannels(batch); }
         } catch(e) {}
     }
 
     function renderChannels(channels) {
         const frag = document.createDocumentFragment();
-        channels.forEach((ch, idx) => {
-            const globalIdx = allChannels.indexOf(ch);
+        channels.forEach((ch) => {
+            // Attention: on recalcule l'index car allChannels grandit
+            const globalIdx = allChannels.indexOf(ch); 
             const div = document.createElement('div');
             div.className = 'channel-item';
             div.id = 'ch-' + globalIdx;
@@ -291,40 +302,26 @@
         document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
     }
 
-    // --- GESTION DES SUPPRESSIONS MANUELLES ---
     function hideCurrentChannel() {
         if(currentChannelIndex < 0 || currentChannelIndex >= allChannels.length) return;
-        
         const ch = allChannels[currentChannelIndex];
-        if(confirm("Supprimer définitivement " + ch.name + " de votre liste ?")) {
-            // Ajouter aux cachés
+        if(confirm("Supprimer " + ch.name + " ?")) {
             hiddenChannels.push(ch.url);
             localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
             document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
-            
-            // Retirer visuellement
             const row = document.getElementById('ch-' + currentChannelIndex);
             if(row) row.style.display = 'none';
-            
-            // Passer à la suivante
             nextChannel();
-            
-            // Mettre à jour la liste active
-            allChannels.splice(currentChannelIndex, 1); // Optionnel mais plus propre
-            // On recharge pas tout pour garder la fluidité
         }
     }
 
     function restoreHidden() {
-        if(confirm("Voulez-vous restaurer toutes les chaînes supprimées ?")) {
+        if(confirm("Restaurer tout ?")) {
             localStorage.removeItem('mybox_hidden');
-            hiddenChannels = [];
-            alert("Chaînes restaurées ! L'application va redémarrer.");
             location.reload();
         }
     }
 
-    // --- PLAYER ---
     function playChannel(index) {
         if(index < 0 || index >= allChannels.length) return;
         currentChannelIndex = index;
@@ -342,7 +339,17 @@
             hls = new Hls({ enableWorker:true, lowLatencyMode:true });
             hls.loadSource(ch.url);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play(); led.className = "green"; clearTimeout(autoZapTimeout); });
+            hls.on(Hls.Events.MANIFEST_PARSED, () => { 
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        led.className = "green";
+                    }).catch(error => {
+                        console.log("Autoplay bloqué par le navigateur (il faut un clic)");
+                    });
+                }
+                clearTimeout(autoZapTimeout); 
+            });
             hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) handleStreamError(index); });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = ch.url;
@@ -353,31 +360,20 @@
         if(isAutoZap) {
             autoZapTimeout = setTimeout(() => {
                 if(video.paused || video.readyState < 2) handleStreamError(index);
-            }, 5000); // 5 sec pour l'auto zap
+            }, 5000);
         }
     }
     
     let autoZapTimeout;
     function handleStreamError(failedIndex) {
         led.className = "";
-        // PLUS DE BANNISSEMENT AUTO (Comme demandé)
-        // Juste Auto-Zap si activé
-        if(isAutoZap) { 
-            statusText.innerText = "Zap Auto..."; 
-            setTimeout(nextChannel, 500); 
-        } else { 
-            statusText.innerText = "Erreur Flux (Internet?)"; 
-        }
+        if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 500); }
+        else { statusText.innerText = "Erreur Flux"; }
     }
 
-    // --- COMMANDES ---
     function nextChannel() { playChannel(currentChannelIndex + 1); }
     function prevChannel() { playChannel(currentChannelIndex - 1); }
-    
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else if (document.exitFullscreen) document.exitFullscreen();
-    }
+    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     
     function toggleAutoZap() {
         isAutoZap = !isAutoZap;
@@ -386,7 +382,6 @@
         else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; }
     }
 
-    // --- MENU ---
     function openMenu() { document.getElementById('menu-modal').style.display = 'flex'; }
     function closeMenu() { document.getElementById('menu-modal').style.display = 'none'; }
     function setBrightness(val) { overlay.style.opacity = val; }
@@ -402,19 +397,12 @@
         }
     }
 
-    // --- SUPPORT CLAVIER ---
     document.addEventListener('keydown', (e) => {
         if(document.getElementById('login-overlay').style.display !== 'none') return;
         switch(e.key) {
-            case 'ArrowUp': 
-            case 'ChannelUp':
-                nextChannel(); break;
-            case 'ArrowDown': 
-            case 'ChannelDown':
-                prevChannel(); break;
-            case 'Enter':
-            case 'OK':
-                toggleFullScreen(); break;
+            case 'ArrowUp': case 'ChannelUp': nextChannel(); break;
+            case 'ArrowDown': case 'ChannelDown': prevChannel(); break;
+            case 'Enter': case 'OK': toggleFullScreen(); break;
         }
     });
 
@@ -424,9 +412,6 @@
         const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
         renderChannels(filtered);
     });
-
-    function saveCache() { try { localStorage.setItem('mybox_cache_v30', JSON.stringify(allChannels.slice(0,500))); } catch(e){} }
-    function loadCache() { const c = localStorage.getItem('mybox_cache_v30'); if(c) { allChannels = JSON.parse(c); renderChannels(allChannels); } }
 </script>
 </body>
 </html>
