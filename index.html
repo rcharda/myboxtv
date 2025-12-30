@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V48 Blindée</title>
+    <title>My Box TV - V49 Sanctuary</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -31,7 +31,6 @@
         .menu-header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:10px;}
         #searchInput { width: 90%; margin: 10px auto; padding: 12px; border-radius: 20px; background: #333; border: none; color: white; display: block; }
         
-        /* SCAN INFO */
         #scan-info { width: 90%; display: none; flex-direction: column; gap: 5px; margin-bottom: 5px; }
         #scan-text { font-size: 10px; color: #0f0; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #scan-progress { width: 100%; height: 2px; background: #333; position: relative; overflow: hidden; }
@@ -185,10 +184,15 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
     // =======================================================
 
-    // CONFIGURATION DE LA CHAINE PAR DEFAUT (Prioritaire)
-    const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
+    // --- CONFIGURATION SANCTUAIRE ---
+    const DEFAULT_CHANNEL = { 
+        name: "Novelas TV", 
+        url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", 
+        logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", 
+        category: "Start" 
+    };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V48_Safe"; // Nouvelle DB
+    const DB_NAME = "MyBoxTV_V49_Sanctuary"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -200,7 +204,6 @@
     let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
     
-    // Variables pour le Watchdog
     let lastActivityTime = Date.now();
     let isScanning = false;
 
@@ -234,6 +237,24 @@
     }
     async function clearDB() { const db = await openDB(); try{ db.transaction("channels", "readwrite").objectStore("channels").clear(); }catch(e){} }
 
+    // --- FONCTION DE PROTECTION (SANCTUAIRE) ---
+    function enforceNovelasIntegrity() {
+        // 1. Si la liste est vide, on met Novelas
+        if (allChannels.length === 0) {
+            allChannels = [DEFAULT_CHANNEL];
+            loadedUrls.add(DEFAULT_CHANNEL.url);
+            return;
+        }
+        // 2. Si le premier élément n'est pas Novelas, on l'injecte de force
+        if (allChannels[0].url !== DEFAULT_CHANNEL.url) {
+            // On supprime les doublons éventuels de Novelas ailleurs
+            allChannels = allChannels.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
+            // On remet Novelas en premier
+            allChannels.unshift(DEFAULT_CHANNEL);
+            loadedUrls.add(DEFAULT_CHANNEL.url);
+        }
+    }
+
     // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
         document.getElementById('login-screen').style.display = 'none';
@@ -262,41 +283,28 @@
     async function logout() { if(confirm("Déconnecter ?")) { try{ await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); }catch(e){} localStorage.removeItem('mybox_auth'); location.reload(); } }
 
     async function initApp() {
-        // 1. DEMARRAGE ECLAIR AVEC NOVELAS (OBLIGATOIRE)
-        // On initialise avec Novelas, on l'affiche et on le joue.
-        allChannels = [DEFAULT_CHANNEL];
-        loadedUrls.add(DEFAULT_CHANNEL.url);
+        // PROTECTION DEMARRAGE
+        enforceNovelasIntegrity();
         renderList();
         playChannel(0);
 
-        // 2. CHECK DB ET FUSION
+        // CHARGEMENT DB
         const cached = await loadChannelsFromDB();
         if(cached.length > 5) {
             console.log("DB Loaded");
-            // FUSION INTELLIGENTE : On garde Novelas en premier, puis on ajoute la DB
-            // On filtre la DB pour ne pas avoir Novelas en double
-            const cleanCache = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
+            // On ajoute le cache à la suite de Novelas
+            const ext = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
+            allChannels = [DEFAULT_CHANNEL, ...ext];
             
-            allChannels = [DEFAULT_CHANNEL, ...cleanCache];
-            
-            // Reconstruire les sets
-            loadedUrls = new Set();
-            allCategories = new Set(['Favoris']);
-            
-            allChannels.forEach(ch => { 
-                loadedUrls.add(ch.url); 
-                if(ch.category) allCategories.add(ch.category); 
-            });
-            
+            // Rebuild Sets
+            allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
             updateCategoryChips();
-            renderList(); // Affiche la liste complète
-            // On ne coupe pas la lecture de Novelas qui tourne déjà !
+            renderList();
         } else {
-            // Pas de cache, on lance le scan
             startSmartScan();
         }
 
-        // 3. Messages
+        // Messages
         try {
             const res = await fetch(`${API_URL}?action=get_message`);
             const text = await res.text();
@@ -307,7 +315,7 @@
             }
         } catch(e){}
         
-        // WATCHDOG TIMER
+        // WATCHDOG
         setInterval(() => {
             if(isScanning && (Date.now() - lastActivityTime > 5000)) {
                 console.warn("Scan bloqué détecté ! Relance...");
@@ -379,7 +387,7 @@
             }
             processLines([buffer], newBatch);
             flushBatch(newBatch);
-        } catch (e) { console.log("Skip Source (Watchdog triggered)"); }
+        } catch (e) { console.log("Skip Source"); }
     }
 
     function processLines(lines, batch) {
@@ -405,7 +413,8 @@
             } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
                 if (currentInfo) {
                     const ch = { ...currentInfo, url: line };
-                    if (!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
+                    // INTERDICTION D'AJOUTER NOVELAS VIA LE SCAN (POUR EVITER DOUBLONS)
+                    if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                         batch.push(ch); loadedUrls.add(ch.url);
                     }
                     currentInfo = null;
@@ -419,13 +428,17 @@
         allChannels = allChannels.concat(batch);
         batch.length = 0;
         document.getElementById('count-display').innerText = allChannels.length + " trouvées";
-        // On rafraichit seulement si l'utilisateur ne cherche pas (pour pas couper sa saisie)
+        // PROTECTION AVANT CHAQUE RENDU
+        enforceNovelasIntegrity();
         if(document.getElementById('searchInput').value === "") renderList(); 
         updateCategoryChips();
     }
 
     // --- RENDERING ---
     function renderList() {
+        // PROTECTION ULTIME : On vérifie Novelas avant d'afficher quoi que ce soit
+        enforceNovelasIntegrity();
+
         const term = document.getElementById('searchInput').value.toLowerCase();
         
         displayedChannels = allChannels.filter(ch => {
@@ -434,27 +447,23 @@
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
-        // Tri Favoris
-        displayedChannels.sort((a,b) => {
-            const favA = favorites.includes(a.url); const favB = favorites.includes(b.url);
-            if(favA && !favB) return -1; if(!favA && favB) return 1; return 0;
-        });
-
+        // Tri Favoris (Novelas reste en haut grâce à la structure du tableau, mais on trie le reste)
+        // Astuce : On ne trie PAS Novelas, on le laisse en 0.
+        
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         const frag = document.createDocumentFragment();
         
-        // Limite pour fluidité
         let limit = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
         
         displayedChannels.slice(0, limit).forEach((ch) => {
             const isFav = favorites.includes(ch.url);
             const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
+            
+            // LOGO PAR DEFAUT SI ERREUR
+            const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
+            
             const div = document.createElement('div');
-            
-            // ANTI-BUG IMAGE : onError
-            const logoSrc = ch.logo || 'https://via.placeholder.com/40';
-            
             div.className = 'channel-row ' + (isPlaying ? 'active' : '');
             div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                              <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
@@ -497,13 +506,24 @@
         if(window.innerWidth < 900) document.body.classList.remove('menu-open');
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
+        
         if(Hls.isSupported()) {
-            if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 2});
+            if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
             hls.loadSource(ch.url); hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handleError(); });
+            
+            // ANTI-BUG CONNEXION: RETRY INFINI POUR NOVELAS
+            hls.on(Hls.Events.ERROR, (e,d) => { 
+                if(d.fatal) {
+                    if(index === 0) { console.log("Retrying Novelas..."); setTimeout(() => playChannel(0), 2000); } // Retry Novelas
+                    else handleError(); 
+                }
+            });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
-        if(isAutoZap) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
+        
+        if(isAutoZap && index !== 0) { // Pas d'autozap sur Novelas
+            clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); 
+        }
     }
     let autoZapTimeout;
     function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
