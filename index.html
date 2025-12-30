@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Décodeur Pro</title>
+    <title>My Box TV - Décodeur V62</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -28,32 +28,28 @@
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
 
-        .menu-header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:10px;}
-        #searchInput { width: 90%; margin: 10px auto; padding: 12px; border-radius: 20px; background: #333; border: none; color: white; display: block; }
+        .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
+        #searchInput { width: 95%; margin: 5px auto; padding: 10px; border-radius: 5px; background: #333; border: none; color: white; display: block; font-size: 14px; }
         
-        /* BOUTON VERS LA PAGE WEB (AJOUT) */
-        .btn-web-link {
-            width: 90%; padding: 12px; margin: 5px auto 15px auto;
-            background: linear-gradient(90deg, #003366 0%, #0055a5 100%);
-            border: 1px solid #0077e6; color: white; border-radius: 8px;
-            cursor: pointer; font-weight: bold; font-size: 13px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s;
-        }
-        .btn-web-link:active { transform: scale(0.95); }
-        
+        /* BARRE DE FILTRES COMPACTE */
+        .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
+        .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
+        .btn-mini.active { background: #333; color: white; border-color: #666; }
+        .btn-mini:active { transform: scale(0.98); }
+        .btn-local { background: linear-gradient(45deg, #e50914, #900); color: white; border: none; }
+
         #scan-info { width: 90%; display: none; flex-direction: column; gap: 5px; margin-bottom: 5px; }
         #scan-text { font-size: 10px; color: #0f0; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #scan-progress { width: 100%; height: 2px; background: #333; position: relative; overflow: hidden; }
         #scan-bar { position: absolute; left: 0; top: 0; height: 100%; width: 50%; background: #0f0; animation: scanAnim 1s infinite linear; }
         @keyframes scanAnim { 0% {left: -50%;} 100% {left: 100%;} }
 
-        #channel-list { flex: 1; overflow-y: auto; padding: 5px; width:100%; }
-        .channel-row { display: flex; align-items: center; padding: 10px; margin: 2px 0; border-radius: 8px; cursor: pointer; contain: content; }
+        #channel-list { flex: 1; overflow-y: auto; padding: 0; width:100%; }
+        .channel-row { display: flex; align-items: center; padding: 10px 15px; margin: 0; border-bottom: 1px solid #222; cursor: pointer; contain: content; }
         .channel-row:hover { background: #222; }
-        .channel-row.active { background: rgba(229,9,20,0.3); border-left: 3px solid var(--primary); }
-        .ch-logo { width: 40px; height: 40px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; margin-right: 10px; }
-        .fav-icon { color: #444; padding: 5px; margin-right: 5px; font-size: 14px; }
+        .channel-row.active { background: rgba(229,9,20,0.2); border-left: 3px solid var(--primary); }
+        .ch-logo { width: 35px; height: 35px; object-fit: contain; background: #fff; padding: 2px; border-radius: 3px; margin-right: 10px; }
+        .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; }
@@ -162,7 +158,7 @@
     </div>
 </div>
 
-<div id="video-layer"><video id="video" onclick="toggleMenu()" playsinline></video></div>
+<div id="video-layer"><video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous"></video></div>
 
 <div id="ui-layer">
     <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
@@ -186,14 +182,17 @@
             </div>
         </div>
         
-        <button class="btn-web-link" onclick="window.location.href='en_direct.html'">
-            <i class="fas fa-globe"></i> CHAINES WEB (ORTB/CANAL3)
-        </button>
-
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
-        <div style="padding:10px; border-bottom:1px solid #333;">
-            <button onclick="toggleOnlyFavorites()" id="btn-fav-filter" style="width:100%; background:#222; color:white; border:1px solid #444; padding:8px; border-radius:5px;"><i class="fas fa-star" style="color:gold;"></i> Favoris</button>
+        
+        <div class="filter-bar">
+            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
+                <i class="fas fa-star" style="color:gold;"></i> Favoris
+            </button>
+            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
+                <i class="fas fa-map-marker-alt"></i> Chaînes Locales
+            </button>
         </div>
+
         <div id="channel-list"></div>
     </div>
 
@@ -216,7 +215,7 @@
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V51_Sat"; 
+    const DB_NAME = "MyBoxTV_V62_Final"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -363,7 +362,6 @@
         } catch (e) { console.log("Skip"); }
     }
 
-    // --- FILTRE DE SCURITÉ POUR L'INDEX ---
     function processLines(lines, batch) {
         let currentInfo = null;
         for (let line of lines) {
@@ -380,8 +378,7 @@
                 currentInfo = { name: name, logo: logo, category: cat }; allCategories.add(cat);
             } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
                 if (currentInfo) {
-                    // ICI : ON REFUSE LES LIENS QUI NE SONT PAS DE LA VIDÉO
-                    // Si ce n'est pas .m3u8 / .ts / .mp4 / .mkv, on l'ignore (ça ira dans en_direct.html)
+                    // FILTRE : UNIQUEMENT LES VRAIES VIDEOS
                     if (line.includes('.m3u8') || line.includes('.ts') || line.includes('.mp4') || line.includes('.mkv')) {
                         const ch = { ...currentInfo, url: line };
                         if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
@@ -450,7 +447,7 @@
     function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
-    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222'; renderList(); }
+    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
 
     function tryPlayChannel(ch) {
         const name = ch.name.toLowerCase();
