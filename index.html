@@ -13,33 +13,16 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* VIDEO LAYER */
         #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: contain; }
-
-        /* UI LAYER */
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        /* STATUS PILL (BULLE INFO) */
-        #status-pill {
-            position: absolute; top: 20px; right: 20px; 
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            padding: 8px 15px; border-radius: 20px; border: 1px solid #444;
-            font-size: 12px; color: #fff; z-index: 60; 
-            display: flex; align-items: center; gap: 8px; pointer-events: none;
-        }
+        #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 8px; pointer-events: none; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
 
-        /* MENU LATERAL */
-        #channel-menu {
-            position: fixed; top: 0; left: 0; width: 350px; height: 100%; 
-            background: var(--glass); backdrop-filter: blur(15px);
-            transform: translateX(-100%); transition: transform 0.3s;
-            display: flex; flex-direction: column; z-index: 100; pointer-events: auto;
-            border-right: 1px solid #333;
-        }
+        #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
 
         .menu-header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center;}
@@ -53,40 +36,18 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 5px; font-size: 14px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
-        /* BARRE DE CONTROLE */
-        #bottom-bar {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px);
-            padding: 8px 15px; border-radius: 40px; border: 1px solid #333;
-            display: flex; gap: 10px; align-items: center; z-index: 90;
-            pointer-events: auto; width: auto; max-width: 98%;
-            justify-content: space-between; flex-wrap: nowrap; overflow-x: auto;
-        }
-        .btn-ctrl {
-            width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white;
-            border: none; display: flex; align-items: center; justify-content: center;
-            font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s;
-        }
+        #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; }
+        .btn-ctrl { width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
         .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); animation: pulse 2s infinite; }
         .btn-large { width: 55px; height: 55px; font-size: 22px; background: var(--primary); border: 2px solid white; box-shadow: 0 0 10px rgba(229,9,20,0.5); }
-
-        /* ELEMENTS CACHÉS SUR MOBILE */
         .desktop-only { display: flex; }
-        @media (max-width: 600px) {
-            .desktop-only { display: none; }
-            #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; }
-            .btn-ctrl { width: 40px; height: 40px; font-size: 16px; }
-            .btn-large { width: 48px; height: 48px; font-size: 20px; }
-            #channel-menu { width: 85%; }
-        }
+        @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
 
-        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .pin-input { font-size: 30px; letter-spacing: 10px; width: 150px; text-align: center; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; margin: 20px 0; }
 
-        /* SETTINGS STYLE */
         .settings-panel { background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh; border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden; }
         .settings-sidebar { width: 200px; background: #111; padding: 20px; border-right: 1px solid #333; }
         .settings-tab { padding: 15px; cursor: pointer; color: #888; font-weight: 600; border-radius: 8px; margin-bottom: 5px; }
@@ -98,7 +59,6 @@
         .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
         @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
 
-        /* MESSAGE ADMIN */
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
@@ -172,12 +132,8 @@
 </div>
 
 <div id="ui-layer">
+    <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
     
-    <div id="status-pill">
-        <div id="led"></div>
-        <span id="status-text">Prêt</span>
-    </div>
-
     <div id="channel-menu">
         <div class="menu-header">
             <div>
@@ -214,8 +170,8 @@
 
 <script>
     // =======================================================
-    // TON NOUVEAU LIEN :
-    const API_URL = "https://script.google.com/macros/s/AKfycbwQCnmfYQKoRjpkVtShj0JgE7iaDlwdQz0qkXmYNvOaSG7F4MW_qEAXvWs_LAWNMAQK6A/exec";
+    // TON LIEN DE DEPLOIEMENT V39
+    const API_URL = "https://script.google.com/macros/s/AKfycbxsj8vxAVwozzX339QAWTvy7sq4qP1nE8JWpeDXk57E27R9bf4kJ50DKR1aRFcbmG4RHw/exec";
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
@@ -240,7 +196,6 @@
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
         document.getElementById('login-screen').style.display = 'none';
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status'));
@@ -330,7 +285,7 @@
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
-                        // ADDITIVE SCAN: On n'ajoute que si c'est nouveau
+                        // ADDITIVE SCAN
                         if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                             allChannels.push(ch);
                             loadedUrls.add(ch.url);
