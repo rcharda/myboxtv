@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V50 Pro</title>
+    <title>My Box TV - V51 Decoder</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -73,6 +73,10 @@
         
         .app-logo { max-width: 150px; margin-bottom: 20px; }
         #maint-screen { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+        
+        .tp-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #333; margin-bottom: 5px; border-radius: 5px; }
+        .tp-name { color: white; font-weight: bold; }
+        .tp-checkbox { width: 20px; height: 20px; accent-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -100,26 +104,31 @@
     <div class="settings-panel">
         <div class="settings-sidebar">
             <div style="font-weight:bold; margin-bottom:20px; color:var(--primary)">RÉGLAGES</div>
-            <div class="settings-tab active" onclick="showTab('tab-cat')">Groupes</div>
-            <div class="settings-tab" onclick="showTab('tab-source')">Sources</div>
+            <div class="settings-tab active" onclick="showTab('tab-inst')">Installation</div>
+            <div class="settings-tab" onclick="showTab('tab-cat')">Groupes</div>
             <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
-            <div class="settings-tab" onclick="forceReload()" style="color:#28a745; margin-top:20px;">Recharger Liste</div>
-            <div class="settings-tab" onclick="closeSettings()" style="color:#ff4444; margin-top:10px;">Fermer ✕</div>
+            <div class="settings-tab" onclick="forceReload()" style="color:#ff4444; margin-top:20px;">Réinitialiser TV</div>
+            <div class="settings-tab" onclick="closeSettings()" style="color:#888; margin-top:10px;">Fermer ✕</div>
         </div>
         <div class="settings-content">
-            <div id="tab-cat" class="tab-content">
+            <div id="tab-inst" class="tab-content">
+                <h3 style="color:#e50914;"><i class="fas fa-satellite-dish"></i> SATELLITE / IPTV</h3>
+                <p style="color:#aaa; font-size:12px;">Cochez les transpondeurs à scanner.</p>
+                <div id="transponder-list">
+                    <div style="text-align:center; padding:20px;">Chargement des sources...</div>
+                </div>
+                <button onclick="scanSelectedTransponders()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold; font-size:16px; margin-top:20px;">
+                    <i class="fas fa-search"></i> LANCER LE BALAYAGE
+                </button>
+            </div>
+
+            <div id="tab-cat" class="tab-content" style="display:none;">
                 <h3>Dossiers</h3>
-                <p style="color:#888; font-size:12px;">Cliquez pour filtrer. Si rien n'est sélectionné, tout s'affiche.</p>
                 <button onclick="resetFilters()" style="width:100%; background:#444; padding:10px; margin-bottom:15px; border:none; color:white; border-radius:5px;">🔄 TOUT AFFICHER</button>
                 <div id="chips-area" class="chips-container"></div>
                 <button onclick="applyFilters()" style="margin-top:20px; width:100%; background:var(--primary); border:none; color:white; padding:10px; border-radius:5px;">Valider</button>
             </div>
-            <div id="tab-source" class="tab-content" style="display:none;">
-                <h3>Sources</h3>
-                <input type="text" id="custom-source" class="input-dark" placeholder="http://...">
-                <button onclick="addSource()" style="margin-top:10px; background:#28a745; border:none; color:white; padding:10px; border-radius:5px;">Ajouter</button>
-                <button onclick="resetSources()" style="margin-top:10px; background:#444; border:none; color:white; padding:10px; border-radius:5px;">Reset</button>
-            </div>
+
             <div id="tab-sub" class="tab-content" style="display:none;">
                 <h3>Abonnement</h3>
                 <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
@@ -152,7 +161,10 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:100px;">
             <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                 <div style="text-align:left; width:100%;">
-                    <div style="font-size:14px; font-weight:bold;">CHAÎNES</div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
+                        <i class="fas fa-sync-alt" onclick="quickScan()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recherche Rapide"></i>
+                    </div>
                     <div style="font-size:10px; color:#888;" id="count-display">0 trouvées</div>
                     <div id="scan-info">
                         <div id="scan-text">En attente...</div>
@@ -183,12 +195,13 @@
 
 <script>
     // =======================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
+    // NOUVEAU LIEN GOOGLE SCRIPT DEPLOYÉ (V51)
+    const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V50_Final"; 
+    const DB_NAME = "MyBoxTV_V51_Sat"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -200,6 +213,7 @@
     let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
     
+    let availableTransponders = []; 
     let lastActivityTime = Date.now();
     let isScanning = false;
 
@@ -237,6 +251,7 @@
 
     async function initApp() {
         enforceNovelasIntegrity(); renderList(); playChannel(0);
+        
         const cached = await loadChannelsFromDB();
         if(cached.length > 5) {
             console.log("DB Loaded");
@@ -244,7 +259,10 @@
             allChannels = [DEFAULT_CHANNEL, ...ext];
             allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
             updateCategoryChips(); renderList();
-        } else { startSmartScan(); }
+        } 
+        
+        fetchTranspondersList();
+
         try {
             const res = await fetch(`${API_URL}?action=get_message`); const text = await res.text();
             if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
@@ -253,25 +271,62 @@
         setInterval(() => { if(isScanning && (Date.now() - lastActivityTime > 5000)) lastActivityTime = Date.now(); }, 1000);
     }
 
-    async function startSmartScan() {
-        document.getElementById('scan-info').style.display = "flex";
+    async function fetchTranspondersList() {
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
-            let raw = (await res.text()).replace("PLAYLISTS:","");
-            let sources = raw.split(",,,");
-            sources.sort((a, b) => {
-                if (a.includes("Backup")) return -1; if (b.includes("Backup")) return 1;
-                if (a.includes("index.m3u")) return 1; if (b.includes("index.m3u")) return -1; return 0;
-            });
-            isScanning = true;
-            for(let i=0; i<sources.length; i++) {
-                if(sources[i].startsWith("http")) {
-                    document.getElementById('scan-text').innerText = `Scan ${i+1}/${sources.length}...`;
-                    await fetchPlaylistWithWatchdog(sources[i]);
-                }
+            const json = await res.json();
+            availableTransponders = json;
+            renderTranspondersUI();
+            
+            if(allChannels.length < 5) {
+                availableTransponders.forEach((tp, i) => {
+                    setTimeout(() => fetchPlaylistWithWatchdog(tp.url), i * 1000);
+                });
             }
-            isScanning = false; document.getElementById('scan-info').style.display = "none"; saveChannelsToDB(allChannels);
-        } catch(e) { console.log("Scan Error", e); }
+        } catch(e) { console.log("TP Error", e); }
+    }
+
+    function renderTranspondersUI() {
+        const container = document.getElementById('transponder-list');
+        container.innerHTML = "";
+        if(availableTransponders.length === 0) { container.innerHTML = "Aucun signal détecté."; return; }
+        availableTransponders.forEach((tp, idx) => {
+            const div = document.createElement('div');
+            div.className = "tp-item";
+            div.innerHTML = `<span class="tp-name">${tp.name}</span><input type="checkbox" class="tp-checkbox" value="${tp.url}" checked>`;
+            container.appendChild(div);
+        });
+    }
+
+    async function scanSelectedTransponders() {
+        const checkboxes = document.querySelectorAll('.tp-checkbox:checked');
+        if(checkboxes.length === 0) return alert("Sélectionnez au moins un transpondeur.");
+        document.getElementById('settings-modal').style.display = 'none'; 
+        document.getElementById('scan-info').style.display = "flex";
+        isScanning = true;
+        for (let i = 0; i < checkboxes.length; i++) {
+            const url = checkboxes[i].value;
+            document.getElementById('scan-text').innerText = `Balayage TP ${i+1}/${checkboxes.length}...`;
+            await fetchPlaylistWithWatchdog(url);
+        }
+        isScanning = false;
+        document.getElementById('scan-info').style.display = "none";
+        saveChannelsToDB(allChannels);
+        alert("Balayage terminé !");
+    }
+
+    async function quickScan() {
+        if(isScanning) return;
+        if(!confirm("Rechercher les nouvelles chaînes maintenant ?")) return;
+        document.getElementById('scan-info').style.display = "flex";
+        isScanning = true;
+        for(let tp of availableTransponders) {
+            document.getElementById('scan-text').innerText = "Recherche Rapide...";
+            await fetchPlaylistWithWatchdog(tp.url);
+        }
+        isScanning = false;
+        document.getElementById('scan-info').style.display = "none";
+        saveChannelsToDB(allChannels);
     }
 
     async function fetchPlaylistWithWatchdog(url) {
@@ -332,20 +387,14 @@
         const term = document.getElementById('searchInput').value.toLowerCase();
         
         displayedChannels = allChannels.filter(ch => {
-            // FIX V50: Si selectedCategories est vide, on affiche tout.
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
-            
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
-        // On ne trie pas pour ne pas perdre Novelas du top, sauf si on trie le sous-ensemble après Novelas
-        // Ici on garde l'ordre naturel (Novelas first, then DB/Scan order)
-        
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         const frag = document.createDocumentFragment();
-        
         let limit = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
         
         displayedChannels.slice(0, limit).forEach((ch) => {
@@ -377,7 +426,7 @@
     
     document.getElementById('searchInput').addEventListener('input', renderList);
     function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
-    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); } // BOUTON RESET
+    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
     function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222'; renderList(); }
