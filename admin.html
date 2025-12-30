@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel V40</title>
+    <title>Admin - My Box TV V41</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; margin: 0; }
@@ -11,7 +12,7 @@
         /* LOGIN */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; }
         .login-box { background: #1e1e1e; padding: 40px; border-radius: 10px; border: 1px solid #333; text-align: center; }
-        input { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; width: 200px; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; margin: 5px 0; }
         button { padding: 10px 20px; background: #e50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         button:hover { background: #ff0f1f; }
 
@@ -24,7 +25,6 @@
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { background: #333; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
         .tab-btn.active { background: #e50914; color: white; }
-        
         .section { display: none; }
         .section.active { display: block; }
 
@@ -34,15 +34,11 @@
         th { background: #252525; color: #aaa; font-size: 12px; text-transform: uppercase; }
         tr:hover { background: #2a2a2a; }
         
-        .action-btn { padding: 5px 10px; font-size: 12px; margin-right: 5px; }
+        .action-btn { padding: 6px 10px; font-size: 12px; margin-right: 5px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+        .btn-pdf { background: #28a745; }
         .btn-edit { background: #007bff; }
         .btn-del { background: #ff4444; }
 
-        /* MESSAGE BOX */
-        .msg-box { background: #222; padding: 20px; border-radius: 10px; }
-        .msg-input { width: 100%; padding: 15px; margin: 10px 0; font-size: 16px; }
-
-        /* ADD USER FORM */
         .add-form { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     </style>
 </head>
@@ -50,8 +46,8 @@
 
 <div id="login-overlay">
     <div class="login-box">
-        <h2 style="color:#e50914;">ADMINISTRATION V40</h2>
-        <input type="password" id="admin-pass" placeholder="Mot de passe Admin">
+        <h2 style="color:#e50914;">ADMIN V41</h2>
+        <input type="password" id="admin-pass" placeholder="Mot de passe Config A1">
         <button onclick="adminLogin()">ENTRER</button>
         <div id="login-error" style="color:red; margin-top:10px;"></div>
     </div>
@@ -59,31 +55,34 @@
 
 <div id="dashboard">
     <div class="header">
-        <h1>MY BOX TV <span style="font-size:14px; color:#aaa;">CONTROL PANEL</span></h1>
+        <h1>MY BOX TV <span style="font-size:14px; color:#aaa;">MANAGER</span></h1>
         <button onclick="location.reload()" style="background:#444;">ACTUALISER</button>
     </div>
 
     <div class="tabs">
         <div class="tab-btn active" onclick="showTab('users')"><i class="fas fa-users"></i> UTILISATEURS</div>
-        <div class="tab-btn" onclick="showTab('sources')"><i class="fas fa-link"></i> SOURCES IPTV</div>
-        <div class="tab-btn" onclick="showTab('message')"><i class="fas fa-bullhorn"></i> MESSAGE GLOBAL</div>
+        <div class="tab-btn" onclick="showTab('sources')"><i class="fas fa-link"></i> SOURCES</div>
+        <div class="tab-btn" onclick="showTab('message')"><i class="fas fa-bullhorn"></i> MESSAGE</div>
     </div>
 
     <div id="users" class="section active">
         <div class="add-form">
-            <h3 style="margin:0; color:#aaa;">Ajouter :</h3>
-            <input type="text" id="new-key" placeholder="ID (ex: CLIENT-JEAN)" style="width:150px;">
-            <select id="new-days" style="padding:10px; background:#333; color:white; border:1px solid #444; border-radius:5px;">
+            <h3 style="margin:0; color:#aaa;">Nouveau Client :</h3>
+            <input type="text" id="new-key" placeholder="ID (ou laisser vide pour Auto)" style="width:200px;">
+            <select id="new-days">
                 <option value="30">30 Jours</option>
+                <option value="90">3 Mois</option>
+                <option value="180">6 Mois</option>
                 <option value="365">1 An</option>
                 <option value="VIE">À VIE</option>
             </select>
-            <select id="new-screens" style="padding:10px; background:#333; color:white; border:1px solid #444; border-radius:5px;">
+            <select id="new-screens">
                 <option value="1">1 Écran</option>
                 <option value="2">2 Écrans</option>
+                <option value="3">3 Écrans</option>
                 <option value="4">4 Écrans</option>
             </select>
-            <button onclick="addUser()">CRÉER</button>
+            <button onclick="addUser()">CRÉER & IMPRIMER PDF</button>
         </div>
 
         <table id="users-table">
@@ -91,9 +90,8 @@
                 <tr>
                     <th>CLÉ / ID</th>
                     <th>DURÉE</th>
-                    <th>ÉCRANS (Max)</th>
-                    <th>APPAREILS CONNECTÉS</th>
-                    <th>ACTIVÉ LE</th>
+                    <th>ÉCRANS</th>
+                    <th>INFOS</th>
                     <th>ACTIONS</th>
                 </tr>
             </thead>
@@ -104,39 +102,36 @@
     <div id="sources" class="section">
         <div class="add-form">
             <h3 style="margin:0; color:#aaa;">Ajouter Source :</h3>
-            <input type="text" id="new-source-name" placeholder="Nom (ex: Canal+ Backup)" style="width:200px;">
-            <input type="text" id="new-source-link" placeholder="http://lien-m3u..." style="width:400px;">
+            <input type="text" id="new-source-name" placeholder="Nom" style="width:200px;">
+            <input type="text" id="new-source-link" placeholder="Lien http://..." style="width:400px;">
             <button onclick="addSource()">AJOUTER</button>
         </div>
-        
         <table id="sources-table">
-            <thead>
-                <tr><th>NOM</th><th>LIEN</th><th>ACTIONS</th></tr>
-            </thead>
+            <thead><tr><th>NOM</th><th>LIEN</th><th>ACTIONS</th></tr></thead>
             <tbody id="sources-body"></tbody>
         </table>
     </div>
 
     <div id="message" class="section">
-        <div class="msg-box">
-            <h3>Message d'accueil (Popup)</h3>
-            <input type="text" id="global-msg-input" class="msg-input" placeholder="Bienvenue...">
-            <button onclick="saveMessage()" style="width:100%;">METTRE À JOUR LE MESSAGE</button>
+        <div style="background:#222; padding:20px; border-radius:10px;">
+            <h3>Message d'accueil</h3>
+            <input type="text" id="global-msg-input" style="width:100%; padding:15px; font-size:16px;" placeholder="Message...">
+            <button onclick="saveMessage()" style="width:100%; margin-top:10px;">METTRE À JOUR</button>
         </div>
     </div>
 </div>
 
 <script>
     // =========================================================
-    // NOUVEAU LIEN GOOGLE SCRIPT DEPLOYÉ (V40)
+    // TON LIEN DEPLOYÉ V40 (Ne change pas)
     const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
     // =========================================================
 
+    // --- 1. LOGIN ---
     async function adminLogin() {
         const pass = document.getElementById('admin-pass').value;
         const btn = document.querySelector('#login-overlay button');
         btn.innerText = "Vérification...";
-        
         try {
             const res = await fetch(`${API_URL}?action=admin_login&pass=${encodeURIComponent(pass)}`);
             const text = await res.text();
@@ -144,13 +139,12 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
                 loadData();
-            } else {
-                document.getElementById('login-error').innerText = "Mot de passe incorrect";
-            }
+            } else { document.getElementById('login-error').innerText = "Mot de passe incorrect"; }
         } catch(e) { alert("Erreur connexion"); }
         btn.innerText = "ENTRER";
     }
 
+    // --- 2. DONNEES ---
     async function loadData() {
         const res = await fetch(`${API_URL}?action=get_admin_data`);
         const data = await res.json();
@@ -161,19 +155,19 @@
             const key = u[0];
             const duration = u[1];
             const devices = u[2] ? u[2].split(',').length : 0;
-            const date = u[3] ? new Date(u[3]).toLocaleDateString() : "-";
             const maxScreens = u[4] || 1;
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-weight:bold; color:white;">${key}</td>
+                <td style="font-weight:bold; color:white; font-family:monospace;">${key}</td>
                 <td>${duration}</td>
                 <td>${maxScreens}</td>
-                <td>${devices} / ${maxScreens} <button onclick="resetDevices('${key}')" style="font-size:9px; background:#444; padding:2px;">RESET</button></td>
-                <td>${date}</td>
+                <td>${devices} connecté(s)</td>
                 <td>
-                    <button class="action-btn btn-edit" onclick="editUser('${key}', '${duration}', '${maxScreens}')"><i class="fas fa-edit"></i></button>
-                    <button class="action-btn btn-del" onclick="deleteUser('${key}')"><i class="fas fa-trash"></i></button>
+                    <button class="action-btn btn-pdf" onclick="generatePDF('${key}', '${duration}', '${maxScreens}')" title="Télécharger PDF"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button class="action-btn btn-edit" onclick="editUser('${key}', '${duration}', '${maxScreens}')" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-del" onclick="deleteUser('${key}')" title="Supprimer"><i class="fas fa-trash"></i></button>
+                    <button class="action-btn" style="background:#444;" onclick="resetDevices('${key}')" title="Débloquer appareils"><i class="fas fa-unlock"></i></button>
                 </td>
             `;
             usersBody.appendChild(tr);
@@ -182,29 +176,36 @@
         const sourcesBody = document.getElementById('sources-body');
         sourcesBody.innerHTML = "";
         data.sources.forEach(s => {
-            const name = s[0];
-            const link = s[1];
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-weight:bold;">${name}</td>
-                <td style="color:#aaa; font-size:12px;">${link.substring(0, 50)}...</td>
-                <td><button class="action-btn btn-del" onclick="deleteSource('${link}')"><i class="fas fa-trash"></i></button></td>
-            `;
+            tr.innerHTML = `<td>${s[0]}</td><td style="color:#888; font-size:12px;">${s[1].substring(0,40)}...</td><td><button class="action-btn btn-del" onclick="deleteSource('${s[1]}')">X</button></td>`;
             sourcesBody.appendChild(tr);
         });
-
         document.getElementById('global-msg-input').value = data.message;
     }
 
+    // --- 3. ACTIONS ---
     async function addUser() {
-        const key = document.getElementById('new-key').value;
+        let key = document.getElementById('new-key').value.trim().toUpperCase();
         const days = document.getElementById('new-days').value;
         const screens = document.getElementById('new-screens').value;
-        if(!key) return alert("Mettez un ID");
         
-        await fetch(`${API_URL}?action=admin_user_action&type=add&key=${encodeURIComponent(key)}&days=${days}&screens=${screens}`);
-        loadData();
-        document.getElementById('new-key').value = "";
+        // Génération ID auto si vide
+        if(!key) {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let rnd = "";
+            for(let i=0; i<6; i++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+            key = "BOX-" + rnd;
+        }
+
+        if(confirm("Créer l'utilisateur " + key + " ?")) {
+            await fetch(`${API_URL}?action=admin_user_action&type=add&key=${encodeURIComponent(key)}&days=${days}&screens=${screens}`);
+            
+            // GENERATION DU PDF IMMEDIATE
+            generatePDF(key, days, screens);
+            
+            loadData();
+            document.getElementById('new-key').value = "";
+        }
     }
 
     async function deleteUser(key) {
@@ -214,50 +215,79 @@
         }
     }
 
-    async function editUser(key, oldDays, oldScreens) {
-        const newDays = prompt("Nouvelle durée (laisser vide pour garder " + oldDays + ") :", oldDays);
-        const newScreens = prompt("Nouveaux écrans Max (laisser vide pour garder " + oldScreens + ") :", oldScreens);
-        
-        if(newDays !== null && newScreens !== null) {
-            await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&days=${newDays}&screens=${newScreens}`);
-            loadData();
+    async function resetDevices(key) {
+        if(confirm("Déconnecter les appareils de " + key + " ?")) {
+            await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&reset=yes`);
+            loadData(); alert("Reset OK");
         }
     }
 
-    async function resetDevices(key) {
-        if(confirm("Déconnecter tous les appareils de " + key + " ?")) {
-            await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&reset=yes`);
+    async function editUser(key, oldD, oldS) {
+        const d = prompt("Jours :", oldD);
+        const s = prompt("Ecrans :", oldS);
+        if(d && s) {
+            await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&days=${d}&screens=${s}`);
             loadData();
-            alert("Appareils débloqués !");
         }
     }
 
     async function addSource() {
-        const name = document.getElementById('new-source-name').value;
-        const link = document.getElementById('new-source-link').value;
-        if(!link) return;
-        await fetch(`${API_URL}?action=admin_source_action&type=add&name=${encodeURIComponent(name)}&link=${encodeURIComponent(link)}`);
-        loadData();
+        const n = document.getElementById('new-source-name').value;
+        const l = document.getElementById('new-source-link').value;
+        if(l) { await fetch(`${API_URL}?action=admin_source_action&type=add&name=${encodeURIComponent(n)}&link=${encodeURIComponent(l)}`); loadData(); }
     }
-
-    async function deleteSource(link) {
-        if(confirm("Supprimer cette source ?")) {
-            await fetch(`${API_URL}?action=admin_source_action&type=delete&link=${encodeURIComponent(link)}`);
-            loadData();
-        }
-    }
-
-    async function saveMessage() {
-        const msg = document.getElementById('global-msg-input').value;
-        await fetch(`${API_URL}?action=admin_set_message&msg=${encodeURIComponent(msg)}`);
-        alert("Message mis à jour !");
-    }
+    async function deleteSource(l) { if(confirm("Supprimer ?")) { await fetch(`${API_URL}?action=admin_source_action&type=delete&link=${encodeURIComponent(l)}`); loadData(); } }
+    async function saveMessage() { await fetch(`${API_URL}?action=admin_set_message&msg=${encodeURIComponent(document.getElementById('global-msg-input').value)}`); alert("OK"); }
 
     function showTab(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         event.currentTarget.classList.add('active');
+    }
+
+    // --- 4. GENERATEUR PDF PRO ---
+    function generatePDF(key, days, screens) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF(); 
+
+        // Design
+        doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 40, 'F'); 
+        doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.setFont("helvetica", "bold");
+        doc.text("MY BOX TV", 105, 20, null, null, "center");
+        doc.setFontSize(12); doc.setTextColor(229, 9, 20);
+        doc.text("CERTIFICAT D'ABONNEMENT", 105, 30, null, null, "center");
+
+        // Clé
+        doc.setTextColor(0, 0, 0); doc.setFontSize(14);
+        doc.text("VOTRE ID DE CONNEXION :", 105, 60, null, null, "center");
+        doc.setFillColor(240, 240, 240); doc.setDrawColor(229, 9, 20);
+        doc.rect(40, 65, 130, 25, 'FD');
+        doc.setFont("courier", "bold"); doc.setFontSize(30); doc.setTextColor(229, 9, 20);
+        doc.text(key, 105, 82, null, null, "center");
+
+        // Info
+        doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); doc.setFontSize(12);
+        doc.text(`VALIDITÉ : ${days} Jours`, 50, 105);
+        doc.text(`ÉCRANS : ${screens}`, 120, 105);
+
+        // Guide
+        doc.setDrawColor(200, 200, 200); doc.line(20, 115, 190, 115);
+        doc.setFontSize(14); doc.setFont("helvetica", "bold");
+        doc.text("INSTRUCTIONS", 20, 125);
+        doc.setFontSize(11); doc.setFont("helvetica", "normal");
+        doc.text("1. Connectez votre appareil à Internet.", 20, 135);
+        doc.text("2. Ouvrez l'application MY BOX TV.", 20, 143);
+        doc.text("3. Entrez votre ID ci-dessus.", 20, 151);
+        doc.text("4. Profitez de +14.000 chaînes !", 20, 159);
+
+        // Support
+        doc.setFillColor(245, 245, 245); doc.rect(0, 250, 210, 50, 'F');
+        doc.setTextColor(229, 9, 20); doc.setFontSize(12); doc.setFont("helvetica", "bold");
+        doc.text("SUPPORT TECHNIQUE WHATSAPP", 105, 265, null, null, "center");
+        doc.setTextColor(0,0,0); doc.text("63 82 87 67", 105, 275, null, null, "center");
+
+        doc.save(`Abonnement_${key}.pdf`);
     }
 </script>
 
