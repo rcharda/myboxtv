@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V28 Ultimate</title>
+    <title>My Box TV - V30 Manager</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"> <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -36,16 +37,15 @@
         .channel-item { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; font-size: 14px; }
         .channel-item:hover { background: #222; }
         .channel-item.active { background: #e50914; color: white; }
-        .channel-item.broken { opacity: 0.4; text-decoration: line-through; } /* Style pour chaines HS */
         .tv-icon { width: 40px; height: 40px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; margin-right: 10px; }
 
-        /* --- CONTROL BAR (NOUVEAU) --- */
+        /* --- CONTROL BAR --- */
         #control-bar {
-            height: 70px; background: #111; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-around; padding: 0 10px;
+            height: 70px; background: #111; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-around; padding: 0 5px;
         }
         .ctrl-btn {
-            background: #222; color: #fff; border: 1px solid #444; width: 50px; height: 50px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: 0.2s;
+            background: #222; color: #fff; border: 1px solid #444; width: 45px; height: 45px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;
         }
         .ctrl-btn:active { transform: scale(0.9); background: #e50914; }
         .ctrl-btn.active-mode { background: #e50914; border-color: #fff; box-shadow: 0 0 10px #e50914; animation: pulse 2s infinite; }
@@ -60,7 +60,6 @@
         .menu-slider { width: 100%; -webkit-appearance: none; height: 10px; background: #333; border-radius: 5px; outline: none; }
         .menu-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #e50914; border-radius: 50%; cursor: pointer; }
         .menu-btn-full { width: 100%; padding: 12px; margin-top: 5px; background: #333; border: none; color: white; border-radius: 5px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; }
-        .menu-btn-full:hover { background: #444; }
 
         /* --- STATUS --- */
         #status-pill { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 12px; pointer-events: none; z-index: 60; border: 1px solid #444; display: flex; align-items: center; gap: 8px;}
@@ -80,7 +79,7 @@
 <div id="login-overlay">
     <div class="login-box">
         <h2 style="color:white; margin-bottom:5px;">MY BOX TV</h2>
-        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V28 ULTIMATE</div>
+        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V30 MANAGER</div>
         <input type="text" id="licenseKey" class="login-input" placeholder="ID ABONNEMENT">
         <button onclick="login()" class="btn-red" id="btnLogin">ENTRER</button>
         <div id="login-msg" style="margin-top:10px; color:red;"></div>
@@ -95,28 +94,28 @@
         </div>
 
         <div class="menu-item">
-            <span class="menu-label"><i class="fas fa-sun"></i> ÉCLAIRAGE / LUMINOSITÉ</span>
+            <span class="menu-label"><i class="fas fa-sun"></i> ÉCLAIRAGE</span>
             <input type="range" min="0" max="0.8" step="0.1" value="0" class="menu-slider" oninput="setBrightness(this.value)">
         </div>
 
         <div class="menu-item">
-            <span class="menu-label"><i class="fas fa-satellite-dish"></i> SOURCES (TRANSPONDEURS)</span>
-            <div id="sources-list" style="font-size:12px; color:#888; margin-bottom:10px;"></div>
-            <input type="text" id="custom-source" placeholder="Ajouter lien M3U (http://...)" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; border-radius:4px;">
-            <button onclick="addSource()" style="margin-top:5px; background:#007bff; color:white; border:none; padding:8px 15px; border-radius:4px;">Ajouter +</button>
-            <button onclick="resetSources()" style="margin-top:5px; background:#444; color:white; border:none; padding:8px 15px; border-radius:4px;">Reset</button>
+            <span class="menu-label"><i class="fas fa-satellite-dish"></i> GESTION CHAINES</span>
+            <div id="hidden-count" style="font-size:12px; color:#888; margin-bottom:10px;">0 chaînes supprimées</div>
+            <button onclick="restoreHidden()" style="background:#007bff; color:white; border:none; padding:8px 15px; border-radius:4px; width:100%;">Restaurer les chaînes supprimées</button>
+        </div>
+
+        <div class="menu-item">
+            <span class="menu-label"><i class="fas fa-plus-circle"></i> AJOUTER SOURCE</span>
+            <input type="text" id="custom-source" placeholder="Lien M3U..." style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; border-radius:4px;">
+            <button onclick="addSource()" style="margin-top:5px; background:#444; color:white; border:none; padding:8px 15px; border-radius:4px;">Ajouter</button>
         </div>
 
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-user-shield"></i> ABONNEMENT</span>
             <div id="sub-info" style="margin-bottom:10px;">Statut: Inconnu</div>
             <a href="https://wa.me/22963828767?text=Bonjour,%20je%20veux%20prolonger%20mon%20abonnement%20TV" target="_blank" class="menu-btn-full" style="text-decoration:none; background:#25D366; color:white; font-weight:bold; justify-content:center;">
-                <i class="fab fa-whatsapp"></i> CONTACTER LE DÉVELOPPEUR (PROLONGER)
+                <i class="fab fa-whatsapp"></i> CONTACTER WHATSAPP
             </a>
-        </div>
-        
-        <div class="menu-item">
-            <button onclick="castVideo()" class="menu-btn-full"><i class="fab fa-chromecast"></i> CASTER SUR TV</button>
         </div>
     </div>
 </div>
@@ -131,8 +130,10 @@
 
     <div id="control-bar">
         <div class="ctrl-btn" onclick="openMenu()"><i class="fas fa-bars"></i></div>
-        <div class="ctrl-btn" onclick="adjustVol(-0.1)"><i class="fas fa-volume-down"></i></div>
-        <div class="ctrl-btn" onclick="adjustVol(0.1)"><i class="fas fa-volume-up"></i></div>
+        
+        <div class="ctrl-btn" onclick="hideCurrentChannel()" style="color:#ff4444; border-color:#ff4444;"><i class="fas fa-trash"></i></div>
+        
+        <div class="ctrl-btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></div>
         
         <div class="ctrl-btn" onclick="prevChannel()"><i class="fas fa-step-backward"></i></div>
         <div class="ctrl-btn" id="btn-autozap" onclick="toggleAutoZap()" style="border: 2px solid #555;">
@@ -160,12 +161,8 @@
 </div>
 
 <script>
-    // ===============================================
-    // CONFIGURATION
-    // ===============================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
     
-    // ELEMENTS DOM
     const video = document.getElementById('video');
     const listContainer = document.getElementById('channel-list');
     const statusText = document.getElementById('status-text');
@@ -173,18 +170,19 @@
     const overlay = document.getElementById('brightness-overlay');
     const subInfo = document.getElementById('sub-info');
     
-    // VARIABLES
     let allChannels = [];
     let currentChannelIndex = -1;
     let hls = null;
-    let isAutoZap = false; // Le mode Recherche Auto
+    let isAutoZap = false;
     let deviceId = localStorage.getItem('mybox_device_id') || 'DEV-'+Math.random().toString(36).substr(2,9).toUpperCase();
     localStorage.setItem('mybox_device_id', deviceId);
     let dynamicSources = [];
+    
+    // NOUVEAU : Liste des chaines cachées (supprimées manuellement)
+    let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
+    document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
 
-    // ===============================================
-    // 1. DEMARRAGE & CONNEXION
-    // ===============================================
+    // --- INITIALISATION ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
         document.getElementById('login-overlay').style.display = 'none';
         subInfo.innerText = localStorage.getItem('mybox_status_text') || "Abonné";
@@ -207,45 +205,32 @@
             if(text.includes("SUCCESS")) {
                 localStorage.setItem('mybox_auth', 'OK');
                 localStorage.setItem('mybox_key', key);
-                
                 let s = text.includes(":VIE") ? "ABONNEMENT À VIE ♾️" : (text.includes(":OK:") ? "Expire dans: "+text.split(':')[2]+" jours" : "Actif");
                 localStorage.setItem('mybox_status_text', s);
                 subInfo.innerText = s;
-                
                 document.getElementById('login-overlay').style.display = 'none';
                 initApp();
             } else {
-                msg.innerText = text.includes("EXPIRED") ? "Abonnement Expiré" : "ID Invalide ou déjà utilisé";
+                msg.innerText = text.includes("EXPIRED") ? "Abonnement Expiré" : "ID Invalide";
             }
         } catch(e) { msg.innerText = "Erreur Internet"; }
         btn.innerText = "ENTRER";
     }
 
     async function initApp() {
-        loadCache(); // Affichage immédiat mémoire
-        
-        // Charger les sources Google + Locales
+        loadCache();
         statusText.innerText = "MAJ Sources...";
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
             const text = await res.text();
             let serverSources = text.startsWith("PLAYLISTS:") ? text.replace("PLAYLISTS:","").split(",,,") : [];
-            
-            // On ajoute les sources locales (perso)
             const localSources = JSON.parse(localStorage.getItem('mybox_custom_sources') || '[]');
             
-            // On combine : Sources Perso -> Sources Rapides -> Index.m3u
             let big = [], small = [];
             serverSources.forEach(s => s.includes("index.m3u") ? big.push(s) : small.push(s));
-            
             dynamicSources = [...localSources, ...small, ...big];
             
-            // Mise à jour affichage sources
-            updateSourcesList();
-            
-            // Scan
             startScan();
-            
         } catch(e) {
             console.log("Offline");
             dynamicSources = ["https://iptv-org.github.io/iptv/index.m3u"];
@@ -253,18 +238,12 @@
         }
     }
 
-    // ===============================================
-    // 2. SCAN & ANALYSE
-    // ===============================================
+    // --- SCAN ---
     async function startScan(force = false) {
         if(force) { listContainer.innerHTML = ""; allChannels = []; }
-        
         statusText.innerText = "Scan en cours...";
-        led.className = ""; // Rouge
-        
-        for(let src of dynamicSources) {
-            await fetchPlaylist(src);
-        }
+        led.className = "";
+        for(let src of dynamicSources) await fetchPlaylist(src);
         statusText.innerText = "Terminé";
         led.className = "green";
     }
@@ -275,19 +254,20 @@
             if(!res.ok) return;
             const text = await res.text();
             const lines = text.split('\n');
-            let info = {};
-            
-            let batch = [];
+            let info = {}, batch = [];
             for(let line of lines) {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
                     const parts = line.split(',');
                     info = { name: parts[1] || "TV", logo: (line.match(/tvg-logo="([^"]*)"/)||[])[1] };
-                } else if(line.startsWith('http') && !line.endsWith('.m3u')) { // Pas de dossiers, que des chaines
+                } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
-                        allChannels.push(ch);
-                        batch.push(ch);
+                        // Si la chaine n'est PAS dans la liste des supprimées, on l'ajoute
+                        if(!hiddenChannels.includes(ch.url)) {
+                            allChannels.push(ch);
+                            batch.push(ch);
+                        }
                         info = {};
                     }
                 }
@@ -299,7 +279,6 @@
     function renderChannels(channels) {
         const frag = document.createDocumentFragment();
         channels.forEach((ch, idx) => {
-            // Calculer le vrai index global
             const globalIdx = allChannels.indexOf(ch);
             const div = document.createElement('div');
             div.className = 'channel-item';
@@ -312,140 +291,133 @@
         document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
     }
 
-    // ===============================================
-    // 3. LECTEUR & CONTROLES
-    // ===============================================
+    // --- GESTION DES SUPPRESSIONS MANUELLES ---
+    function hideCurrentChannel() {
+        if(currentChannelIndex < 0 || currentChannelIndex >= allChannels.length) return;
+        
+        const ch = allChannels[currentChannelIndex];
+        if(confirm("Supprimer définitivement " + ch.name + " de votre liste ?")) {
+            // Ajouter aux cachés
+            hiddenChannels.push(ch.url);
+            localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
+            document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
+            
+            // Retirer visuellement
+            const row = document.getElementById('ch-' + currentChannelIndex);
+            if(row) row.style.display = 'none';
+            
+            // Passer à la suivante
+            nextChannel();
+            
+            // Mettre à jour la liste active
+            allChannels.splice(currentChannelIndex, 1); // Optionnel mais plus propre
+            // On recharge pas tout pour garder la fluidité
+        }
+    }
+
+    function restoreHidden() {
+        if(confirm("Voulez-vous restaurer toutes les chaînes supprimées ?")) {
+            localStorage.removeItem('mybox_hidden');
+            hiddenChannels = [];
+            alert("Chaînes restaurées ! L'application va redémarrer.");
+            location.reload();
+        }
+    }
+
+    // --- PLAYER ---
     function playChannel(index) {
         if(index < 0 || index >= allChannels.length) return;
         currentChannelIndex = index;
         const ch = allChannels[index];
         
-        // UI Update
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         const row = document.getElementById('ch-' + index);
-        if(row) {
-            row.classList.add('active');
-            row.scrollIntoView({block: "center", behavior: "smooth"});
-        }
+        if(row) { row.classList.add('active'); row.scrollIntoView({block: "center", behavior: "smooth"}); }
         
         statusText.innerText = ch.name;
-        led.className = ""; // Rouge (chargement)
+        led.className = "";
 
         if(Hls.isSupported()) {
             if(hls) hls.destroy();
             hls = new Hls({ enableWorker:true, lowLatencyMode:true });
             hls.loadSource(ch.url);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                video.play();
-                led.className = "green";
-                // Réinitialiser le timeout d'erreur si ça marche
-                clearTimeout(autoZapTimeout);
-            });
-            
-            // GESTION ERREUR AUTO-ZAP
-            hls.on(Hls.Events.ERROR, (e, data) => {
-                if(data.fatal) {
-                    handleStreamError(index);
-                }
-            });
+            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play(); led.className = "green"; clearTimeout(autoZapTimeout); });
+            hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) handleStreamError(index); });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = ch.url;
             video.play();
             video.onerror = () => handleStreamError(index);
         }
         
-        // Sécurité timeout (si ça charge indéfiniment)
         if(isAutoZap) {
             autoZapTimeout = setTimeout(() => {
                 if(video.paused || video.readyState < 2) handleStreamError(index);
-            }, 4000); // 4 sec pour charger, sinon next
+            }, 5000); // 5 sec pour l'auto zap
         }
     }
     
     let autoZapTimeout;
-
     function handleStreamError(failedIndex) {
-        led.className = ""; // Rouge
-        // Marquer visuellement comme cassé
-        const row = document.getElementById('ch-' + failedIndex);
-        if(row) row.classList.add('broken');
-        
-        if(isAutoZap) {
-            statusText.innerText = "Zap Auto...";
-            console.log("Erreur chaîne " + failedIndex + " -> Suivante");
-            setTimeout(() => nextChannel(), 500); // Petit délai
-        } else {
-            statusText.innerText = "Erreur Flux";
+        led.className = "";
+        // PLUS DE BANNISSEMENT AUTO (Comme demandé)
+        // Juste Auto-Zap si activé
+        if(isAutoZap) { 
+            statusText.innerText = "Zap Auto..."; 
+            setTimeout(nextChannel, 500); 
+        } else { 
+            statusText.innerText = "Erreur Flux (Internet?)"; 
         }
     }
 
-    // --- BOUTONS ---
+    // --- COMMANDES ---
     function nextChannel() { playChannel(currentChannelIndex + 1); }
     function prevChannel() { playChannel(currentChannelIndex - 1); }
     
-    function adjustVol(delta) {
-        video.volume = Math.min(1, Math.max(0, video.volume + delta));
-        statusText.innerText = "Vol: " + Math.round(video.volume * 100) + "%";
-        setTimeout(() => statusText.innerText = allChannels[currentChannelIndex]?.name || "Prêt", 1000);
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else if (document.exitFullscreen) document.exitFullscreen();
     }
-
+    
     function toggleAutoZap() {
         isAutoZap = !isAutoZap;
         const btn = document.getElementById('btn-autozap');
-        if(isAutoZap) {
-            btn.classList.add('active-mode');
-            statusText.innerText = "AUTO-ZAP ACTIVÉ ⚡";
-        } else {
-            btn.classList.remove('active-mode');
-            statusText.innerText = "Auto-Zap Arrêt";
-        }
+        if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "AUTO-ZAP ON"; }
+        else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; }
     }
 
-    // ===============================================
-    // 4. MENU & PARAMETRES
-    // ===============================================
+    // --- MENU ---
     function openMenu() { document.getElementById('menu-modal').style.display = 'flex'; }
     function closeMenu() { document.getElementById('menu-modal').style.display = 'none'; }
+    function setBrightness(val) { overlay.style.opacity = val; }
     
-    function setBrightness(val) {
-        overlay.style.opacity = val;
-    }
-    
-    // Gestion Sources Perso
     function addSource() {
         const url = document.getElementById('custom-source').value.trim();
         if(url.startsWith('http')) {
             const current = JSON.parse(localStorage.getItem('mybox_custom_sources') || '[]');
             current.push(url);
             localStorage.setItem('mybox_custom_sources', JSON.stringify(current));
-            alert("Source ajoutée ! Rechargement...");
+            alert("Source ajoutée !");
             location.reload();
         }
     }
-    
-    function resetSources() {
-        if(confirm("Effacer vos sources perso ?")) {
-            localStorage.removeItem('mybox_custom_sources');
-            location.reload();
-        }
-    }
-    
-    function updateSourcesList() {
-        const div = document.getElementById('sources-list');
-        div.innerHTML = dynamicSources.map((s,i) => `<div>Source ${i+1}: ...${s.substr(-20)}</div>`).join('');
-    }
 
-    function castVideo() {
-        // Simple ouverture dans lecteur natif android si dispo, ou API cast basique
-        if(currentChannelIndex > -1) {
-            window.open(allChannels[currentChannelIndex].url, '_blank');
-        } else {
-            alert("Lancez une chaîne d'abord");
+    // --- SUPPORT CLAVIER ---
+    document.addEventListener('keydown', (e) => {
+        if(document.getElementById('login-overlay').style.display !== 'none') return;
+        switch(e.key) {
+            case 'ArrowUp': 
+            case 'ChannelUp':
+                nextChannel(); break;
+            case 'ArrowDown': 
+            case 'ChannelDown':
+                prevChannel(); break;
+            case 'Enter':
+            case 'OK':
+                toggleFullScreen(); break;
         }
-    }
+    });
 
-    // --- RECHERCHE ---
     document.getElementById('searchInput').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         listContainer.innerHTML = "";
@@ -453,12 +425,8 @@
         renderChannels(filtered);
     });
 
-    // CACHE
-    function saveCache() { try { localStorage.setItem('mybox_cache_v28', JSON.stringify(allChannels.slice(0,500))); } catch(e){} }
-    function loadCache() { 
-        const c = localStorage.getItem('mybox_cache_v28'); 
-        if(c) { allChannels = JSON.parse(c); renderChannels(allChannels); }
-    }
+    function saveCache() { try { localStorage.setItem('mybox_cache_v30', JSON.stringify(allChannels.slice(0,500))); } catch(e){} }
+    function loadCache() { const c = localStorage.getItem('mybox_cache_v30'); if(c) { allChannels = JSON.parse(c); renderChannels(allChannels); } }
 </script>
 </body>
 </html>
