@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V45 Live Scan</title>
+    <title>My Box TV - V46 Universal</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -34,9 +34,10 @@
         .menu-header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:10px;}
         #searchInput { width: 90%; margin: 10px auto; padding: 12px; border-radius: 20px; background: #333; border: none; color: white; display: block; }
         
-        /* LIVE SCAN INDICATOR */
-        #scan-status { font-size: 11px; color: #0f0; font-weight: bold; margin-top: 5px; display: none; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
+        /* SCAN INFO */
+        #scan-box { width: 90%; background: #222; padding: 5px; border-radius: 5px; display: none; margin-bottom: 5px; border: 1px solid #444; }
+        #scan-text { font-size: 10px; color: #0f0; font-family: monospace; }
+        #scan-bar { height: 2px; background: #0f0; width: 0%; transition: width 0.2s; margin-top: 2px; }
 
         #channel-list { flex: 1; overflow-y: auto; padding: 5px; width:100%; }
         .channel-row { display: flex; align-items: center; padding: 10px; margin: 2px 0; border-radius: 8px; cursor: pointer; contain: content; }
@@ -66,7 +67,9 @@
         .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
         .chip.selected { background: var(--primary); color: white; }
-        
+        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
+        @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
+
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
         
@@ -82,7 +85,7 @@
     <p>Nous améliorons nos services.<br>Veuillez patienter.</p>
 </div>
 
-<div id="admin-msg-box">Message...</div>
+<div id="admin-msg-box">Message du serveur...</div>
 
 <div id="pin-modal" class="modal">
     <div class="modal-box">
@@ -102,7 +105,7 @@
             <div class="settings-tab active" onclick="showTab('tab-cat')">Catégories</div>
             <div class="settings-tab" onclick="showTab('tab-source')">Sources</div>
             <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
-            <div class="settings-tab" onclick="forceReload()" style="color:#28a745; margin-top:20px;">Forcer Rechargement</div>
+            <div class="settings-tab" onclick="forceReload()" style="color:#28a745; margin-top:20px;">Actualiser Liste</div>
             <div class="settings-tab" onclick="closeSettings()" style="color:#ff4444; margin-top:10px;">Fermer ✕</div>
         </div>
         <div class="settings-content">
@@ -113,7 +116,7 @@
             </div>
             <div id="tab-source" class="tab-content" style="display:none;">
                 <h3>Ajouter source</h3>
-                <input type="text" id="custom-source" style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white;" placeholder="http://...">
+                <input type="text" id="custom-source" class="input-dark" placeholder="http://...">
                 <button onclick="addSource()" style="margin-top:10px; background:#28a745; border:none; color:white; padding:10px; border-radius:5px;">Ajouter</button>
                 <button onclick="resetSources()" style="margin-top:10px; background:#444; border:none; color:white; padding:10px; border-radius:5px;">Reset</button>
             </div>
@@ -140,7 +143,9 @@
     </div>
 </div>
 
-<div id="video-layer"><video id="video" onclick="toggleMenu()" playsinline></video></div>
+<div id="video-layer">
+    <video id="video" onclick="toggleMenu()" playsinline></video>
+</div>
 
 <div id="ui-layer">
     <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
@@ -149,17 +154,22 @@
         <div class="menu-header">
             <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:100px;">
             <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-                <div style="text-align:left;">
+                <div style="text-align:left; width:100%;">
                     <div style="font-size:14px; font-weight:bold;">CHAÎNES</div>
                     <div style="font-size:10px; color:#888;" id="count-display">0 trouvées</div>
-                    <div id="scan-status">Scanner: En cours...</div>
+                    <div id="scan-box">
+                        <div id="scan-text">Recherche...</div>
+                        <div id="scan-bar"></div>
+                    </div>
                 </div>
                 <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
             </div>
         </div>
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
         <div style="padding:10px; border-bottom:1px solid #333;">
-            <button onclick="toggleOnlyFavorites()" id="btn-fav-filter" style="width:100%; background:#222; color:white; border:1px solid #444; padding:8px; border-radius:5px;"><i class="fas fa-star" style="color:gold;"></i> Voir Favoris</button>
+            <button onclick="toggleOnlyFavorites()" id="btn-fav-filter" style="width:100%; background:#222; color:white; border:1px solid #444; padding:8px; border-radius:5px;">
+                <i class="fas fa-star" style="color:gold;"></i> Voir mes Favoris
+            </button>
         </div>
         <div id="channel-list"></div>
     </div>
@@ -183,8 +193,8 @@
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_DB_V45";
-    const DB_VERSION = 1;
+    const DB_NAME = "MyBoxTV_V46_Universal";
+    const DB_VERSION = 2;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
@@ -199,7 +209,7 @@
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    // --- DB ---
+    // --- INDEXED DB (CACHE ROBUSTE) ---
     function openDB() {
         return new Promise((resolve, reject) => {
             const r = indexedDB.open(DB_NAME, DB_VERSION);
@@ -223,9 +233,9 @@
             req.onerror = () => resolve([]);
         });
     }
-    async function clearDB() { const db = await openDB(); db.transaction("channels", "readwrite").objectStore("channels").clear(); }
+    async function clearDB() { const db = await openDB(); try{ db.transaction("channels", "readwrite").objectStore("channels").clear(); }catch(e){} }
 
-    // --- APP START ---
+    // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
         document.getElementById('login-screen').style.display = 'none';
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status'));
@@ -242,7 +252,7 @@
                 localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text);
                 updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp();
             } else alert("Erreur Compte");
-        } catch(e) { alert("Erreur Web"); }
+        } catch(e) { alert("Erreur Internet"); }
     }
 
     function updateAccountDisplay(key, raw) {
@@ -253,55 +263,48 @@
     async function logout() { if(confirm("Déconnecter ?")) { try{ await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); }catch(e){} localStorage.removeItem('mybox_auth'); location.reload(); } }
 
     async function initApp() {
-        // 1. DÉMARRAGE ÉCLAIR
-        // On ajoute Novelas immédiatement et on lance la lecture pour qu'il y ait du son/image tout de suite
-        console.log("Start Novelas...");
+        // 1. DEMARRAGE ECLAIR AVEC NOVELAS
         allChannels = [DEFAULT_CHANNEL];
         loadedUrls.add(DEFAULT_CHANNEL.url);
-        renderList(); 
+        renderList();
         playChannel(0);
 
-        // 2. CHECK DB
-        const cached = await loadChannelsFromDB();
-        if(cached.length > 1) {
-            console.log("DB Loaded");
-            allChannels = cached; 
-            allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
-            updateCategoryChips();
-            renderList();
-        } else {
-            console.log("Downloading...");
-            downloadPlaylists();
-        }
-
-        // 3. Messages & Maint Check
+        // 2. RECUPERATION DONNEES
         try {
-            const res = await fetch(`${API_URL}?action=get_message`);
-            const text = await res.text();
-            if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
-            if(text.startsWith("MSG:") && text.length>5) {
-                const b = document.getElementById('admin-msg-box'); b.innerText = "📢 " + text.replace("MSG:","");
+            // Check Maintenance & Message
+            const msgRes = await fetch(`${API_URL}?action=get_message`);
+            const msgText = await msgRes.text();
+            if(msgText.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
+            if(msgText.startsWith("MSG:") && msgText.length>5) {
+                const b = document.getElementById('admin-msg-box'); b.innerText = "📢 " + msgText.replace("MSG:","");
                 b.style.display="block"; setTimeout(()=>b.style.display="none", 8000);
+            }
+
+            // Load Channels
+            const cached = await loadChannelsFromDB();
+            if(cached.length > 5) {
+                console.log("DB Loaded");
+                allChannels = cached; 
+                allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
+                updateCategoryChips();
+                renderList();
+            } else {
+                console.log("Downloading Sources...");
+                const res = await fetch(`${API_URL}?action=get_playlists`);
+                let sources = (await res.text()).replace("PLAYLISTS:","").split(",,,");
+                sources.sort((a,b) => a.includes("index.m3u") ? 1 : -1); // Index last to prioritize others
+                for(let s of sources) if(s.startsWith("http")) await fetchPlaylistStreaming(s);
             }
         } catch(e){}
     }
 
-    async function downloadPlaylists() {
-        document.getElementById('scan-status').style.display = "block";
-        try {
-            const res = await fetch(`${API_URL}?action=get_playlists`);
-            let sources = (await res.text()).replace("PLAYLISTS:","").split(",,,");
-            for(let s of sources) if(s.startsWith("http")) await fetchPlaylistStreaming(s);
-        } catch(e){}
-        document.getElementById('scan-status').innerText = "Scan Terminé";
-        setTimeout(() => document.getElementById('scan-status').style.display = "none", 3000);
-    }
-
-    // --- MOTEUR STREAMING PARSER ---
+    // --- MOTEUR UNIVERSEL V46 ---
     async function fetchPlaylistStreaming(url) {
+        document.getElementById('scan-box').style.display = 'block';
         try {
             const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
             if (!response.ok) return;
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder("utf-8");
             let buffer = "";
@@ -312,47 +315,60 @@
                 if (done) break;
                 buffer += decoder.decode(value, { stream: true });
                 let lines = buffer.split("\n");
-                buffer = lines.pop(); // Keep incomplete line
+                buffer = lines.pop(); 
                 
                 processLines(lines, newBatch);
                 
-                // MISE A JOUR TEMPS RÉEL (TOUTES LES 50 CHAINES)
+                // REFRESH VISUEL TOUS LES 50 ITEMS
                 if (newBatch.length >= 50) {
                     flushBatch(newBatch);
-                    await new Promise(r => setTimeout(r, 10)); // Pause anti-freeze
+                    await new Promise(r => setTimeout(r, 10)); // Anti-Freeze
                 }
             }
             processLines([buffer], newBatch);
             flushBatch(newBatch);
-            saveChannelsToDB(allChannels); // Save final result
-        } catch (e) { console.log("Stream Error", e); }
+            saveChannelsToDB(allChannels);
+        } catch (e) { console.log(e); }
+        document.getElementById('scan-box').style.display = 'none';
     }
 
     function processLines(lines, batch) {
-        let info = {};
+        let currentInfo = null; // Memorise infos entre les lignes
+
         for (let line of lines) {
             line = line.trim();
+            if(!line) continue;
+
             if (line.startsWith('#EXTINF:')) {
+                // ANALYSE LIGNE INFO
                 const parts = line.split(',');
-                // EXTRACTION DOSSIER (GROUP-TITLE) AMELIOREE
+                let name = parts[1] || "Sans Nom";
+                let logo = (line.match(/tvg-logo=["']?([^"']*)["']?/) || [])[1];
+                
+                // DETECTION GROUP (UNIVERSELLE)
                 let cat = "Autres";
-                const grp = line.match(/group-title="([^"]*)"/);
-                if(grp) cat = grp[1]; 
-                else {
-                    // Fallback: parfois le dossier est dans le nom (ex: "FR: TF1")
-                    if(parts[1] && parts[1].includes(":")) cat = parts[1].split(":")[0].trim();
+                
+                // 1. group-title="..." ou group-title=...
+                const grpMatch = line.match(/group-title=["']?([^"']*)["']?/);
+                if(grpMatch) {
+                    cat = grpMatch[1].replace(/;/g, " ").trim(); // Nettoyage
+                } 
+                // 2. Si pas de groupe, chercher dans le nom (Ex: "FR: TF1")
+                else if(name.includes(":")) {
+                    cat = name.split(":")[0].trim();
                 }
                 
-                let logo = (line.match(/tvg-logo="([^"]*)"/) || [])[1];
-                info = { name: parts[1] || "TV", logo: logo, category: cat };
+                currentInfo = { name: name, logo: logo, category: cat };
                 allCategories.add(cat);
+
             } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
-                if (info.name) {
-                    const ch = { ...info, url: line };
+                // ANALYSE LIGNE URL
+                if (currentInfo) {
+                    const ch = { ...currentInfo, url: line };
                     if (!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                         batch.push(ch); loadedUrls.add(ch.url);
                     }
-                    info = {};
+                    currentInfo = null; // Reset pour la prochaine
                 }
             }
         }
@@ -363,11 +379,11 @@
         allChannels = allChannels.concat(batch);
         batch.length = 0;
         
-        // UPDATE COMPTEUR VISUEL
-        document.getElementById('scan-status').innerText = "Scanner: " + allChannels.length + " chaînes...";
+        // ANIMATION COMPTEUR
+        document.getElementById('scan-text').innerText = "Ajout de " + allChannels.length + " chaînes...";
         document.getElementById('count-display').innerText = allChannels.length + " trouvées";
         
-        // UPDATE LISTE (Seulement si nécessaire pour pas lagger)
+        // UPDATE LISTE (SI NECESSAIRE)
         if(document.getElementById('searchInput').value === "") renderList(); 
         updateCategoryChips();
     }
@@ -375,40 +391,41 @@
     // --- RENDERING ---
     function renderList() {
         const term = document.getElementById('searchInput').value.toLowerCase();
-        
-        // Filtrage
         displayedChannels = allChannels.filter(ch => {
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
-        // Limite affichage (Anti-Lag DOM)
+        // Tri Favoris
+        displayedChannels.sort((a,b) => {
+            const favA = favorites.includes(a.url); const favB = favorites.includes(b.url);
+            if(favA && !favB) return -1; if(!favA && favB) return 1; return 0;
+        });
+
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         const frag = document.createDocumentFragment();
         
-        // Affiche max 200 items au début
-        const maxShow = (term === "" && selectedCategories.length === 0) ? 200 : 500;
+        // Limite visuelle initiale pour fluidité
+        let limit = (term === "" && selectedCategories.length === 0) ? 200 : 500;
         
-        displayedChannels.slice(0, maxShow).forEach((ch) => {
+        displayedChannels.slice(0, limit).forEach((ch) => {
             const isFav = favorites.includes(ch.url);
             const div = document.createElement('div');
             div.className = 'channel-row ' + (ch.url === allChannels[currentChannelIndex]?.url ? 'active' : '');
-            div.innerHTML = `
-                <i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
-                <img src="${ch.logo || 'https://via.placeholder.com/40'}" class="ch-logo" loading="lazy">
-                <div>
-                    <div style="font-weight:600; font-size:14px;">${ch.name}</div>
-                    <div style="font-size:10px; color:#888;">${ch.category}</div>
-                </div>`;
+            div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
+                             <img src="${ch.logo || 'https://via.placeholder.com/40'}" class="ch-logo" loading="lazy">
+                             <div>
+                                <div style="font-weight:600; font-size:14px;">${ch.name}</div>
+                                <div style="font-size:10px; color:#888;">${ch.category}</div>
+                             </div>`;
             div.onclick = () => tryPlayChannel(ch);
             frag.appendChild(div);
         });
         list.appendChild(frag);
     }
 
-    // --- STANDARD PLAYER FUNC ---
     function updateCategoryChips() {
         const container = document.getElementById('chips-area');
         if(container.childElementCount === allCategories.size) return;
@@ -423,7 +440,9 @@
     document.getElementById('searchInput').addEventListener('input', renderList);
     function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
-    
+    function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
+    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222'; renderList(); }
+
     function tryPlayChannel(ch) {
         const name = ch.name.toLowerCase();
         if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex'; }
@@ -456,8 +475,6 @@
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
     function hideCurrentChannel() { if(confirm("Supprimer cette chaîne ?")) { const ch = allChannels[currentChannelIndex]; hiddenChannels.push(ch.url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); loadedUrls.delete(ch.url); renderList(); nextChannel(); } }
-    function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
-    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222'; renderList(); }
     function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
