@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V39 Ultimate</title>
+    <title>My Box TV - V40</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -154,24 +154,19 @@
     <div id="bottom-bar">
         <button class="btn-ctrl" onclick="prevChannel()"><i class="fas fa-step-backward"></i></button>
         <button class="btn-ctrl desktop-only" onclick="adjustVol(-0.1)"><i class="fas fa-minus"></i></button>
-        
         <button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-        
         <button class="btn-ctrl desktop-only" onclick="adjustVol(0.1)"><i class="fas fa-plus"></i></button>
         <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
-        
         <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
-        
         <button class="btn-ctrl" onclick="hideCurrentChannel()" style="color:#ff4444;"><i class="fas fa-trash"></i></button>
-
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
 </div>
 
 <script>
     // =======================================================
-    // TON LIEN DE DEPLOIEMENT V39
-    const API_URL = "https://script.google.com/macros/s/AKfycbxsj8vxAVwozzX339QAWTvy7sq4qP1nE8JWpeDXk57E27R9bf4kJ50DKR1aRFcbmG4RHw/exec";
+    // TON LIEN DE DEPLOIEMENT V40
+    const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
