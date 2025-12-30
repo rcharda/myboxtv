@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V37 Final</title>
+    <title>My Box TV - V38 Final</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
         /* UI LAYER */
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        /* STATUS PILL (RETOUR) */
+        /* STATUS PILL (BULLE INFO) */
         #status-pill {
             position: absolute; top: 20px; right: 20px; 
             background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
@@ -30,6 +30,7 @@
         }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
+        #led.orange { background: orange; box-shadow: 0 0 5px orange; }
 
         /* MENU LATERAL */
         #channel-menu {
@@ -67,7 +68,7 @@
             font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s;
         }
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
-        .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); }
+        .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); animation: pulse 2s infinite; }
         .btn-large { width: 55px; height: 55px; font-size: 22px; background: var(--primary); border: 2px solid white; box-shadow: 0 0 10px rgba(229,9,20,0.5); }
 
         /* ELEMENTS CACHÉS SUR MOBILE */
@@ -99,6 +100,7 @@
         /* MESSAGE ADMIN */
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
     </style>
 </head>
 <body>
@@ -197,6 +199,8 @@
         
         <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
         
+        <button class="btn-ctrl" onclick="hideCurrentChannel()" style="color:#ff4444;"><i class="fas fa-trash"></i></button>
+
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
 </div>
@@ -219,7 +223,7 @@
     let isFavFilter = false;
     let hls = null;
     let pendingChannelIndex = -1;
-    let isAutoZap = false; // Par défaut désactivé
+    let isAutoZap = false; 
     let allCategories = new Set(['Favoris']);
     let selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
@@ -319,7 +323,6 @@
         } catch(e){}
     }
 
-    // --- RENDERING ---
     function toggleFavorite(url, e) {
         e.stopPropagation(); 
         if(favorites.includes(url)) favorites = favorites.filter(u => u !== url);
@@ -374,7 +377,6 @@
 
     document.getElementById('searchInput').addEventListener('input', renderList);
 
-    // --- PLAYER & ERROR HANDLING ---
     function tryPlayChannel(ch) {
         const name = ch.name.toLowerCase();
         if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) {
@@ -395,6 +397,7 @@
     }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
+    // --- MOTEUR DE LECTURE (SMART ZAP) ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -402,37 +405,59 @@
         renderList(); 
 
         statusText.innerText = ch.name;
-        led.className = ""; // Rouge
+        led.className = "orange"; // Chargement
 
         if(Hls.isSupported()) {
             if(hls) hls.destroy();
-            hls = new Hls();
+            hls = new Hls({
+                manifestLoadingMaxRetry: 3, // Essayer 3 fois avant d'abandonner
+                levelLoadingMaxRetry: 3
+            });
             hls.loadSource(ch.url);
             hls.attachMedia(video);
+            
+            // SUCCES : On a reçu des données (Manifest)
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 video.play().catch(()=>{});
                 led.className = "green";
+                // IMPORTANT : On annule le Zap si le flux répond
                 clearTimeout(autoZapTimeout);
             });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handleError(); });
+            
+            // GESTION ERREURS HLS
+            hls.on(Hls.Events.ERROR, (e, data) => {
+                if(data.fatal) {
+                    console.log("Erreur Fatale HLS");
+                    handleError(); // Lien mort
+                }
+            });
+            
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = ch.url;
             video.play();
         }
         
+        // ZAP INTELLIGENT : On attend 15 secondes max
         if(isAutoZap) {
+            clearTimeout(autoZapTimeout); // Reset ancien timer
             autoZapTimeout = setTimeout(() => {
-                if(video.paused || video.readyState < 2) handleError();
-            }, 6000);
+                // Si après 15s on est toujours en pause ou pas prêt -> Zap
+                if(video.paused || video.readyState < 2) {
+                    console.log("Timeout dépassé -> Zap");
+                    handleError();
+                }
+            }, 15000);
         }
     }
 
     let autoZapTimeout;
+    
     function handleError() {
-        led.className = "";
+        led.className = ""; // Eteint (Rouge/Noir)
         if(isAutoZap) { 
             statusText.innerText = "Zap Auto..."; 
-            setTimeout(nextChannel, 500); 
+            // Petit délai pour voir le message
+            setTimeout(() => nextChannel(), 1000); 
         } else { 
             statusText.innerText = "Erreur Flux"; 
         }
@@ -462,6 +487,19 @@
         } else {
             btn.classList.remove('active-mode');
             statusText.innerText = "Auto-Zap OFF";
+            clearTimeout(autoZapTimeout);
+        }
+    }
+    
+    function hideCurrentChannel() {
+        if(confirm("Supprimer cette chaîne ?")) {
+            const ch = allChannels[currentChannelIndex];
+            hiddenChannels.push(ch.url);
+            localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
+            allChannels.splice(currentChannelIndex, 1);
+            loadedUrls.delete(ch.url);
+            renderList();
+            nextChannel();
         }
     }
 
