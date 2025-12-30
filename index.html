@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V58 Ultimate</title>
+    <title>My Box TV - V59 Control Master</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -16,15 +16,15 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- V58 : MOTEUR HYBRIDE --- */
-        #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
+        /* --- V59 : GESTION DES COUCHES (LAYERS) --- */
+        #player-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         
-        /* Lecteur IPTV */
         video { width: 100%; height: 100%; object-fit: contain; display: block; }
-        
-        /* Lecteur WEB (Caché par défaut) */
         iframe { width: 100%; height: 100%; border: none; display: none; background: #000; position: absolute; top:0; left:0; z-index: 1; }
-        /* ---------------------------- */
+        
+        /* LE BOUCLIER INVISIBLE (Pour garder le contrôle) */
+        #touch-shield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; background: transparent; cursor: pointer; }
+        /* ------------------------------------------- */
 
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
@@ -161,9 +161,12 @@
     </div>
 </div>
 
-<div id="video-layer">
-    <video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous" referrerpolicy="no-referrer"></video>
-    <iframe id="web-player" onclick="toggleMenu()" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+<div id="player-layer">
+    <video id="video" playsinline crossorigin="anonymous"></video>
+    
+    <iframe id="web-player" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    
+    <div id="touch-shield" onclick="toggleMenu()"></div>
 </div>
 
 <div id="ui-layer">
@@ -213,7 +216,7 @@
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V58_Ultimate"; 
+    const DB_NAME = "MyBoxTV_V59_Ctrl"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -230,7 +233,7 @@
     let isScanning = false;
 
     const video = document.getElementById('video');
-    const iframe = document.getElementById('web-player'); // LE MOTEUR WEB
+    const iframe = document.getElementById('web-player'); 
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
@@ -360,7 +363,6 @@
         } catch (e) { console.log("Skip"); }
     }
 
-    // --- LE CERVEAU V58 (Détection Hybride) ---
     function processLines(lines, batch) {
         let currentInfo = null;
         for (let line of lines) {
@@ -375,16 +377,12 @@
                 else if(name.includes(":")) cat = name.split(":")[0].trim();
                 if(name.includes(">")) cat = name.split(">")[0].trim(); 
                 currentInfo = { name: name, logo: logo, category: cat }; allCategories.add(cat);
-            } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
+            } else if (line.startsWith('http')) {
                 if (currentInfo) {
-                    // C'EST ICI LA CLÉ DE LA V58 : DETECTION WEB/VIDEO
-                    let isWeb = true; // On suppose que c'est une page WEB (comme ORTB) par défaut
-                    
-                    // Si on voit une extension vidéo classique, on passe en mode Vidéo
+                    let isWeb = true; 
                     if(line.includes('.m3u8') || line.includes('.ts') || line.includes('.mp4')) {
                         isWeb = false;
                     }
-
                     const ch = { ...currentInfo, url: line, isWeb: isWeb };
                     
                     if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
@@ -425,7 +423,6 @@
             const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             
-            // Badge WEB dans la liste
             const badge = ch.isWeb ? '<span class="web-tag">WEB</span>' : '';
             
             const div = document.createElement('div');
@@ -466,7 +463,7 @@
     function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
-    // --- LECTEUR V58 (HYBRIDE SWITCH) ---
+    // --- PLAY CHANNEL V59 (Bouclier & Autoplay) ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -474,31 +471,30 @@
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
-        // MODE WEB (Iframe)
+        // 1. SI WEB
         if(ch.isWeb) {
             video.style.display = "none";
             video.pause();
             if(hls) hls.destroy(); 
             
-            iframe.src = ch.url;
+            // AUTOPLAY INJECTION
+            let separator = ch.url.includes('?') ? '&' : '?';
+            // On force le son coupé (muted) sinon les navigateurs bloquent l'autoplay
+            iframe.src = ch.url + separator + "autoplay=1&muted=1&playsinline=1";
+            
             iframe.style.display = "block";
             led.className = "green";
             return;
         }
 
-        // MODE VIDEO (HLS)
+        // 2. SI VIDEO
         iframe.style.display = "none";
-        iframe.src = ""; // Stop le site web
+        iframe.src = ""; 
         video.style.display = "block";
 
         if(Hls.isSupported()) {
             if(hls) hls.destroy(); 
-            // Config Furtive
-            hls = new Hls({
-                manifestLoadingMaxRetry: 5, 
-                manifestLoadingTimeOut: 10000,
-                xhrSetup: function (xhr, url) { xhr.withCredentials = false; }
-            });
+            hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000, xhrSetup: function (xhr, url) { xhr.withCredentials = false; }});
             hls.loadSource(ch.url); 
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
