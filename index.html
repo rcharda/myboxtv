@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV</title>
+    <title>My Box TV - V44 Infinity</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -32,7 +32,7 @@
         #searchInput { width: 90%; margin: 10px auto; padding: 12px; border-radius: 20px; background: #333; border: none; color: white; display: block; }
         
         #channel-list { flex: 1; overflow-y: auto; padding: 5px; width:100%; }
-        .channel-row { display: flex; align-items: center; padding: 10px; margin: 2px 0; border-radius: 8px; cursor: pointer; }
+        .channel-row { display: flex; align-items: center; padding: 10px; margin: 2px 0; border-radius: 8px; cursor: pointer; contain: content; }
         .channel-row:hover { background: #222; }
         .channel-row.active { background: rgba(229,9,20,0.3); border-left: 3px solid var(--primary); }
         .ch-logo { width: 40px; height: 40px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; margin-right: 10px; }
@@ -65,20 +65,20 @@
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
         
-        /* LOGO STYLE */
         .app-logo { max-width: 150px; margin-bottom: 20px; }
-        
-        /* MAINTENANCE SCREEN */
         #maint-screen { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+        #loading-bar-container { position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 200; display:none; }
+        #loading-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s; }
     </style>
 </head>
 <body>
+
+<div id="loading-bar-container"><div id="loading-bar"></div></div>
 
 <div id="maint-screen">
     <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:120px; margin-bottom:20px;">
     <h1 style="color:#e50914;">MAINTENANCE</h1>
     <p>Nous améliorons nos services.<br>Veuillez patienter.</p>
-    <div style="margin-top:20px; color:#666;">Essayer de recharger dans 10min</div>
 </div>
 
 <div id="admin-msg-box">Message du serveur...</div>
@@ -101,6 +101,7 @@
             <div class="settings-tab active" onclick="showTab('tab-cat')">Catégories</div>
             <div class="settings-tab" onclick="showTab('tab-source')">Sources</div>
             <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
+            <div class="settings-tab" onclick="forceReload()" style="color:#28a745; margin-top:20px;">Actualiser Liste</div>
             <div class="settings-tab" onclick="closeSettings()" style="color:#ff4444; margin-top:10px;">Fermer ✕</div>
         </div>
         <div class="settings-content">
@@ -120,11 +121,10 @@
             <div id="tab-sub" class="tab-content" style="display:none;">
                 <h3>Mon Abonnement</h3>
                 <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
-                    Statut: <span style="color:#0f0;">Actif</span><br>
                     ID: <span id="sub-id">...</span><br>
                     Infos: <span id="sub-details">...</span>
                 </div>
-                <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">SE DÉCONNECTER (LIBÉRER SLOT)</button>
+                <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">SE DÉCONNECTER</button>
                 <br><br>
                 <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; background:#25D366; color:white; padding:10px; text-align:center; border-radius:5px; text-decoration:none;">Support WhatsApp</a>
             </div>
@@ -184,6 +184,8 @@
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
+    const DB_NAME = "MyBoxTV_DB";
+    const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
@@ -198,6 +200,49 @@
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
+    // --- INDEXED DB (MÉMOIRE INFINIE) ---
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = e => reject("DB Error");
+            request.onsuccess = e => resolve(e.target.result);
+            request.onupgradeneeded = e => {
+                const db = e.target.result;
+                if(!db.objectStoreNames.contains("channels")) {
+                    db.createObjectStore("channels", { keyPath: "url" });
+                }
+            };
+        });
+    }
+
+    async function saveChannelsToDB(channels) {
+        const db = await openDB();
+        const tx = db.transaction("channels", "readwrite");
+        const store = tx.objectStore("channels");
+        channels.forEach(ch => {
+            try { store.put(ch); } catch(e){}
+        });
+        return tx.complete;
+    }
+
+    async function loadChannelsFromDB() {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction("channels", "readonly");
+            const store = tx.objectStore("channels");
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => resolve([]);
+        });
+    }
+
+    async function clearDB() {
+        const db = await openDB();
+        const tx = db.transaction("channels", "readwrite");
+        tx.objectStore("channels").clear();
+    }
+
+    // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
         document.getElementById('login-screen').style.display = 'none';
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status'));
@@ -211,8 +256,7 @@
             const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text = await res.text();
             
-            if(text.includes("MAINTENANCE")) { alert("Maintenance en cours. Revenez plus tard."); return; }
-
+            if(text.includes("MAINTENANCE")) { alert("Maintenance."); return; }
             if(text.includes("SUCCESS")) {
                 localStorage.setItem('mybox_auth', 'OK');
                 localStorage.setItem('mybox_key', key);
@@ -238,7 +282,7 @@
     }
 
     async function logout() {
-        if(!confirm("Déconnecter cet appareil ?")) return;
+        if(!confirm("Déconnecter ?")) return;
         const key = localStorage.getItem('mybox_key');
         try { await fetch(`${API_URL}?action=logout&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); } catch(e){}
         localStorage.removeItem('mybox_auth');
@@ -248,12 +292,9 @@
     async function initApp() {
         // VERIF MAINTENANCE
         try {
-            const res = await fetch(`${API_URL}?action=get_message`); // Simple ping to check status
+            const res = await fetch(`${API_URL}?action=get_message`);
             const text = await res.text();
-            if(text.includes("MAINTENANCE")) {
-                document.getElementById('maint-screen').style.display = 'flex';
-                return;
-            }
+            if(text.includes("MAINTENANCE")) { document.getElementById('maint-screen').style.display = 'flex'; return; }
             if(text.startsWith("MSG:") && text.length > 5) {
                 const box = document.getElementById('admin-msg-box');
                 box.innerText = "📢 " + text.replace("MSG:", "");
@@ -262,20 +303,38 @@
             }
         } catch(e){}
 
-        loadCache();
-        addChannelToFront(DEFAULT_CHANNEL);
+        // 1. CHARGER DEPUIS DB (CACHE INFINI)
+        const cachedChannels = await loadChannelsFromDB();
         
-        if(allChannels.length > 0) playChannel(0);
+        if (cachedChannels.length > 0) {
+            console.log("Chargement depuis la mémoire appareil...");
+            allChannels = cachedChannels;
+            allChannels.forEach(ch => {
+                loadedUrls.add(ch.url);
+                if(ch.category) allCategories.add(ch.category);
+            });
+            updateCategoryChips();
+            renderList();
+            playChannel(0); // Lancement immédiat
+        } else {
+            console.log("Premier lancement ou reset...");
+            addChannelToFront(DEFAULT_CHANNEL);
+            playChannel(0); // Lancement Novelas
+            // Lancer le téléchargement
+            downloadPlaylists();
+        }
+    }
 
+    async function downloadPlaylists() {
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
             const text = await res.text();
-            if(text.includes("MAINTENANCE")) return; // double check
+            if(text.includes("MAINTENANCE")) return;
 
             let sources = text.startsWith("PLAYLISTS:") ? text.replace("PLAYLISTS:","").split(",,,") : ["https://iptv-org.github.io/iptv/index.m3u"];
             sources.sort((a,b) => a.includes("index.m3u") ? 1 : -1);
             
-            for(let s of sources) await fetchPlaylist(s);
+            for(let s of sources) await fetchPlaylistStreaming(s);
             
         } catch(e) { console.log("Offline"); }
     }
@@ -284,139 +343,117 @@
         if(!loadedUrls.has(ch.url)) { allChannels.unshift(ch); loadedUrls.add(ch.url); renderList(); }
     }
 
-    async function fetchPlaylist(url) {
+    async function fetchPlaylistStreaming(url) {
+        document.getElementById('loading-bar-container').style.display = "block";
         try {
-            const res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
-            if(!res.ok) return;
-            const text = await res.text();
-            const lines = text.split('\n');
-            let info = {}, count = 0;
-            for(let line of lines) {
-                line = line.trim();
-                if(line.startsWith('#EXTINF:')) {
-                    const parts = line.split(',');
-                    let cat = (line.match(/group-title="([^"]*)"/) || [])[1] || "Autres";
-                    let logo = (line.match(/tvg-logo="([^"]*)"/) || [])[1];
-                    info = { name: parts[1] || "TV", logo: logo, category: cat };
-                    allCategories.add(cat);
-                } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
-                    if(info.name) {
-                        const ch = { ...info, url: line };
-                        if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { allChannels.push(ch); loadedUrls.add(ch.url); count++; }
-                        info = {};
-                    }
+            const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
+            if (!response.ok) return;
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+            let newChannelsBuffer = [];
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                buffer += decoder.decode(value, { stream: true });
+                let lines = buffer.split("\n");
+                buffer = lines.pop(); 
+
+                processLines(lines, newChannelsBuffer);
+                
+                if (newChannelsBuffer.length > 50) {
+                   flushBuffer(newChannelsBuffer);
+                   await new Promise(r => setTimeout(r, 10)); 
                 }
             }
-            if(count > 0) { updateCategoryChips(); renderList(); saveCache(); }
-        } catch(e){}
+            processLines([buffer], newChannelsBuffer);
+            flushBuffer(newChannelsBuffer);
+            
+            // SAUVEGARDE EN ARRIERE PLAN DANS LA DB
+            saveChannelsToDB(allChannels);
+
+        } catch (e) { console.error(e); }
+        document.getElementById('loading-bar-container').style.display = "none";
     }
 
-    function toggleFavorite(url, e) {
-        e.stopPropagation(); 
-        if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url);
-        localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList();
+    function processLines(lines, bufferArray) {
+        let info = {};
+        for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                let cat = "Autres";
+                const groupMatch = line.match(/group-title="([^"]*)"/);
+                if (groupMatch) cat = groupMatch[1];
+                let logo = (line.match(/tvg-logo="([^"]*)"/) || [])[1];
+                info = { name: parts[1] || "TV", logo: logo, category: cat };
+                allCategories.add(cat);
+            } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
+                if (info.name) {
+                    const ch = { ...info, url: line };
+                    if (!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
+                        bufferArray.push(ch); 
+                        loadedUrls.add(ch.url);
+                    }
+                    info = {};
+                }
+            }
+        }
     }
 
-    function toggleOnlyFavorites() {
-        isFavFilter = !isFavFilter;
-        document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222';
+    function flushBuffer(bufferArray) {
+        if(bufferArray.length === 0) return;
+        allChannels = allChannels.concat(bufferArray);
+        bufferArray.length = 0;
         renderList();
+        updateCategoryChips();
     }
 
     function renderList() {
         const term = document.getElementById('searchInput').value.toLowerCase();
+        
         displayedChannels = allChannels.filter(ch => {
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
+
         displayedChannels.sort((a,b) => {
             const favA = favorites.includes(a.url); const favB = favorites.includes(b.url);
             if(favA && !favB) return -1; if(!favA && favB) return 1; return 0;
         });
+
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         const frag = document.createDocumentFragment();
-        displayedChannels.forEach((ch, idx) => {
+        
+        let maxShow = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
+        
+        displayedChannels.slice(0, maxShow).forEach((ch) => {
             const isFav = favorites.includes(ch.url);
             const div = document.createElement('div');
             div.className = 'channel-row ' + (ch.url === allChannels[currentChannelIndex]?.url ? 'active' : '');
-            div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i><img src="${ch.logo || 'https://via.placeholder.com/40'}" class="ch-logo"><div style="font-weight:600; font-size:14px;">${ch.name}</div>`;
+            div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
+                             <img src="${ch.logo || 'https://via.placeholder.com/40'}" class="ch-logo" loading="lazy">
+                             <div>
+                                <div style="font-weight:600; font-size:14px;">${ch.name}</div>
+                                <div style="font-size:10px; color:#888;">${ch.category}</div>
+                             </div>`;
             div.onclick = () => tryPlayChannel(ch);
             frag.appendChild(div);
         });
         list.appendChild(frag);
-        document.getElementById('count-display').innerText = displayedChannels.length + " Chaînes";
-    }
-
-    document.getElementById('searchInput').addEventListener('input', renderList);
-
-    function tryPlayChannel(ch) {
-        const name = ch.name.toLowerCase();
-        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) {
-            pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex';
-        } else { currentChannelIndex = allChannels.indexOf(ch); playChannel(currentChannelIndex); }
-    }
-
-    function checkPin() {
-        if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné");
-    }
-    function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
-
-    function playChannel(index) {
-        if(!allChannels[index]) return;
-        const ch = allChannels[index];
-        if(window.innerWidth < 900) document.body.classList.remove('menu-open');
-        renderList(); 
-        statusText.innerText = ch.name; led.className = "orange";
-
-        if(Hls.isSupported()) {
-            if(hls) hls.destroy();
-            hls = new Hls({manifestLoadingMaxRetry: 2});
-            hls.loadSource(ch.url); hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handleError(); });
-        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
-        
-        if(isAutoZap) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
-    }
-
-    let autoZapTimeout;
-    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
-
-    function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
-    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
-    function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
-    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
-
-    function toggleAutoZap() {
-        isAutoZap = !isAutoZap;
-        const btn = document.getElementById('btn-autozap');
-        if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; }
-        else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); }
+        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
     }
     
-    function hideCurrentChannel() {
-        if(confirm("Supprimer cette chaîne ?")) {
-            const ch = allChannels[currentChannelIndex];
-            hiddenChannels.push(ch.url);
-            localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
-            allChannels.splice(currentChannelIndex, 1);
-            loadedUrls.delete(ch.url); renderList(); nextChannel();
-        }
-    }
-
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
-    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-    function showTab(id) {
-        document.querySelectorAll('.tab-content').forEach(el => el.style.display='none');
-        document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active'));
-        document.getElementById(id).style.display = 'block';
-    }
+    // --- ACTIONS ---
     function updateCategoryChips() {
         const container = document.getElementById('chips-area');
-        if(selectedCategories.length === 0) selectedCategories = Array.from(allCategories);
+        if(container.childElementCount === allCategories.size) return;
+        if(selectedCategories.length === 0) selectedCategories = [];
         let cats = Array.from(allCategories).sort();
         let html = '';
         cats.forEach(cat => {
@@ -425,25 +462,63 @@
         });
         container.innerHTML = html;
     }
-    function toggleCat(cat) {
-        if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat);
-        updateCategoryChips();
+
+    document.getElementById('searchInput').addEventListener('input', renderList);
+
+    function toggleFavorite(url, e) {
+        e.stopPropagation(); 
+        if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url);
+        localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList();
     }
+    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222'; renderList(); }
+    
+    function tryPlayChannel(ch) {
+        const name = ch.name.toLowerCase();
+        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) {
+            pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex';
+        } else { currentChannelIndex = allChannels.indexOf(ch); playChannel(currentChannelIndex); }
+    }
+    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
+    function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
+
+    function playChannel(index) {
+        if(!allChannels[index]) return;
+        const ch = allChannels[index];
+        if(window.innerWidth < 900) document.body.classList.remove('menu-open');
+        renderList(); 
+        statusText.innerText = ch.name; led.className = "orange";
+        if(Hls.isSupported()) {
+            if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 2});
+            hls.loadSource(ch.url); hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
+            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handleError(); });
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
+        if(isAutoZap) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
+    }
+    let autoZapTimeout;
+    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
+    function toggleMenu() { document.body.classList.toggle('menu-open'); }
+    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
+    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
+    function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
+    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
+    function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
+    function hideCurrentChannel() { if(confirm("Supprimer cette chaîne ?")) { const ch = allChannels[currentChannelIndex]; hiddenChannels.push(ch.url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); loadedUrls.delete(ch.url); renderList(); nextChannel(); } }
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
+    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+    function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
+    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     function restoreHidden() { localStorage.removeItem('mybox_hidden'); location.reload(); }
-    function addSource() {
-        const url = document.getElementById('custom-source').value.trim();
-        if(url) {
-            const current = JSON.parse(localStorage.getItem('mybox_custom_sources') || '[]');
-            current.push(url);
-            localStorage.setItem('mybox_custom_sources', JSON.stringify(current));
-            alert("Ajouté !"); location.reload();
+    function addSource() { const url = document.getElementById('custom-source').value.trim(); if(url) { const current = JSON.parse(localStorage.getItem('mybox_custom_sources') || '[]'); current.push(url); localStorage.setItem('mybox_custom_sources', JSON.stringify(current)); alert("Ajouté !"); location.reload(); } }
+    function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
+    
+    async function forceReload() {
+        if(confirm("Cela va effacer la mémoire et recharger la liste. Continuer ?")) {
+            await clearDB();
+            location.reload();
         }
     }
-    function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
-    function saveCache() { localStorage.setItem('mybox_cache_v35', JSON.stringify(allChannels.slice(0,1000))); }
-    function loadCache() { const c = localStorage.getItem('mybox_cache_v35'); if(c) { allChannels = JSON.parse(c); allChannels.forEach(ch=>loadedUrls.add(ch.url)); renderList(); } }
 </script>
 </body>
 </html>
-
