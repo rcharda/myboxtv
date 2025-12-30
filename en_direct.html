@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV EN DIRECT - WEB</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; background: #121212; color: white; font-family: 'Montserrat', sans-serif; display: flex; flex-direction: column; height: 100vh; }
+        
+        .header { padding: 20px; background: #1e1e1e; border-bottom: 2px solid #e50914; display: flex; justify-content: space-between; align-items: center; }
+        .title { font-weight: 800; font-size: 20px; color: #e50914; }
+        .btn-back { background: #333; color: white; border: 1px solid #555; padding: 10px 20px; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 20px; overflow-y: auto; flex: 1; }
+        
+        .card { background: #252525; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; border: 1px solid #333; }
+        .card:hover { transform: scale(1.05); border-color: #e50914; background: #333; }
+        .card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; background: white; border-radius: 50%; padding: 5px; }
+        .card h3 { font-size: 14px; margin: 0; }
+
+        /* IFRAME FULLSCREEN OVERLAY */
+        #web-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; display: none; flex-direction: column; }
+        iframe { flex: 1; width: 100%; border: none; }
+        .overlay-bar { height: 50px; background: #e50914; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .overlay-title { font-weight: bold; }
+        .close-btn { background: white; color: #e50914; border: none; padding: 5px 15px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title"><i class="fas fa-globe"></i> TV WEB</div>
+        <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> RETOUR</a>
+    </div>
+
+    <div class="grid-container" id="grid">
+        <div style="color:#888;">Chargement des chaînes Web...</div>
+    </div>
+
+    <div id="web-overlay">
+        <div class="overlay-bar">
+            <span class="overlay-title" id="overlay-title">TV</span>
+            <button class="close-btn" onclick="closePlayer()">FERMER ✕</button>
+        </div>
+        <iframe id="web-frame" allow="autoplay; encrypted-media; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"></iframe>
+    </div>
+
+    <script>
+        // METTRE ICI LE LIEN DE TON FICHIER GITHUB "BOUQUET_BENIN.M3U"
+        const M3U_URL = "https://raw.githubusercontent.com/rcharda/mes-listes-iptv/main/bouquet_benin.m3u";
+
+        fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(M3U_URL))
+            .then(r => r.text())
+            .then(data => {
+                const lines = data.split('\n');
+                const grid = document.getElementById('grid');
+                grid.innerHTML = "";
+                let currentInfo = null;
+                let found = 0;
+
+                for (let line of lines) {
+                    line = line.trim();
+                    if (line.startsWith('#EXTINF:')) {
+                        const parts = line.split(',');
+                        currentInfo = { 
+                            name: parts[1] || "TV", 
+                            logo: (line.match(/tvg-logo="([^"]*)"/) || [])[1] 
+                        };
+                    } else if (line.startsWith('http')) {
+                        if (currentInfo) {
+                            // FILTRE INVERSE : ON GARDE UNIQUEMENT LES LIENS WEB
+                            // Si ce n'est PAS un .m3u8, c'est pour nous !
+                            if(!line.includes('.m3u8') && !line.includes('.ts')) {
+                                createCard(currentInfo, line);
+                                found++;
+                            }
+                            currentInfo = null;
+                        }
+                    }
+                }
+                if(found === 0) grid.innerHTML = "<div style='padding:20px'>Aucune chaîne Web trouvée dans la liste.</div>";
+            });
+
+        function createCard(info, url) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.innerHTML = `
+                <img src="${info.logo || 'https://via.placeholder.com/80'}" loading="lazy">
+                <h3>${info.name}</h3>
+            `;
+            div.onclick = () => openPlayer(info.name, url);
+            document.getElementById('grid').appendChild(div);
+        }
+
+        function openPlayer(name, url) {
+            document.getElementById('overlay-title').innerText = name;
+            const frame = document.getElementById('web-frame');
+            
+            // Injection Autoplay
+            let separator = url.includes('?') ? '&' : '?';
+            frame.src = url + separator + "autoplay=1";
+            
+            document.getElementById('web-overlay').style.display = 'flex';
+        }
+
+        function closePlayer() {
+            document.getElementById('web-overlay').style.display = 'none';
+            document.getElementById('web-frame').src = "";
+        }
+    </script>
+
+</body>
+</html>
