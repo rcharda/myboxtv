@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V49 Sanctuary</title>
+    <title>My Box TV - V50 Pro</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
@@ -109,6 +109,8 @@
         <div class="settings-content">
             <div id="tab-cat" class="tab-content">
                 <h3>Dossiers</h3>
+                <p style="color:#888; font-size:12px;">Cliquez pour filtrer. Si rien n'est sélectionné, tout s'affiche.</p>
+                <button onclick="resetFilters()" style="width:100%; background:#444; padding:10px; margin-bottom:15px; border:none; color:white; border-radius:5px;">🔄 TOUT AFFICHER</button>
                 <div id="chips-area" class="chips-container"></div>
                 <button onclick="applyFilters()" style="margin-top:20px; width:100%; background:var(--primary); border:none; color:white; padding:10px; border-radius:5px;">Valider</button>
             </div>
@@ -184,15 +186,9 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
     // =======================================================
 
-    // --- CONFIGURATION SANCTUAIRE ---
-    const DEFAULT_CHANNEL = { 
-        name: "Novelas TV", 
-        url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", 
-        logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", 
-        category: "Start" 
-    };
+    const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V49_Sanctuary"; 
+    const DB_NAME = "MyBoxTV_V50_Final"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -211,56 +207,20 @@
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    // --- INDEXED DB ---
-    function openDB() {
-        return new Promise((resolve, reject) => {
-            const r = indexedDB.open(DB_NAME, DB_VERSION);
-            r.onerror = () => reject("DB Error");
-            r.onsuccess = e => resolve(e.target.result);
-            r.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); };
-        });
-    }
-    async function saveChannelsToDB(channels) {
-        const db = await openDB();
-        const tx = db.transaction("channels", "readwrite");
-        const store = tx.objectStore("channels");
-        channels.forEach(ch => { try { store.put(ch); } catch(e){} });
-    }
-    async function loadChannelsFromDB() {
-        const db = await openDB();
-        return new Promise(resolve => {
-            const tx = db.transaction("channels", "readonly");
-            const req = tx.objectStore("channels").getAll();
-            req.onsuccess = () => resolve(req.result || []);
-            req.onerror = () => resolve([]);
-        });
-    }
-    async function clearDB() { const db = await openDB(); try{ db.transaction("channels", "readwrite").objectStore("channels").clear(); }catch(e){} }
+    function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror=()=>reject("DB Error"); r.onsuccess=e=>resolve(e.target.result); r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
+    async function saveChannelsToDB(channels) { const db=await openDB(); const tx=db.transaction("channels","readwrite"); const store=tx.objectStore("channels"); channels.forEach(ch=>{try{store.put(ch);}catch(e){}}); }
+    async function loadChannelsFromDB() { const db=await openDB(); return new Promise(r=>{ const tx=db.transaction("channels","readonly"); const req=tx.objectStore("channels").getAll(); req.onsuccess=()=>r(req.result||[]); req.onerror=()=>r([]); }); }
+    async function clearDB() { const db=await openDB(); try{db.transaction("channels","readwrite").objectStore("channels").clear();}catch(e){} }
 
-    // --- FONCTION DE PROTECTION (SANCTUAIRE) ---
     function enforceNovelasIntegrity() {
-        // 1. Si la liste est vide, on met Novelas
-        if (allChannels.length === 0) {
-            allChannels = [DEFAULT_CHANNEL];
-            loadedUrls.add(DEFAULT_CHANNEL.url);
-            return;
-        }
-        // 2. Si le premier élément n'est pas Novelas, on l'injecte de force
+        if (allChannels.length === 0) { allChannels = [DEFAULT_CHANNEL]; loadedUrls.add(DEFAULT_CHANNEL.url); return; }
         if (allChannels[0].url !== DEFAULT_CHANNEL.url) {
-            // On supprime les doublons éventuels de Novelas ailleurs
             allChannels = allChannels.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
-            // On remet Novelas en premier
-            allChannels.unshift(DEFAULT_CHANNEL);
-            loadedUrls.add(DEFAULT_CHANNEL.url);
+            allChannels.unshift(DEFAULT_CHANNEL); loadedUrls.add(DEFAULT_CHANNEL.url);
         }
     }
 
-    // --- INIT ---
-    if(localStorage.getItem('mybox_auth') === 'OK') {
-        document.getElementById('login-screen').style.display = 'none';
-        updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status'));
-        initApp();
-    }
+    if(localStorage.getItem('mybox_auth') === 'OK') { document.getElementById('login-screen').style.display = 'none'; updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); initApp(); }
 
     async function login() {
         const key = document.getElementById('licenseKey').value.trim();
@@ -268,60 +228,29 @@
             const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text = await res.text();
             if(text.includes("MAINTENANCE")) { alert("Maintenance"); return; }
-            if(text.includes("SUCCESS")) {
-                localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text);
-                updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp();
-            } else alert("Erreur Compte");
+            if(text.includes("SUCCESS")) { localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text); updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp(); } else alert("Erreur Compte");
         } catch(e) { alert("Erreur Internet"); }
     }
 
-    function updateAccountDisplay(key, raw) {
-        document.getElementById('sub-id').innerText = key;
-        if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Expire: " + raw.split(':')[1] + "j";
-    }
-
+    function updateAccountDisplay(key, raw) { document.getElementById('sub-id').innerText = key; if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Expire: " + raw.split(':')[1] + "j"; }
     async function logout() { if(confirm("Déconnecter ?")) { try{ await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); }catch(e){} localStorage.removeItem('mybox_auth'); location.reload(); } }
 
     async function initApp() {
-        // PROTECTION DEMARRAGE
-        enforceNovelasIntegrity();
-        renderList();
-        playChannel(0);
-
-        // CHARGEMENT DB
+        enforceNovelasIntegrity(); renderList(); playChannel(0);
         const cached = await loadChannelsFromDB();
         if(cached.length > 5) {
             console.log("DB Loaded");
-            // On ajoute le cache à la suite de Novelas
             const ext = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
             allChannels = [DEFAULT_CHANNEL, ...ext];
-            
-            // Rebuild Sets
             allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
-            updateCategoryChips();
-            renderList();
-        } else {
-            startSmartScan();
-        }
-
-        // Messages
+            updateCategoryChips(); renderList();
+        } else { startSmartScan(); }
         try {
-            const res = await fetch(`${API_URL}?action=get_message`);
-            const text = await res.text();
+            const res = await fetch(`${API_URL}?action=get_message`); const text = await res.text();
             if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
-            if(text.startsWith("MSG:") && text.length>5) {
-                const b = document.getElementById('admin-msg-box'); b.innerText = "📢 " + text.replace("MSG:","");
-                b.style.display="block"; setTimeout(()=>b.style.display="none", 8000);
-            }
+            if(text.startsWith("MSG:") && text.length>5) { const b=document.getElementById('admin-msg-box'); b.innerText="📢 "+text.replace("MSG:",""); b.style.display="block"; setTimeout(()=>b.style.display="none",8000); }
         } catch(e){}
-        
-        // WATCHDOG
-        setInterval(() => {
-            if(isScanning && (Date.now() - lastActivityTime > 5000)) {
-                console.warn("Scan bloqué détecté ! Relance...");
-                lastActivityTime = Date.now(); 
-            }
-        }, 1000);
+        setInterval(() => { if(isScanning && (Date.now() - lastActivityTime > 5000)) lastActivityTime = Date.now(); }, 1000);
     }
 
     async function startSmartScan() {
@@ -330,93 +259,59 @@
             const res = await fetch(`${API_URL}?action=get_playlists`);
             let raw = (await res.text()).replace("PLAYLISTS:","");
             let sources = raw.split(",,,");
-            
             sources.sort((a, b) => {
-                if (a.includes("Backup")) return -1;
-                if (b.includes("Backup")) return 1;
-                if (a.includes("index.m3u")) return 1;
-                if (b.includes("index.m3u")) return -1;
-                return 0;
+                if (a.includes("Backup")) return -1; if (b.includes("Backup")) return 1;
+                if (a.includes("index.m3u")) return 1; if (b.includes("index.m3u")) return -1; return 0;
             });
-
             isScanning = true;
             for(let i=0; i<sources.length; i++) {
                 if(sources[i].startsWith("http")) {
-                    document.getElementById('scan-text').innerText = `Scan Source ${i+1}/${sources.length}...`;
+                    document.getElementById('scan-text').innerText = `Scan ${i+1}/${sources.length}...`;
                     await fetchPlaylistWithWatchdog(sources[i]);
                 }
             }
-            isScanning = false;
-            document.getElementById('scan-info').style.display = "none";
-            saveChannelsToDB(allChannels);
-
+            isScanning = false; document.getElementById('scan-info').style.display = "none"; saveChannelsToDB(allChannels);
         } catch(e) { console.log("Scan Error", e); }
     }
 
-    // --- MOTEUR WATCHDOG STREAMING ---
     async function fetchPlaylistWithWatchdog(url) {
         lastActivityTime = Date.now();
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); 
-
         try {
             const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url), { signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (!response.ok) return;
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let buffer = "";
-            let newBatch = [];
-            
+            clearTimeout(timeoutId); if (!response.ok) return;
+            const reader = response.body.getReader(); const decoder = new TextDecoder("utf-8");
+            let buffer = ""; let newBatch = [];
             while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                lastActivityTime = Date.now(); 
-                buffer += decoder.decode(value, { stream: true });
-                let lines = buffer.split("\n");
-                buffer = lines.pop(); 
-                
+                const { done, value } = await reader.read(); if (done) break;
+                lastActivityTime = Date.now(); buffer += decoder.decode(value, { stream: true });
+                let lines = buffer.split("\n"); buffer = lines.pop(); 
                 processLines(lines, newBatch);
-                
-                if (newBatch.length >= 50) {
-                    flushBatch(newBatch);
-                    await new Promise(r => setTimeout(r, 10)); 
-                }
+                if (newBatch.length >= 50) { flushBatch(newBatch); await new Promise(r => setTimeout(r, 10)); }
             }
-            processLines([buffer], newBatch);
-            flushBatch(newBatch);
-        } catch (e) { console.log("Skip Source"); }
+            processLines([buffer], newBatch); flushBatch(newBatch);
+        } catch (e) { console.log("Skip"); }
     }
 
     function processLines(lines, batch) {
         let currentInfo = null;
         for (let line of lines) {
-            line = line.trim();
-            if(!line) continue;
-
+            line = line.trim(); if(!line) continue;
             if (line.startsWith('#EXTINF:')) {
                 const parts = line.split(',');
                 let name = parts[1] || "Sans Nom";
                 let logo = (line.match(/tvg-logo=["']?([^"']*)["']?/) || [])[1];
                 let cat = "Autres";
-                
                 const grpMatch = line.match(/group-title=["']?([^"']*)["']?/);
                 if(grpMatch) cat = grpMatch[1].replace(/;/g, " ").trim();
                 else if(name.includes(":")) cat = name.split(":")[0].trim();
                 if(name.includes(">")) cat = name.split(">")[0].trim(); 
-
-                currentInfo = { name: name, logo: logo, category: cat };
-                allCategories.add(cat);
-
+                currentInfo = { name: name, logo: logo, category: cat }; allCategories.add(cat);
             } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
                 if (currentInfo) {
                     const ch = { ...currentInfo, url: line };
-                    // INTERDICTION D'AJOUTER NOVELAS VIA LE SCAN (POUR EVITER DOUBLONS)
-                    if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
-                        batch.push(ch); loadedUrls.add(ch.url);
-                    }
+                    if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { batch.push(ch); loadedUrls.add(ch.url); }
                     currentInfo = null;
                 }
             }
@@ -425,30 +320,27 @@
 
     function flushBatch(batch) {
         if(batch.length === 0) return;
-        allChannels = allChannels.concat(batch);
-        batch.length = 0;
+        allChannels = allChannels.concat(batch); batch.length = 0;
         document.getElementById('count-display').innerText = allChannels.length + " trouvées";
-        // PROTECTION AVANT CHAQUE RENDU
         enforceNovelasIntegrity();
         if(document.getElementById('searchInput').value === "") renderList(); 
         updateCategoryChips();
     }
 
-    // --- RENDERING ---
     function renderList() {
-        // PROTECTION ULTIME : On vérifie Novelas avant d'afficher quoi que ce soit
         enforceNovelasIntegrity();
-
         const term = document.getElementById('searchInput').value.toLowerCase();
         
         displayedChannels = allChannels.filter(ch => {
+            // FIX V50: Si selectedCategories est vide, on affiche tout.
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
+            
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
-        // Tri Favoris (Novelas reste en haut grâce à la structure du tableau, mais on trie le reste)
-        // Astuce : On ne trie PAS Novelas, on le laisse en 0.
+        // On ne trie pas pour ne pas perdre Novelas du top, sauf si on trie le sous-ensemble après Novelas
+        // Ici on garde l'ordre naturel (Novelas first, then DB/Scan order)
         
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
@@ -459,10 +351,7 @@
         displayedChannels.slice(0, limit).forEach((ch) => {
             const isFav = favorites.includes(ch.url);
             const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
-            
-            // LOGO PAR DEFAUT SI ERREUR
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
-            
             const div = document.createElement('div');
             div.className = 'channel-row ' + (isPlaying ? 'active' : '');
             div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
@@ -488,6 +377,7 @@
     
     document.getElementById('searchInput').addEventListener('input', renderList);
     function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
+    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); } // BOUTON RESET
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
     function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222'; renderList(); }
@@ -511,23 +401,13 @@
             if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
             hls.loadSource(ch.url); hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            
-            // ANTI-BUG CONNEXION: RETRY INFINI POUR NOVELAS
-            hls.on(Hls.Events.ERROR, (e,d) => { 
-                if(d.fatal) {
-                    if(index === 0) { console.log("Retrying Novelas..."); setTimeout(() => playChannel(0), 2000); } // Retry Novelas
-                    else handleError(); 
-                }
-            });
+            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(index===0){ setTimeout(()=>playChannel(0),2000); } else handleError(); } });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
         
-        if(isAutoZap && index !== 0) { // Pas d'autozap sur Novelas
-            clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); 
-        }
+        if(isAutoZap && index !== 0) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
     }
     let autoZapTimeout;
     function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
-    
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
     function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
     function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
