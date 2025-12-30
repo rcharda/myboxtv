@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V32 Memory</title>
+    <title>My Box TV - V33 Decoder</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,20 +12,20 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #000; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
         
-        #main-area { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; }
-        #video-container { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        /* --- LAYOUT --- */
+        #main-area { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; transition: width 0.3s; }
+        #video-container { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: black; }
         video { width: 100%; height: 100%; object-fit: contain; }
 
-        #brightness-overlay { pointer-events: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; z-index: 50; transition: opacity 0.2s; }
+        /* --- SIDEBAR (Menu des chaînes) --- */
+        #sidebar { width: 350px; background: #111; display: flex; flex-direction: column; border-left: 1px solid #333; z-index: 20; transition: transform 0.3s, width 0.3s; position: relative; }
         
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
-        .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 20px; text-align: center; text-transform: uppercase; }
-        .btn-red { background: #e50914; color: white; padding: 15px; width: 100%; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer; }
-        
-        #sidebar { width: 350px; background: #111; display: flex; flex-direction: column; border-left: 1px solid #333; z-index: 20; transition: transform 0.3s; }
-        .brand-header { padding: 15px; background: #1a1a1a; border-bottom: 2px solid #e50914; display: flex; align-items: center; gap: 10px; }
-        .brand-logo { width: 50px; }
+        /* Classe pour cacher la sidebar */
+        body.sidebar-closed #sidebar { display: none; }
+        body.sidebar-closed #main-area { width: 100vw; }
+
+        .brand-header { padding: 15px; background: #1a1a1a; border-bottom: 2px solid #e50914; display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+        .brand-logo { width: 40px; }
         
         .search-box { padding: 10px; }
         #searchInput { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #222; color: white; text-align: center; }
@@ -36,34 +36,66 @@
         .channel-item.active { background: #e50914; color: white; }
         .tv-icon { width: 40px; height: 40px; object-fit: contain; background: #fff; padding: 2px; border-radius: 4px; margin-right: 10px; }
 
+        /* --- CONTROL BAR --- */
         #control-bar {
-            height: 70px; background: #111; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-around; padding: 0 5px;
+            height: 70px; background: #111; border-top: 1px solid #333; display: flex; align-items: center; justify-content: space-around; padding: 0 5px; z-index: 30;
         }
+        /* Cache la barre de contrôle en plein écran si on veut immersion totale */
+        body.fullscreen-mode #control-bar { display: none; } 
+        body.fullscreen-mode #sidebar { display: none; }
+
         .ctrl-btn {
             background: #222; color: #fff; border: 1px solid #444; width: 45px; height: 45px; border-radius: 50%; 
             display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: 0.2s;
         }
         .ctrl-btn:active { transform: scale(0.9); background: #e50914; }
         .ctrl-btn.active-mode { background: #e50914; border-color: #fff; box-shadow: 0 0 10px #e50914; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
+        
+        /* BOUTON FLOTTANT POUR ROUVRIR LE MENU */
+        #floating-menu-btn {
+            position: absolute; bottom: 20px; right: 20px; width: 50px; height: 50px; background: #e50914; 
+            border-radius: 50%; display: none; align-items: center; justify-content: center; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.8); cursor: pointer; z-index: 100; font-size: 20px;
+        }
+        body.sidebar-closed #floating-menu-btn { display: flex; }
 
-        #menu-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; }
-        .menu-content { background: #1a1a1a; width: 90%; max-width: 500px; border-radius: 10px; padding: 20px; border: 1px solid #444; }
+        /* --- MENU MODAL --- */
+        #menu-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; }
+        .menu-content { background: #1a1a1a; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; border-radius: 10px; padding: 20px; border: 1px solid #444; }
         .menu-item { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .menu-label { font-weight: bold; color: #e50914; margin-bottom: 10px; display: block; }
+        
+        /* Checkbox Style */
+        .cat-checkbox { display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; color: #ccc; cursor: pointer; }
+        .cat-checkbox input { margin-right: 10px; accent-color: #e50914; width: 18px; height: 18px; }
+
+        /* Slider */
         .menu-slider { width: 100%; -webkit-appearance: none; height: 10px; background: #333; border-radius: 5px; outline: none; }
         .menu-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #e50914; border-radius: 50%; cursor: pointer; }
+        
+        /* Boutons larges */
         .menu-btn-full { width: 100%; padding: 12px; margin-top: 5px; background: #333; border: none; color: white; border-radius: 5px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; }
 
+        /* --- LOGIN & OVERLAYS --- */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-box { background: #1a1a1a; padding: 30px; border-radius: 10px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
+        .login-input { width: 100%; padding: 15px; margin: 20px 0; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 20px; text-align: center; text-transform: uppercase; }
+        .btn-red { background: #e50914; color: white; padding: 15px; width: 100%; border: none; font-weight: bold; font-size: 16px; border-radius: 5px; cursor: pointer; }
+        #brightness-overlay { pointer-events: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 0; z-index: 50; transition: opacity 0.2s; }
         #status-pill { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.7); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 12px; pointer-events: none; z-index: 60; border: 1px solid #444; display: flex; align-items: center; gap: 8px;}
         #led { width: 10px; height: 10px; background: red; border-radius: 50%; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
             #sidebar { width: 100%; height: 40vh; order: 2; }
             #main-area { height: 60vh; order: 1; }
             #control-bar { order: 3; }
+            /* Sur mobile, fermer la sidebar cache juste la partie basse */
+            body.sidebar-closed #sidebar { display: none; } 
+            body.sidebar-closed #main-area { height: 90vh; }
         }
     </style>
 </head>
@@ -72,7 +104,7 @@
 <div id="login-overlay">
     <div class="login-box">
         <h2 style="color:white; margin-bottom:5px;">MY BOX TV</h2>
-        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V32 MEMORY</div>
+        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V33 DECODER</div>
         <input type="text" id="licenseKey" class="login-input" placeholder="ID ABONNEMENT">
         <button onclick="login()" class="btn-red" id="btnLogin">ENTRER</button>
         <div id="login-msg" style="margin-top:10px; color:red;"></div>
@@ -82,23 +114,34 @@
 <div id="menu-modal">
     <div class="menu-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="margin:0;">MENU PARAMÈTRES</h2>
+            <h2 style="margin:0;">PARAMÈTRES</h2>
             <button onclick="closeMenu()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
         </div>
+
+        <div class="menu-item">
+            <span class="menu-label"><i class="fas fa-filter"></i> FILTRER LES CHAÎNES (Catégories)</span>
+            <div style="max-height:150px; overflow-y:scroll; border:1px solid #333; padding:10px; background:#222;" id="category-list">
+                </div>
+            <button onclick="applyFilters()" style="width:100%; background:#e50914; color:white; border:none; padding:10px; margin-top:5px; border-radius:4px;">Appliquer les filtres</button>
+        </div>
+
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-sun"></i> ÉCLAIRAGE</span>
             <input type="range" min="0" max="0.8" step="0.1" value="0" class="menu-slider" oninput="setBrightness(this.value)">
         </div>
+
         <div class="menu-item">
-            <span class="menu-label"><i class="fas fa-satellite-dish"></i> GESTION CHAINES</span>
+            <span class="menu-label"><i class="fas fa-satellite-dish"></i> GESTION</span>
             <div id="hidden-count" style="font-size:12px; color:#888; margin-bottom:10px;">0 chaînes supprimées</div>
-            <button onclick="restoreHidden()" style="background:#007bff; color:white; border:none; padding:8px 15px; border-radius:4px; width:100%;">Restaurer les chaînes supprimées</button>
+            <button onclick="restoreHidden()" style="background:#007bff; color:white; border:none; padding:8px 15px; border-radius:4px; width:100%;">Restaurer chaînes supprimées</button>
         </div>
+
         <div class="menu-item">
-            <span class="menu-label"><i class="fas fa-plus-circle"></i> AJOUTER SOURCE</span>
+            <span class="menu-label"><i class="fas fa-plus-circle"></i> AJOUT MANUEL</span>
             <input type="text" id="custom-source" placeholder="Lien M3U..." style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; border-radius:4px;">
-            <button onclick="addSource()" style="margin-top:5px; background:#444; color:white; border:none; padding:8px 15px; border-radius:4px;">Ajouter</button>
+            <button onclick="addSource()" style="margin-top:5px; background:#444; color:white; border:none; padding:8px 15px; border-radius:4px;">Ajouter Source</button>
         </div>
+
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-user-shield"></i> ABONNEMENT</span>
             <div id="sub-info" style="margin-bottom:10px;">Statut: Inconnu</div>
@@ -113,14 +156,23 @@
     <div id="brightness-overlay"></div>
     <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
     
+    <div id="floating-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-list"></i>
+    </div>
+
     <div id="video-container">
         <video id="video" onclick="togglePlay()" playsinline></video>
     </div>
 
     <div id="control-bar">
-        <div class="ctrl-btn" onclick="openMenu()"><i class="fas fa-bars"></i></div>
-        <div class="ctrl-btn" onclick="hideCurrentChannel()" style="color:#ff4444; border-color:#ff4444;"><i class="fas fa-trash"></i></div>
+        <div class="ctrl-btn" onclick="openMenu()"><i class="fas fa-cog"></i></div> <div class="ctrl-btn" onclick="hideCurrentChannel()" style="color:#ff4444; border-color:#ff4444;"><i class="fas fa-trash"></i></div>
+        
+        <div class="ctrl-btn" onclick="adjustVol(-0.1)"><i class="fas fa-volume-down"></i></div>
+        <div class="ctrl-btn" id="btn-mute" onclick="toggleMute()"><i class="fas fa-volume-mute"></i></div>
+        <div class="ctrl-btn" onclick="adjustVol(0.1)"><i class="fas fa-volume-up"></i></div>
+        
         <div class="ctrl-btn" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></div>
+        
         <div class="ctrl-btn" onclick="prevChannel()"><i class="fas fa-step-backward"></i></div>
         <div class="ctrl-btn" id="btn-autozap" onclick="toggleAutoZap()" style="border: 2px solid #555;">
             <i class="fas fa-magic"></i>
@@ -131,26 +183,34 @@
 
 <div id="sidebar">
     <div class="brand-header">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo">
-        <div style="flex:1">
-            <div style="font-weight:bold;">MY BOX TV</div>
-            <div id="count-display" style="font-size:11px; color:#aaa;">0 Chaînes</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="brand-logo">
+            <div style="font-size:12px; font-weight:bold;">MY BOX TV</div>
         </div>
-        <button onclick="startScan(false)" style="background:#e50914; border:none; color:white; border-radius:4px; padding:5px 10px;">MAJ</button>
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✕</button>
     </div>
+    
+    <div style="padding:10px; background:#111;">
+        <button onclick="startScan(false)" style="width:100%; background:#e50914; border:none; color:white; border-radius:4px; padding:8px;">ACTUALISER</button>
+    </div>
+
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
+        <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
     </div>
+    
     <div id="channel-list"></div>
+    <div style="text-align:center; padding:5px; font-size:10px; color:#666;" id="count-display">0 Chaînes</div>
 </div>
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
     
+    // CHAINE PAR DEFAUT
     const DEFAULT_START_CHANNEL = {
         name: "Novelas TV (Séries)",
         url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8",
-        logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png"
+        logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png",
+        category: "Favoris"
     };
 
     const video = document.getElementById('video');
@@ -161,7 +221,8 @@
     const subInfo = document.getElementById('sub-info');
     
     let allChannels = [];
-    let loadedUrls = new Set(); // Pour éviter les doublons
+    let displayedChannels = []; // Liste filtrée
+    let loadedUrls = new Set();
     let currentChannelIndex = -1;
     let hls = null;
     let isAutoZap = false;
@@ -170,6 +231,10 @@
     let dynamicSources = [];
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
     
+    // GESTION CATEGORIES
+    let allCategories = new Set();
+    let selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
+
     document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
 
     // --- INITIALISATION ---
@@ -208,16 +273,12 @@
     }
 
     async function initApp() {
-        // 1. CHARGER MEMOIRE IMMEDIATEMENT
+        // 1. Charge mémoire et ajoute chaine defaut
         loadCache(); 
-
-        // 2. AJOUTER/FORCER LA CHAINE PAR DEFAUT EN PREMIER
         addChannelToFront(DEFAULT_START_CHANNEL);
         
-        // 3. LANCER LA LECTURE DIRECTEMENT
         if(allChannels.length > 0) playChannel(0);
 
-        // 4. METTRE A JOUR LES SOURCES EN ARRIERE PLAN
         try {
             statusText.innerText = "MAJ Sources...";
             const res = await fetch(`${API_URL}?action=get_playlists`);
@@ -229,9 +290,7 @@
             serverSources.forEach(s => s.includes("index.m3u") ? big.push(s) : small.push(s));
             dynamicSources = [...localSources, ...small, ...big];
             
-            // 5. LANCER LE SCAN (SANS RIEN EFFACER)
             startScan(false); 
-
         } catch(e) {
             console.log("Offline");
             dynamicSources = ["https://iptv-org.github.io/iptv/index.m3u"];
@@ -239,29 +298,20 @@
         }
     }
 
-    // --- FONCTION AJOUT SECURISE ---
+    // --- FONCTIONS SCAN ---
     function addChannelToFront(ch) {
-        // Vérifie si elle existe déjà pour pas faire de doublon
         if(!loadedUrls.has(ch.url)) {
-            allChannels.unshift(ch); // Ajoute au début
+            allChannels.unshift(ch);
             loadedUrls.add(ch.url);
-            renderChannels();
+            filterAndRender();
         }
     }
 
-    // --- SCAN ADDITIF (N'EFFACE RIEN) ---
     async function startScan(force = false) {
-        if(force) { 
-            // Seulement si on veut vraiment tout casser (bouton Reset caché)
-            // Mais pour l'utilisateur normal, on évite.
-        }
-        
         statusText.innerText = "Recherche...";
         led.className = "";
-        
         for(let src of dynamicSources) await fetchPlaylist(src);
-        
-        statusText.innerText = allChannels[currentChannelIndex]?.name || "Prêt";
+        statusText.innerText = DEFAULT_START_CHANNEL.name;
         led.className = "green";
     }
 
@@ -271,19 +321,24 @@
             if(!res.ok) return;
             const text = await res.text();
             const lines = text.split('\n');
-            let info = {};
-            let newCount = 0;
+            let info = {}, newCount = 0;
             
             for(let line of lines) {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
                     const parts = line.split(',');
-                    info = { name: parts[1] || "TV", logo: (line.match(/tvg-logo="([^"]*)"/)||[])[1] };
+                    // DETECTION CATEGORIE INTELLIGENTE
+                    let cat = (line.match(/group-title="([^"]*)"/) || [])[1] || "Autres";
+                    let logo = (line.match(/tvg-logo="([^"]*)"/) || [])[1];
+                    info = { name: parts[1] || "TV", logo: logo, category: cat };
+                    
+                    // Ajout aux catégories globales
+                    allCategories.add(cat);
+                    
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
                         
-                        // ICI LE SECRET : On n'ajoute QUE si on ne l'a pas déjà
                         if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                             allChannels.push(ch);
                             loadedUrls.add(ch.url);
@@ -293,59 +348,85 @@
                     }
                 }
             }
-            // On met à jour l'affichage seulement s'il y a du nouveau
             if(newCount > 0) { 
-                renderChannels(); 
+                updateCategoriesMenu();
+                filterAndRender(); 
                 saveCache(); 
             }
         } catch(e) {}
     }
 
-    function renderChannels() {
-        // On refait la liste proprement
+    // --- FILTRAGE INTELLIGENT ---
+    function updateCategoriesMenu() {
+        const container = document.getElementById('category-list');
+        // Si c'est vide, on initialise avec toutes les catégories cochées par défaut
+        if(selectedCategories.length === 0) {
+            selectedCategories = Array.from(allCategories);
+        }
+        
+        let html = '<label class="cat-checkbox"><input type="checkbox" onchange="toggleAllCats(this)"> <b>TOUT COCHER/DÉCOCHER</b></label>';
+        
+        Array.from(allCategories).sort().forEach(cat => {
+            const isChecked = selectedCategories.includes(cat) ? 'checked' : '';
+            html += `<label class="cat-checkbox"><input type="checkbox" value="${cat}" ${isChecked}> ${cat}</label>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleAllCats(source) {
+        const checkboxes = document.querySelectorAll('#category-list input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = source.checked);
+    }
+
+    function applyFilters() {
+        const checkboxes = document.querySelectorAll('#category-list input[type="checkbox"]:checked');
+        selectedCategories = Array.from(checkboxes).map(cb => cb.value);
+        localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories));
+        filterAndRender();
+        alert("Filtres appliqués !");
+    }
+
+    function filterAndRender() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        
+        // 1. Filtrer par catégories choisies ET recherche
+        displayedChannels = allChannels.filter(ch => {
+            // Si pas de catégories sélectionnées (premier lancement), on montre tout
+            const catMatch = selectedCategories.length === 0 || selectedCategories.includes(ch.category || "Autres");
+            const searchMatch = ch.name.toLowerCase().includes(term);
+            return catMatch && searchMatch;
+        });
+
+        // 2. Afficher
         listContainer.innerHTML = "";
         const frag = document.createDocumentFragment();
         
-        allChannels.forEach((ch, idx) => {
+        displayedChannels.forEach((ch, idx) => {
             const div = document.createElement('div');
             div.className = 'channel-item';
-            if(idx === currentChannelIndex) div.classList.add('active');
-            div.id = 'ch-' + idx;
-            div.innerHTML = `<img src="${ch.logo || 'https://via.placeholder.com/40'}" class="tv-icon"> ${ch.name}`;
-            div.onclick = () => playChannel(idx);
+            // On compare avec l'URL car l'index peut changer
+            if(allChannels[currentChannelIndex]?.url === ch.url) div.classList.add('active');
+            
+            div.id = 'ch-vis-' + idx;
+            div.innerHTML = `<img src="${ch.logo || 'https://via.placeholder.com/40'}" class="tv-icon"> 
+                             <div>
+                                <div>${ch.name}</div>
+                                <div style="font-size:10px; color:#888;">${ch.category || "General"}</div>
+                             </div>`;
+            div.onclick = () => playChannelFromList(idx);
             frag.appendChild(div);
         });
         
         listContainer.appendChild(frag);
-        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
+        document.getElementById('count-display').innerText = displayedChannels.length + " Chaînes";
     }
 
-    function hideCurrentChannel() {
-        if(currentChannelIndex < 0 || currentChannelIndex >= allChannels.length) return;
-        const ch = allChannels[currentChannelIndex];
-        if(confirm("Supprimer " + ch.name + " ?")) {
-            hiddenChannels.push(ch.url);
-            localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
-            document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
-            
-            // On l'enlève de la liste active et mémoire
-            allChannels.splice(currentChannelIndex, 1);
-            loadedUrls.delete(ch.url);
-            
-            renderChannels();
-            saveCache();
-            
-            // On lance la suivante (qui a pris la place de l'ancienne)
-            if(currentChannelIndex < allChannels.length) playChannel(currentChannelIndex);
-            else playChannel(allChannels.length - 1);
-        }
-    }
-
-    function restoreHidden() {
-        if(confirm("Restaurer tout ?")) {
-            localStorage.removeItem('mybox_hidden');
-            location.reload();
-        }
+    // --- LECTEUR ---
+    function playChannelFromList(visualIndex) {
+        const ch = displayedChannels[visualIndex];
+        // Retrouver le vrai index dans la liste globale
+        currentChannelIndex = allChannels.indexOf(ch);
+        playChannel(currentChannelIndex);
     }
 
     function playChannel(index) {
@@ -353,9 +434,14 @@
         currentChannelIndex = index;
         const ch = allChannels[index];
         
+        // Update visuel
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-        const row = document.getElementById('ch-' + index);
-        if(row) { row.classList.add('active'); row.scrollIntoView({block: "center", behavior: "smooth"}); }
+        // Essayer de trouver l'item dans la liste filtrée
+        const visualIndex = displayedChannels.indexOf(ch);
+        if(visualIndex > -1) {
+            const row = document.getElementById('ch-vis-' + visualIndex);
+            if(row) { row.classList.add('active'); row.scrollIntoView({block: "center", behavior: "smooth"}); }
+        }
         
         statusText.innerText = ch.name;
         led.className = "";
@@ -366,7 +452,7 @@
             hls.loadSource(ch.url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { 
-                video.play().catch(e=>console.log("Auto-play bloqué")); 
+                video.play().catch(e=>{}); 
                 led.className = "green"; clearTimeout(autoZapTimeout); 
             });
             hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) handleStreamError(index); });
@@ -390,10 +476,65 @@
         else { statusText.innerText = "Erreur Flux"; }
     }
 
-    function nextChannel() { playChannel(currentChannelIndex + 1); }
-    function prevChannel() { playChannel(currentChannelIndex - 1); }
-    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
+    // --- CONTROLES UTILISATEUR ---
+    function nextChannel() { 
+        // Logique suivante basée sur la liste FILTRÉE (pour ne pas zapper sur des chaines masquées)
+        const currentCh = allChannels[currentChannelIndex];
+        let visIdx = displayedChannels.indexOf(currentCh);
+        if(visIdx > -1 && visIdx < displayedChannels.length - 1) {
+            playChannelFromList(visIdx + 1);
+        } else {
+            playChannelFromList(0); // Boucle
+        }
+    }
     
+    function prevChannel() { 
+        const currentCh = allChannels[currentChannelIndex];
+        let visIdx = displayedChannels.indexOf(currentCh);
+        if(visIdx > 0) {
+            playChannelFromList(visIdx - 1);
+        }
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            document.body.classList.add('fullscreen-mode');
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            document.body.classList.remove('fullscreen-mode');
+        }
+    }
+    
+    // EVENT LISTENER POUR SORTIE PLEIN ECRAN (Echap)
+    document.addEventListener('fullscreenchange', (event) => {
+        if (!document.fullscreenElement) {
+            document.body.classList.remove('fullscreen-mode');
+        }
+    });
+
+    function toggleSidebar() {
+        document.body.classList.toggle('sidebar-closed');
+    }
+
+    function toggleMute() {
+        video.muted = !video.muted;
+        const btn = document.getElementById('btn-mute');
+        if(video.muted) {
+            btn.innerHTML = '<i class="fas fa-volume-mute" style="color:red;"></i>';
+            statusText.innerText = "MUET 🔇";
+        } else {
+            btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            statusText.innerText = "SON ON 🔊";
+        }
+    }
+
+    function adjustVol(delta) { 
+        video.volume = Math.min(1, Math.max(0, video.volume + delta)); 
+        video.muted = false; // Unmute si on touche au volume
+        statusText.innerText = "Vol: " + Math.round(video.volume * 100) + "%"; 
+    }
+
     function toggleAutoZap() {
         isAutoZap = !isAutoZap;
         const btn = document.getElementById('btn-autozap');
@@ -401,6 +542,7 @@
         else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; }
     }
 
+    // --- MENU ET GESTION ---
     function openMenu() { document.getElementById('menu-modal').style.display = 'flex'; }
     function closeMenu() { document.getElementById('menu-modal').style.display = 'none'; }
     function setBrightness(val) { overlay.style.opacity = val; }
@@ -416,39 +558,52 @@
         }
     }
 
+    function hideCurrentChannel() {
+        const ch = allChannels[currentChannelIndex];
+        if(confirm("Supprimer définitivement " + ch.name + " ?")) {
+            hiddenChannels.push(ch.url);
+            localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
+            document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
+            // Retirer de la liste globale et filtrée
+            allChannels.splice(currentChannelIndex, 1);
+            loadedUrls.delete(ch.url);
+            filterAndRender();
+            saveCache();
+            // Lancer chaine suivante
+            playChannel(currentChannelIndex);
+        }
+    }
+
+    function restoreHidden() {
+        if(confirm("Restaurer tout ?")) {
+            localStorage.removeItem('mybox_hidden');
+            location.reload();
+        }
+    }
+
+    // --- SUPPORT CLAVIER ---
     document.addEventListener('keydown', (e) => {
         if(document.getElementById('login-overlay').style.display !== 'none') return;
         switch(e.key) {
-            case 'ArrowUp': case 'ChannelUp': nextChannel(); break;
-            case 'ArrowDown': case 'ChannelDown': prevChannel(); break;
-            case 'Enter': case 'OK': toggleFullScreen(); break;
+            case 'ArrowUp': case 'ChannelUp': prevChannel(); break; // Inversion souvent plus logique
+            case 'ArrowDown': case 'ChannelDown': nextChannel(); break;
+            case 'Enter': case 'OK': toggleSidebar(); break; // OK pour fermer/ouvrir menu
+            case 'm': case 'M': openMenu(); break;
+            case 'f': case 'F': toggleFullScreen(); break;
         }
     });
 
     document.getElementById('searchInput').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        listContainer.innerHTML = "";
-        const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
-        const frag = document.createDocumentFragment();
-        filtered.forEach(ch => {
-             // Il faut retrouver le bon index original pour que le clic marche
-             const originalIdx = allChannels.indexOf(ch);
-             const div = document.createElement('div');
-             div.className = 'channel-item';
-             div.innerHTML = `<img src="${ch.logo || 'https://via.placeholder.com/40'}" class="tv-icon"> ${ch.name}`;
-             div.onclick = () => playChannel(originalIdx);
-             frag.appendChild(div);
-        });
-        listContainer.appendChild(frag);
+        filterAndRender();
     });
 
-    function saveCache() { try { localStorage.setItem('mybox_cache_v32', JSON.stringify(allChannels.slice(0,1000))); } catch(e){} }
+    function saveCache() { try { localStorage.setItem('mybox_cache_v33', JSON.stringify(allChannels.slice(0,1000))); } catch(e){} }
     function loadCache() { 
-        const c = localStorage.getItem('mybox_cache_v32'); 
+        const c = localStorage.getItem('mybox_cache_v33'); 
         if(c) { 
             allChannels = JSON.parse(c);
             allChannels.forEach(ch => loadedUrls.add(ch.url));
-            renderChannels(); 
+            filterAndRender(); 
         } 
     }
 </script>
