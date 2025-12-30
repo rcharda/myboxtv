@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V35 Ultimate</title>
+    <title>My Box TV - V36 Fusion</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -68,7 +68,36 @@
             #channel-menu { width: 85%; }
         }
 
-        /* MODALS */
+        /* --- SETTINGS MODAL (STYLE LOGICIEL) --- */
+        #settings-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 200;
+            align-items: center; justify-content: center; pointer-events: auto;
+        }
+        
+        .settings-panel {
+            background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh;
+            border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        
+        .settings-sidebar { width: 200px; background: #111; padding: 20px; border-right: 1px solid #333; }
+        .settings-tab { padding: 15px; cursor: pointer; color: #888; font-weight: 600; border-radius: 8px; margin-bottom: 5px; transition: 0.2s; }
+        .settings-tab:hover, .settings-tab.active { background: #222; color: white; }
+        .settings-content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
+        .chip.selected { background: var(--primary); color: white; }
+        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
+
+        @media (max-width: 700px) {
+            .settings-panel { flex-direction: column; }
+            .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; padding: 10px; }
+            .settings-tab { white-space: nowrap; margin-right: 10px; padding: 10px; }
+        }
+
+        /* MODAL PIN & LOGIN */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .pin-input { font-size: 30px; letter-spacing: 10px; width: 150px; text-align: center; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; margin: 20px 0; }
@@ -94,6 +123,44 @@
     </div>
 </div>
 
+<div id="settings-modal">
+    <div class="settings-panel">
+        <div class="settings-sidebar">
+            <div style="font-weight:bold; margin-bottom:20px; color:var(--primary)">RÉGLAGES</div>
+            <div class="settings-tab active" onclick="showTab('tab-cat')">Catégories</div>
+            <div class="settings-tab" onclick="showTab('tab-source')">Sources</div>
+            <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
+            <div class="settings-tab" onclick="closeSettings()" style="color:#ff4444; margin-top:10px;">Fermer ✕</div>
+        </div>
+        
+        <div class="settings-content">
+            <div id="tab-cat" class="tab-content">
+                <h3>Filtrer les chaînes</h3>
+                <div id="chips-area" class="chips-container"></div>
+                <button onclick="applyFilters()" style="margin-top:20px; width:100%; background:var(--primary); border:none; color:white; padding:10px; border-radius:5px;">Appliquer</button>
+                <br><br>
+                <button onclick="restoreHidden()" style="background:#444; border:none; color:white; padding:10px; border-radius:5px;">Restaurer chaînes supprimées</button>
+            </div>
+
+            <div id="tab-source" class="tab-content" style="display:none;">
+                <h3>Ajouter une source</h3>
+                <input type="text" id="custom-source" class="input-dark" placeholder="http://liens-iptv...">
+                <button onclick="addSource()" style="margin-top:10px; background:#28a745; border:none; color:white; padding:10px; border-radius:5px;">Ajouter</button>
+                <button onclick="resetSources()" style="margin-top:10px; background:#444; border:none; color:white; padding:10px; border-radius:5px;">Réinitialiser</button>
+            </div>
+
+            <div id="tab-sub" class="tab-content" style="display:none;">
+                <h3>Mon Abonnement</h3>
+                <div style="background:#222; padding:15px; border-radius:5px; margin-bottom:15px;">
+                    Statut: <span style="color:#0f0;">Actif</span><br>
+                    ID: <span id="sub-id">...</span>
+                </div>
+                <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; background:#25D366; color:white; padding:10px; text-align:center; border-radius:5px; text-decoration:none;">Contacter Support WhatsApp</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="login-screen" class="modal" style="display:flex;">
     <div class="modal-box">
         <h2>MY BOX <span style="color:var(--primary)">TV</span></h2>
@@ -115,7 +182,7 @@
                 <span style="font-weight:bold; font-size:18px;">CHAÎNES</span>
                 <div style="font-size:11px; color:#888;" id="count-display">0 trouvées</div>
             </div>
-            <i class="fas fa-sync" onclick="resetCache()" style="cursor:pointer; color:#888;"></i>
+            <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
         </div>
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
         
@@ -147,26 +214,30 @@
 
 <script>
     // =======================================================
-    // TON LIEN DE DEPLOIEMENT :
     const API_URL = "https://script.google.com/macros/s/AKfycbwgW8304FxVgE6qKW422ckOjVhrLglQd96oSvmFXweLBwP74SpfGvHt-Co2PztTZmg28A/exec";
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
-    const PIN_CODE = "0000"; // Code parental
+    const PIN_CODE = "0000"; 
 
     let allChannels = [];
     let displayedChannels = [];
+    let loadedUrls = new Set();
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
     let currentChannelIndex = 0;
     let deviceId = localStorage.getItem('mybox_device_id') || 'DEV-'+Math.random().toString(36).substr(2,9).toUpperCase();
     localStorage.setItem('mybox_device_id', deviceId);
     let isFavFilter = false;
     let hls = null;
-    let pendingChannelIndex = -1; // Pour le PIN
+    let pendingChannelIndex = -1;
+    let allCategories = new Set(['Favoris']);
+    let selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
+    let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
 
     // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') {
         document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('sub-id').innerText = localStorage.getItem('mybox_key');
         initApp();
     }
 
@@ -188,41 +259,38 @@
     }
 
     async function initApp() {
-        // 1. Message Admin (Popup)
         checkAdminMessage();
         
-        // 2. Load Cache
-        const c = localStorage.getItem('mybox_cache_v35');
-        if(c) { allChannels = JSON.parse(c); renderList(); }
-        else { allChannels = [DEFAULT_CHANNEL]; renderList(); }
+        // 1. CHARGEMENT RAPIDE DU CACHE
+        loadCache();
         
-        // Lance la chaine 0 (Novelas ou autre)
-        playChannel(0);
+        // 2. AJOUTER LA CHAINE PAR DEFAUT EN PREMIER (Logique V32)
+        addChannelToFront(DEFAULT_CHANNEL);
+        
+        // 3. LANCEMENT IMMEDIAT
+        if(allChannels.length > 0) playChannel(0);
 
-        // 3. Update Sources
+        // 4. SCAN ADDITIF (Ne supprime jamais, ajoute seulement)
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
             const text = await res.text();
             let sources = text.startsWith("PLAYLISTS:") ? text.replace("PLAYLISTS:","").split(",,,") : ["https://iptv-org.github.io/iptv/index.m3u"];
             
-            // Scan
+            // Priorité : Petits fichiers d'abord
+            sources.sort((a,b) => a.includes("index.m3u") ? 1 : -1);
+            
             for(let s of sources) await fetchPlaylist(s);
             
         } catch(e) { console.log("Offline"); }
     }
 
-    async function checkAdminMessage() {
-        try {
-            const res = await fetch(`${API_URL}?action=get_message`);
-            const text = await res.text();
-            if(text.startsWith("MSG:") && text.length > 5) {
-                const msg = text.replace("MSG:", "");
-                const box = document.getElementById('admin-msg-box');
-                box.innerText = "📢 " + msg;
-                box.style.display = "block";
-                setTimeout(() => box.style.display = "none", 8000);
-            }
-        } catch(e){}
+    // --- LOGIQUE D'AJOUT INTELLIGENTE (V32) ---
+    function addChannelToFront(ch) {
+        if(!loadedUrls.has(ch.url)) {
+            allChannels.unshift(ch);
+            loadedUrls.add(ch.url);
+            renderList();
+        }
     }
 
     async function fetchPlaylist(url) {
@@ -231,28 +299,46 @@
             if(!res.ok) return;
             const text = await res.text();
             const lines = text.split('\n');
-            let info = {}, newCh = [];
+            let info = {}, count = 0;
             
             for(let line of lines) {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
                     const parts = line.split(',');
+                    let cat = (line.match(/group-title="([^"]*)"/) || [])[1] || "Autres";
                     let logo = (line.match(/tvg-logo="([^"]*)"/) || [])[1];
-                    info = { name: parts[1] || "TV", logo: logo };
+                    info = { name: parts[1] || "TV", logo: logo, category: cat };
+                    allCategories.add(cat);
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
-                        newCh.push({ ...info, url: line });
+                        const ch = { ...info, url: line };
+                        // ON NE RAJOUTE QUE SI C'EST NOUVEAU
+                        if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
+                            allChannels.push(ch);
+                            loadedUrls.add(ch.url);
+                            count++;
+                        }
                         info = {};
                     }
                 }
             }
-            if(newCh.length > 0) {
-                const existingUrls = new Set(allChannels.map(c => c.url));
-                newCh.forEach(c => {
-                    if(!existingUrls.has(c.url)) allChannels.push(c);
-                });
-                localStorage.setItem('mybox_cache_v35', JSON.stringify(allChannels.slice(0,1000)));
+            if(count > 0) {
+                updateCategoryChips();
                 renderList();
+                saveCache();
+            }
+        } catch(e){}
+    }
+
+    async function checkAdminMessage() {
+        try {
+            const res = await fetch(`${API_URL}?action=get_message`);
+            const text = await res.text();
+            if(text.startsWith("MSG:") && text.length > 5) {
+                const box = document.getElementById('admin-msg-box');
+                box.innerText = "📢 " + text.replace("MSG:", "");
+                box.style.display = "block";
+                setTimeout(() => box.style.display = "none", 8000);
             }
         } catch(e){}
     }
@@ -260,20 +346,15 @@
     // --- RENDERING & FAVORIS ---
     function toggleFavorite(url, e) {
         e.stopPropagation(); 
-        if(favorites.includes(url)) {
-            favorites = favorites.filter(u => u !== url);
-        } else {
-            favorites.push(url);
-        }
+        if(favorites.includes(url)) favorites = favorites.filter(u => u !== url);
+        else favorites.push(url);
         localStorage.setItem('mybox_favs', JSON.stringify(favorites));
         renderList();
     }
 
     function toggleOnlyFavorites() {
         isFavFilter = !isFavFilter;
-        const btn = document.getElementById('btn-fav-filter');
-        btn.style.background = isFavFilter ? '#e50914' : '#222';
-        btn.innerText = isFavFilter ? "Afficher Tout" : "Voir mes Favoris";
+        document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#222';
         renderList();
     }
 
@@ -281,9 +362,13 @@
         const term = document.getElementById('searchInput').value.toLowerCase();
         
         displayedChannels = allChannels.filter(ch => {
+            // Filtre Catégorie (Si activé)
+            let catOK = true;
+            if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
+            
             const matchSearch = ch.name.toLowerCase().includes(term);
-            if(isFavFilter) return matchSearch && favorites.includes(ch.url);
-            return matchSearch;
+            const matchFav = isFavFilter ? favorites.includes(ch.url) : true;
+            return catOK && matchSearch && matchFav;
         });
 
         // Trier : Favoris en haut
@@ -317,17 +402,13 @@
 
     document.getElementById('searchInput').addEventListener('input', renderList);
 
-    // --- PARENTAL CONTROL & PLAYER ---
+    // --- PARENTAL & PLAYER ---
     function tryPlayChannel(ch) {
-        // Détection mots-clés adultes
         const name = ch.name.toLowerCase();
-        const sensitive = ['adult', 'xxx', '18+', 'porn', 'sex'];
-        
+        const sensitive = ['adult', 'xxx', '18+', 'porn'];
         if(sensitive.some(kw => name.includes(kw))) {
             pendingChannelIndex = allChannels.indexOf(ch);
             document.getElementById('pin-modal').style.display = 'flex';
-            document.getElementById('pin-code').value = "";
-            document.getElementById('pin-code').focus();
         } else {
             currentChannelIndex = allChannels.indexOf(ch);
             playChannel(currentChannelIndex);
@@ -335,24 +416,19 @@
     }
 
     function checkPin() {
-        const val = document.getElementById('pin-code').value;
-        if(val === PIN_CODE) {
+        if(document.getElementById('pin-code').value === PIN_CODE) {
             closePin();
             currentChannelIndex = pendingChannelIndex;
             playChannel(currentChannelIndex);
-        } else {
-            alert("Code Erroné (Essayez 0000)");
-        }
+        } else alert("Code Erroné");
     }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
-        
-        // Ferme menu sur mobile après selection
         if(window.innerWidth < 900) document.body.classList.remove('menu-open');
-        renderList(); // Update active class
+        renderList(); 
 
         const video = document.getElementById('video');
         if(Hls.isSupported()) {
@@ -369,41 +445,89 @@
 
     // --- CONTROLS ---
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    
     function nextChannel() { 
         let nextIdx = currentChannelIndex + 1;
         if(nextIdx >= allChannels.length) nextIdx = 0;
         tryPlayChannel(allChannels[nextIdx]);
     }
-    
     function prevChannel() { 
         let prevIdx = currentChannelIndex - 1;
         if(prevIdx < 0) prevIdx = allChannels.length - 1;
         tryPlayChannel(allChannels[prevIdx]);
     }
-
     function toggleMute() {
         const v = document.getElementById('video');
         v.muted = !v.muted;
         document.getElementById('btn-mute').innerHTML = v.muted ? '<i class="fas fa-volume-mute" style="color:red"></i>' : '<i class="fas fa-volume-up"></i>';
     }
-
     function adjustVol(d) {
         const v = document.getElementById('video');
         v.volume = Math.min(1, Math.max(0, v.volume + d));
         v.muted = false;
     }
-
     function toggleFullScreen() {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen();
         else if (document.exitFullscreen) document.exitFullscreen();
     }
+
+    // --- REGLAGES ---
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
+    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+    function showTab(id) {
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display='none');
+        document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(id).style.display = 'block';
+    }
     
-    function resetCache() {
-        if(confirm("Recharger la liste ?")) {
-            localStorage.removeItem('mybox_cache_v35');
-            location.reload();
+    function updateCategoryChips() {
+        const container = document.getElementById('chips-area');
+        if(selectedCategories.length === 0) selectedCategories = Array.from(allCategories);
+        let cats = Array.from(allCategories).sort();
+        let html = '';
+        cats.forEach(cat => {
+            const active = selectedCategories.includes(cat) ? 'selected' : '';
+            html += `<div class="chip ${active}" onclick="toggleCat('${cat}')">${cat}</div>`;
+        });
+        container.innerHTML = html;
+    }
+    
+    function toggleCat(cat) {
+        if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat);
+        else selectedCategories.push(cat);
+        updateCategoryChips();
+    }
+    
+    function applyFilters() {
+        localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories));
+        renderList();
+        closeSettings();
+    }
+    
+    function restoreHidden() {
+        localStorage.removeItem('mybox_hidden');
+        location.reload();
+    }
+
+    function addSource() {
+        const url = document.getElementById('custom-source').value.trim();
+        if(url) {
+            const current = JSON.parse(localStorage.getItem('mybox_custom_sources') || '[]');
+            current.push(url);
+            localStorage.setItem('mybox_custom_sources', JSON.stringify(current));
+            alert("Ajouté !"); location.reload();
         }
+    }
+    
+    function resetSources() {
+        localStorage.removeItem('mybox_custom_sources');
+        location.reload();
+    }
+
+    // --- CACHE ---
+    function saveCache() { localStorage.setItem('mybox_cache_v35', JSON.stringify(allChannels.slice(0,1000))); }
+    function loadCache() {
+        const c = localStorage.getItem('mybox_cache_v35');
+        if(c) { allChannels = JSON.parse(c); allChannels.forEach(ch=>loadedUrls.add(ch.url)); renderList(); }
     }
 </script>
 </body>
