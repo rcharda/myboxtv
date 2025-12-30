@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V31 AutoStart</title>
+    <title>My Box TV - V32 Memory</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,7 +12,6 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: 'Roboto', sans-serif; background: #000; color: #eee; height: 100vh; overflow: hidden; display: flex; flex-direction: row; }
         
-        /* --- LAYOUT --- */
         #main-area { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; }
         #video-container { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         video { width: 100%; height: 100%; object-fit: contain; }
@@ -73,7 +72,7 @@
 <div id="login-overlay">
     <div class="login-box">
         <h2 style="color:white; margin-bottom:5px;">MY BOX TV</h2>
-        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V31 AUTOSTART</div>
+        <div style="color:#e50914; font-size:12px; margin-bottom:20px;">V32 MEMORY</div>
         <input type="text" id="licenseKey" class="login-input" placeholder="ID ABONNEMENT">
         <button onclick="login()" class="btn-red" id="btnLogin">ENTRER</button>
         <div id="login-msg" style="margin-top:10px; color:red;"></div>
@@ -86,24 +85,20 @@
             <h2 style="margin:0;">MENU PARAMÈTRES</h2>
             <button onclick="closeMenu()" style="background:none; border:none; color:white; font-size:24px;">✕</button>
         </div>
-
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-sun"></i> ÉCLAIRAGE</span>
             <input type="range" min="0" max="0.8" step="0.1" value="0" class="menu-slider" oninput="setBrightness(this.value)">
         </div>
-
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-satellite-dish"></i> GESTION CHAINES</span>
             <div id="hidden-count" style="font-size:12px; color:#888; margin-bottom:10px;">0 chaînes supprimées</div>
             <button onclick="restoreHidden()" style="background:#007bff; color:white; border:none; padding:8px 15px; border-radius:4px; width:100%;">Restaurer les chaînes supprimées</button>
         </div>
-
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-plus-circle"></i> AJOUTER SOURCE</span>
             <input type="text" id="custom-source" placeholder="Lien M3U..." style="width:100%; padding:10px; background:#222; border:1px solid #444; color:white; border-radius:4px;">
             <button onclick="addSource()" style="margin-top:5px; background:#444; color:white; border:none; padding:8px 15px; border-radius:4px;">Ajouter</button>
         </div>
-
         <div class="menu-item">
             <span class="menu-label"><i class="fas fa-user-shield"></i> ABONNEMENT</span>
             <div id="sub-info" style="margin-bottom:10px;">Statut: Inconnu</div>
@@ -141,20 +136,17 @@
             <div style="font-weight:bold;">MY BOX TV</div>
             <div id="count-display" style="font-size:11px; color:#aaa;">0 Chaînes</div>
         </div>
-        <button onclick="startScan(true)" style="background:#e50914; border:none; color:white; border-radius:4px; padding:5px 10px;">SCAN</button>
+        <button onclick="startScan(false)" style="background:#e50914; border:none; color:white; border-radius:4px; padding:5px 10px;">MAJ</button>
     </div>
-    
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
     </div>
-    
     <div id="channel-list"></div>
 </div>
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwUXUduSIrlDTvZfCO_gevNbPmajycNw00MJ2mkAiiV99lUfNcgbZiUHNEw_my7bT914A/exec";
     
-    // --- CHAINE PAR DEFAUT (STARTUP) ---
     const DEFAULT_START_CHANNEL = {
         name: "Novelas TV (Séries)",
         url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8",
@@ -169,6 +161,7 @@
     const subInfo = document.getElementById('sub-info');
     
     let allChannels = [];
+    let loadedUrls = new Set(); // Pour éviter les doublons
     let currentChannelIndex = -1;
     let hls = null;
     let isAutoZap = false;
@@ -215,11 +208,18 @@
     }
 
     async function initApp() {
-        // CHARGEMENT RAPIDE
-        startScan(true); // true = force reset pour mettre la chaine par défaut en premier
+        // 1. CHARGER MEMOIRE IMMEDIATEMENT
+        loadCache(); 
 
-        statusText.innerText = "MAJ Sources...";
+        // 2. AJOUTER/FORCER LA CHAINE PAR DEFAUT EN PREMIER
+        addChannelToFront(DEFAULT_START_CHANNEL);
+        
+        // 3. LANCER LA LECTURE DIRECTEMENT
+        if(allChannels.length > 0) playChannel(0);
+
+        // 4. METTRE A JOUR LES SOURCES EN ARRIERE PLAN
         try {
+            statusText.innerText = "MAJ Sources...";
             const res = await fetch(`${API_URL}?action=get_playlists`);
             const text = await res.text();
             let serverSources = text.startsWith("PLAYLISTS:") ? text.replace("PLAYLISTS:","").split(",,,") : [];
@@ -229,33 +229,39 @@
             serverSources.forEach(s => s.includes("index.m3u") ? big.push(s) : small.push(s));
             dynamicSources = [...localSources, ...small, ...big];
             
-            continueScan(); // Continue de scanner les autres listes
+            // 5. LANCER LE SCAN (SANS RIEN EFFACER)
+            startScan(false); 
+
         } catch(e) {
             console.log("Offline");
             dynamicSources = ["https://iptv-org.github.io/iptv/index.m3u"];
-            continueScan();
+            startScan(false);
         }
     }
 
-    // --- SCAN ---
+    // --- FONCTION AJOUT SECURISE ---
+    function addChannelToFront(ch) {
+        // Vérifie si elle existe déjà pour pas faire de doublon
+        if(!loadedUrls.has(ch.url)) {
+            allChannels.unshift(ch); // Ajoute au début
+            loadedUrls.add(ch.url);
+            renderChannels();
+        }
+    }
+
+    // --- SCAN ADDITIF (N'EFFACE RIEN) ---
     async function startScan(force = false) {
         if(force) { 
-            listContainer.innerHTML = ""; 
-            allChannels = [];
-            // AJOUT IMMEDIAT DE LA CHAINE PAR DEFAUT
-            allChannels.push(DEFAULT_START_CHANNEL);
-            renderChannels([DEFAULT_START_CHANNEL]);
-            
-            // LECTURE AUTOMATIQUE IMMEDIATE
-            setTimeout(() => playChannel(0), 500); 
+            // Seulement si on veut vraiment tout casser (bouton Reset caché)
+            // Mais pour l'utilisateur normal, on évite.
         }
-    }
-
-    async function continueScan() {
-        statusText.innerText = "Chargement liste...";
+        
+        statusText.innerText = "Recherche...";
         led.className = "";
+        
         for(let src of dynamicSources) await fetchPlaylist(src);
-        statusText.innerText = DEFAULT_START_CHANNEL.name; // Remet le nom de la chaine en cours
+        
+        statusText.innerText = allChannels[currentChannelIndex]?.name || "Prêt";
         led.className = "green";
     }
 
@@ -265,7 +271,9 @@
             if(!res.ok) return;
             const text = await res.text();
             const lines = text.split('\n');
-            let info = {}, batch = [];
+            let info = {};
+            let newCount = 0;
+            
             for(let line of lines) {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
@@ -274,30 +282,40 @@
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
-                        if(!hiddenChannels.includes(ch.url)) {
+                        
+                        // ICI LE SECRET : On n'ajoute QUE si on ne l'a pas déjà
+                        if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                             allChannels.push(ch);
-                            batch.push(ch);
+                            loadedUrls.add(ch.url);
+                            newCount++;
                         }
                         info = {};
                     }
                 }
             }
-            if(batch.length > 0) { renderChannels(batch); }
+            // On met à jour l'affichage seulement s'il y a du nouveau
+            if(newCount > 0) { 
+                renderChannels(); 
+                saveCache(); 
+            }
         } catch(e) {}
     }
 
-    function renderChannels(channels) {
+    function renderChannels() {
+        // On refait la liste proprement
+        listContainer.innerHTML = "";
         const frag = document.createDocumentFragment();
-        channels.forEach((ch) => {
-            // Attention: on recalcule l'index car allChannels grandit
-            const globalIdx = allChannels.indexOf(ch); 
+        
+        allChannels.forEach((ch, idx) => {
             const div = document.createElement('div');
             div.className = 'channel-item';
-            div.id = 'ch-' + globalIdx;
+            if(idx === currentChannelIndex) div.classList.add('active');
+            div.id = 'ch-' + idx;
             div.innerHTML = `<img src="${ch.logo || 'https://via.placeholder.com/40'}" class="tv-icon"> ${ch.name}`;
-            div.onclick = () => playChannel(globalIdx);
+            div.onclick = () => playChannel(idx);
             frag.appendChild(div);
         });
+        
         listContainer.appendChild(frag);
         document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
     }
@@ -309,9 +327,17 @@
             hiddenChannels.push(ch.url);
             localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
             document.getElementById('hidden-count').innerText = hiddenChannels.length + " chaînes supprimées";
-            const row = document.getElementById('ch-' + currentChannelIndex);
-            if(row) row.style.display = 'none';
-            nextChannel();
+            
+            // On l'enlève de la liste active et mémoire
+            allChannels.splice(currentChannelIndex, 1);
+            loadedUrls.delete(ch.url);
+            
+            renderChannels();
+            saveCache();
+            
+            // On lance la suivante (qui a pris la place de l'ancienne)
+            if(currentChannelIndex < allChannels.length) playChannel(currentChannelIndex);
+            else playChannel(allChannels.length - 1);
         }
     }
 
@@ -340,15 +366,8 @@
             hls.loadSource(ch.url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { 
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(_ => {
-                        led.className = "green";
-                    }).catch(error => {
-                        console.log("Autoplay bloqué par le navigateur (il faut un clic)");
-                    });
-                }
-                clearTimeout(autoZapTimeout); 
+                video.play().catch(e=>console.log("Auto-play bloqué")); 
+                led.className = "green"; clearTimeout(autoZapTimeout); 
             });
             hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) handleStreamError(index); });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -410,8 +429,28 @@
         const term = e.target.value.toLowerCase();
         listContainer.innerHTML = "";
         const filtered = allChannels.filter(c => c.name.toLowerCase().includes(term));
-        renderChannels(filtered);
+        const frag = document.createDocumentFragment();
+        filtered.forEach(ch => {
+             // Il faut retrouver le bon index original pour que le clic marche
+             const originalIdx = allChannels.indexOf(ch);
+             const div = document.createElement('div');
+             div.className = 'channel-item';
+             div.innerHTML = `<img src="${ch.logo || 'https://via.placeholder.com/40'}" class="tv-icon"> ${ch.name}`;
+             div.onclick = () => playChannel(originalIdx);
+             frag.appendChild(div);
+        });
+        listContainer.appendChild(frag);
     });
+
+    function saveCache() { try { localStorage.setItem('mybox_cache_v32', JSON.stringify(allChannels.slice(0,1000))); } catch(e){} }
+    function loadCache() { 
+        const c = localStorage.getItem('mybox_cache_v32'); 
+        if(c) { 
+            allChannels = JSON.parse(c);
+            allChannels.forEach(ch => loadedUrls.add(ch.url));
+            renderChannels(); 
+        } 
+    }
 </script>
 </body>
 </html>
