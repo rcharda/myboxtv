@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V40</title>
+    <title>My Box TV</title>
+    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
+    
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
@@ -25,10 +28,10 @@
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
 
-        .menu-header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center;}
+        .menu-header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:10px;}
         #searchInput { width: 90%; margin: 10px auto; padding: 12px; border-radius: 20px; background: #333; border: none; color: white; display: block; }
         
-        #channel-list { flex: 1; overflow-y: auto; padding: 5px; }
+        #channel-list { flex: 1; overflow-y: auto; padding: 5px; width:100%; }
         .channel-row { display: flex; align-items: center; padding: 10px; margin: 2px 0; border-radius: 8px; cursor: pointer; }
         .channel-row:hover { background: #222; }
         .channel-row.active { background: rgba(229,9,20,0.3); border-left: 3px solid var(--primary); }
@@ -61,21 +64,32 @@
 
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); } 100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); } }
+        
+        /* LOGO STYLE */
+        .app-logo { max-width: 150px; margin-bottom: 20px; }
+        
+        /* MAINTENANCE SCREEN */
+        #maint-screen { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
     </style>
 </head>
 <body>
+
+<div id="maint-screen">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:120px; margin-bottom:20px;">
+    <h1 style="color:#e50914;">MAINTENANCE</h1>
+    <p>Nous améliorons nos services.<br>Veuillez patienter.</p>
+    <div style="margin-top:20px; color:#666;">Essayer de recharger dans 10min</div>
+</div>
 
 <div id="admin-msg-box">Message du serveur...</div>
 
 <div id="pin-modal" class="modal">
     <div class="modal-box">
         <h3 style="color:#e50914;"><i class="fas fa-lock"></i> CONTRÔLE PARENTAL</h3>
-        <p>Cette chaîne est restreinte.</p>
         <input type="password" id="pin-code" class="pin-input" maxlength="4" placeholder="••••">
         <div style="display:flex; gap:10px; justify-content:center;">
-            <button onclick="checkPin()" style="padding:10px 20px; background:#e50914; color:white; border:none; border-radius:5px;">Valider</button>
-            <button onclick="closePin()" style="padding:10px 20px; background:#444; color:white; border:none; border-radius:5px;">Annuler</button>
+            <button onclick="checkPin()" style="padding:10px 20px; background:#e50914; color:white; border:none; border-radius:5px;">OK</button>
+            <button onclick="closePin()" style="padding:10px 20px; background:#444; color:white; border:none; border-radius:5px;">X</button>
         </div>
     </div>
 </div>
@@ -120,7 +134,7 @@
 
 <div id="login-screen" class="modal" style="display:flex;">
     <div class="modal-box">
-        <h2>MY BOX <span style="color:var(--primary)">TV</span></h2>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="app-logo">
         <input type="text" id="licenseKey" placeholder="ID ABONNEMENT" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:5px; text-align:center; font-size:18px; margin-bottom:15px;">
         <button onclick="login()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold;">ENTRER</button>
         <div id="login-msg" style="color:#ff4444; margin-top:10px;"></div>
@@ -136,11 +150,11 @@
     
     <div id="channel-menu">
         <div class="menu-header">
-            <div>
-                <span style="font-weight:bold; font-size:18px;">CHAÎNES</span>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:100px;">
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                 <div style="font-size:11px; color:#888;" id="count-display">0 trouvées</div>
+                <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
             </div>
-            <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
         </div>
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
         <div style="padding:10px; border-bottom:1px solid #333;">
@@ -165,26 +179,19 @@
 
 <script>
     // =======================================================
-    // TON LIEN DE DEPLOIEMENT V40
     const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
 
-    let allChannels = [];
-    let displayedChannels = [];
-    let loadedUrls = new Set();
+    let allChannels = [], displayedChannels = [], loadedUrls = new Set();
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
     let currentChannelIndex = 0;
     let deviceId = localStorage.getItem('mybox_device_id') || 'DEV-'+Math.random().toString(36).substr(2,9).toUpperCase();
     localStorage.setItem('mybox_device_id', deviceId);
-    let isFavFilter = false;
-    let hls = null;
-    let pendingChannelIndex = -1;
-    let isAutoZap = false; 
-    let allCategories = new Set(['Favoris']);
-    let selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
+    let isFavFilter = false, hls = null, pendingChannelIndex = -1, isAutoZap = false;
+    let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
 
     const video = document.getElementById('video');
@@ -203,6 +210,9 @@
         try {
             const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text = await res.text();
+            
+            if(text.includes("MAINTENANCE")) { alert("Maintenance en cours. Revenez plus tard."); return; }
+
             if(text.includes("SUCCESS")) {
                 localStorage.setItem('mybox_auth', 'OK');
                 localStorage.setItem('mybox_key', key);
@@ -236,7 +246,22 @@
     }
 
     async function initApp() {
-        checkAdminMessage();
+        // VERIF MAINTENANCE
+        try {
+            const res = await fetch(`${API_URL}?action=get_message`); // Simple ping to check status
+            const text = await res.text();
+            if(text.includes("MAINTENANCE")) {
+                document.getElementById('maint-screen').style.display = 'flex';
+                return;
+            }
+            if(text.startsWith("MSG:") && text.length > 5) {
+                const box = document.getElementById('admin-msg-box');
+                box.innerText = "📢 " + text.replace("MSG:", "");
+                box.style.display = "block";
+                setTimeout(() => box.style.display = "none", 8000);
+            }
+        } catch(e){}
+
         loadCache();
         addChannelToFront(DEFAULT_CHANNEL);
         
@@ -245,6 +270,8 @@
         try {
             const res = await fetch(`${API_URL}?action=get_playlists`);
             const text = await res.text();
+            if(text.includes("MAINTENANCE")) return; // double check
+
             let sources = text.startsWith("PLAYLISTS:") ? text.replace("PLAYLISTS:","").split(",,,") : ["https://iptv-org.github.io/iptv/index.m3u"];
             sources.sort((a,b) => a.includes("index.m3u") ? 1 : -1);
             
@@ -254,11 +281,7 @@
     }
 
     function addChannelToFront(ch) {
-        if(!loadedUrls.has(ch.url)) {
-            allChannels.unshift(ch);
-            loadedUrls.add(ch.url);
-            renderList();
-        }
+        if(!loadedUrls.has(ch.url)) { allChannels.unshift(ch); loadedUrls.add(ch.url); renderList(); }
     }
 
     async function fetchPlaylist(url) {
@@ -268,7 +291,6 @@
             const text = await res.text();
             const lines = text.split('\n');
             let info = {}, count = 0;
-            
             for(let line of lines) {
                 line = line.trim();
                 if(line.startsWith('#EXTINF:')) {
@@ -280,44 +302,19 @@
                 } else if(line.startsWith('http') && !line.endsWith('.m3u')) {
                     if(info.name) {
                         const ch = { ...info, url: line };
-                        // ADDITIVE SCAN
-                        if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
-                            allChannels.push(ch);
-                            loadedUrls.add(ch.url);
-                            count++;
-                        }
+                        if(!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { allChannels.push(ch); loadedUrls.add(ch.url); count++; }
                         info = {};
                     }
                 }
             }
-            if(count > 0) {
-                updateCategoryChips();
-                renderList();
-                saveCache();
-            }
+            if(count > 0) { updateCategoryChips(); renderList(); saveCache(); }
         } catch(e){}
     }
 
-    async function checkAdminMessage() {
-        try {
-            const res = await fetch(`${API_URL}?action=get_message`);
-            const text = await res.text();
-            if(text.startsWith("MSG:") && text.length > 5) {
-                const box = document.getElementById('admin-msg-box');
-                box.innerText = "📢 " + text.replace("MSG:", "");
-                box.style.display = "block";
-                setTimeout(() => box.style.display = "none", 8000);
-            }
-        } catch(e){}
-    }
-
-    // --- RENDERING ---
     function toggleFavorite(url, e) {
         e.stopPropagation(); 
-        if(favorites.includes(url)) favorites = favorites.filter(u => u !== url);
-        else favorites.push(url);
-        localStorage.setItem('mybox_favs', JSON.stringify(favorites));
-        renderList();
+        if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url);
+        localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList();
     }
 
     function toggleOnlyFavorites() {
@@ -328,37 +325,23 @@
 
     function renderList() {
         const term = document.getElementById('searchInput').value.toLowerCase();
-        
         displayedChannels = allChannels.filter(ch => {
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
-            
-            const matchSearch = ch.name.toLowerCase().includes(term);
-            const matchFav = isFavFilter ? favorites.includes(ch.url) : true;
-            return catOK && matchSearch && matchFav;
+            return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
-
         displayedChannels.sort((a,b) => {
-            const favA = favorites.includes(a.url);
-            const favB = favorites.includes(b.url);
-            if(favA && !favB) return -1;
-            if(!favA && favB) return 1;
-            return 0;
+            const favA = favorites.includes(a.url); const favB = favorites.includes(b.url);
+            if(favA && !favB) return -1; if(!favA && favB) return 1; return 0;
         });
-
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         const frag = document.createDocumentFragment();
-        
         displayedChannels.forEach((ch, idx) => {
             const isFav = favorites.includes(ch.url);
             const div = document.createElement('div');
             div.className = 'channel-row ' + (ch.url === allChannels[currentChannelIndex]?.url ? 'active' : '');
-            div.innerHTML = `
-                <i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
-                <img src="${ch.logo || 'https://via.placeholder.com/40'}" class="ch-logo">
-                <div style="font-weight:600; font-size:14px;">${ch.name}</div>
-            `;
+            div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i><img src="${ch.logo || 'https://via.placeholder.com/40'}" class="ch-logo"><div style="font-weight:600; font-size:14px;">${ch.name}</div>`;
             div.onclick = () => tryPlayChannel(ch);
             frag.appendChild(div);
         });
@@ -368,22 +351,15 @@
 
     document.getElementById('searchInput').addEventListener('input', renderList);
 
-    // --- PLAYER & SMART ZAP ---
     function tryPlayChannel(ch) {
         const name = ch.name.toLowerCase();
         if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) {
-            pendingChannelIndex = allChannels.indexOf(ch);
-            document.getElementById('pin-modal').style.display = 'flex';
-        } else {
-            currentChannelIndex = allChannels.indexOf(ch);
-            playChannel(currentChannelIndex);
-        }
+            pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex';
+        } else { currentChannelIndex = allChannels.indexOf(ch); playChannel(currentChannelIndex); }
     }
 
     function checkPin() {
-        if(document.getElementById('pin-code').value === PIN_CODE) {
-            closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex);
-        } else alert("Code Erroné");
+        if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné");
     }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
@@ -392,74 +368,33 @@
         const ch = allChannels[index];
         if(window.innerWidth < 900) document.body.classList.remove('menu-open');
         renderList(); 
-
-        statusText.innerText = ch.name;
-        led.className = "orange"; // Chargement
+        statusText.innerText = ch.name; led.className = "orange";
 
         if(Hls.isSupported()) {
             if(hls) hls.destroy();
             hls = new Hls({manifestLoadingMaxRetry: 2});
-            hls.loadSource(ch.url);
-            hls.attachMedia(video);
-            
-            // SMART ZAP : Si ça marche, on annule le timer
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                video.play().catch(()=>{});
-                led.className = "green";
-                clearTimeout(autoZapTimeout);
-            });
+            hls.loadSource(ch.url); hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
             hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handleError(); });
-        } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = ch.url;
-            video.play();
-        }
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
         
-        // SMART ZAP : Timeout 15s
-        if(isAutoZap) {
-            clearTimeout(autoZapTimeout);
-            autoZapTimeout = setTimeout(() => {
-                if(video.paused || video.readyState < 2) handleError();
-            }, 15000);
-        }
+        if(isAutoZap) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
     }
 
     let autoZapTimeout;
-    function handleError() {
-        led.className = "";
-        if(isAutoZap) { 
-            statusText.innerText = "Zap Auto..."; 
-            setTimeout(nextChannel, 1000); 
-        } else { 
-            statusText.innerText = "Erreur Flux"; 
-        }
-    }
+    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
 
-    // --- CONTROLS ---
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { 
-        let nextIdx = currentChannelIndex + 1;
-        if(nextIdx >= allChannels.length) nextIdx = 0;
-        tryPlayChannel(allChannels[nextIdx]);
-    }
-    function prevChannel() { 
-        let prevIdx = currentChannelIndex - 1;
-        if(prevIdx < 0) prevIdx = allChannels.length - 1;
-        tryPlayChannel(allChannels[prevIdx]);
-    }
+    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
+    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
 
     function toggleAutoZap() {
         isAutoZap = !isAutoZap;
         const btn = document.getElementById('btn-autozap');
-        if(isAutoZap) {
-            btn.classList.add('active-mode');
-            statusText.innerText = "Auto-Zap ON";
-        } else {
-            btn.classList.remove('active-mode');
-            statusText.innerText = "Auto-Zap OFF";
-            clearTimeout(autoZapTimeout);
-        }
+        if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; }
+        else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); }
     }
     
     function hideCurrentChannel() {
@@ -468,13 +403,10 @@
             hiddenChannels.push(ch.url);
             localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels));
             allChannels.splice(currentChannelIndex, 1);
-            loadedUrls.delete(ch.url);
-            renderList();
-            nextChannel();
+            loadedUrls.delete(ch.url); renderList(); nextChannel();
         }
     }
 
-    // --- SETTINGS ---
     function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) {
@@ -494,8 +426,7 @@
         container.innerHTML = html;
     }
     function toggleCat(cat) {
-        if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat);
-        else selectedCategories.push(cat);
+        if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat);
         updateCategoryChips();
     }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
@@ -510,12 +441,8 @@
         }
     }
     function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
-
     function saveCache() { localStorage.setItem('mybox_cache_v35', JSON.stringify(allChannels.slice(0,1000))); }
-    function loadCache() {
-        const c = localStorage.getItem('mybox_cache_v35');
-        if(c) { allChannels = JSON.parse(c); allChannels.forEach(ch=>loadedUrls.add(ch.url)); renderList(); }
-    }
+    function loadCache() { const c = localStorage.getItem('mybox_cache_v35'); if(c) { allChannels = JSON.parse(c); allChannels.forEach(ch=>loadedUrls.add(ch.url)); renderList(); } }
 </script>
 </body>
 </html>
