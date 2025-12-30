@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V60 Auto-Start</title>
+    <title>My Box TV - V61 Sound Unlock</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -15,23 +15,31 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* --- V60 : OPTIMISATION WEB --- */
         #player-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         
         video { width: 100%; height: 100%; object-fit: contain; display: block; }
         
+        /* IFRAME WEB */
         iframe { 
             width: 100%; height: 100%; border: none; display: none; background: #000; 
             position: absolute; top:0; left:0; z-index: 1;
-            pointer-events: none; /* Désactive les clics sur l'iframe pour laisser passer au Shield */
         }
         
-        /* LE BOUCLIER DE CONTROLE */
+        /* BOUCLIER (SHIELD) */
         #touch-shield { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; 
-            background: transparent; cursor: pointer; display: none; /* Caché par défaut */
+            background: transparent; cursor: pointer; display: none;
         }
-        /* ------------------------------ */
+
+        /* BOUTON DÉBLOCAGE SON (V61) */
+        #unlock-sound-btn {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(229, 9, 20, 0.9); color: white;
+            padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 16px;
+            z-index: 20; display: none; cursor: pointer; border: 2px solid white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8); animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% {transform: translate(-50%, -50%) scale(1);} 50% {transform: translate(-50%, -50%) scale(1.05);} 100% {transform: translate(-50%, -50%) scale(1);} }
 
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
@@ -171,8 +179,12 @@
 <div id="player-layer">
     <video id="video" playsinline crossorigin="anonymous"></video>
     
-    <iframe id="web-player" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"></iframe>
+    <iframe id="web-player" allow="autoplay; encrypted-media; fullscreen"></iframe>
     
+    <div id="unlock-sound-btn" onclick="enableWebInteraction()">
+        <i class="fas fa-volume-up"></i> ACTIVER LE SON
+    </div>
+
     <div id="touch-shield" onclick="toggleMenu()"></div>
 </div>
 
@@ -223,7 +235,7 @@
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V60_Auto"; 
+    const DB_NAME = "MyBoxTV_V61_Sound"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -241,7 +253,8 @@
 
     const video = document.getElementById('video');
     const iframe = document.getElementById('web-player');
-    const shield = document.getElementById('touch-shield'); // V60
+    const shield = document.getElementById('touch-shield');
+    const soundBtn = document.getElementById('unlock-sound-btn'); // V61
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
@@ -471,7 +484,14 @@
     function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
-    // --- PLAY CHANNEL V60 (Force Autoplay + Shield) ---
+    // --- V61 : FONCTION POUR RETIRER LE BOUCLIER ---
+    function enableWebInteraction() {
+        shield.style.display = 'none'; // On retire le bouclier
+        soundBtn.style.display = 'none'; // On cache le bouton
+        iframe.style.pointerEvents = 'auto'; // On active les clics sur l'iframe
+    }
+
+    // --- PLAY CHANNEL V61 ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -479,29 +499,33 @@
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
-        // 1. MODE WEB (Avec injection de démarrage forcé)
+        // 1. MODE WEB (ORTB, Canal3)
         if(ch.isWeb) {
             video.style.display = "none";
             video.pause();
             if(hls) hls.destroy(); 
             
-            // INJECTION INTELLIGENTE DES PARAMETRES D'AUTOPLAY
-            // On ajoute tout ce qui peut déclencher la vidéo + le mode muet (obligatoire)
+            // Injection paramètres
             let separator = ch.url.includes('?') ? '&' : '?';
-            let extraParams = "autoplay=1&autoPlay=1&muted=1&mute=1&playsinline=1&controls=0";
-            
+            let extraParams = "autoplay=1&muted=1&playsinline=1&controls=1";
             iframe.src = ch.url + separator + extraParams;
             
             iframe.style.display = "block";
-            shield.style.display = "block"; // Active le bouclier contre les clics parasites
+            
+            // V61 : ON ACTIVE LE BOUCLIER + LE BOUTON "ACTIVER LE SON"
+            shield.style.display = "block";
+            soundBtn.style.display = "block"; // Affiche le bouton rouge
+            iframe.style.pointerEvents = 'none'; // Pas de clic direct au début
+            
             led.className = "green";
             return;
         }
 
-        // 2. MODE VIDEO
+        // 2. MODE VIDEO NORMAL
         iframe.style.display = "none";
-        shield.style.display = "none"; // Désactive le bouclier pour la vidéo normale
         iframe.src = ""; 
+        shield.style.display = "none"; 
+        soundBtn.style.display = "none";
         video.style.display = "block";
 
         if(Hls.isSupported()) {
@@ -520,7 +544,10 @@
 
     let autoZapTimeout;
     function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
+    
+    // Modification V61 : Le menu ne s'ouvre que si le Shield est actif
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
+    
     function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
     function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
