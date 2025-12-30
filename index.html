@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Décodeur V62</title>
+    <title>My Box TV - V72 Hybrid</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -16,8 +15,19 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
+        /* --- MOTEUR D'AFFICHAGE HYBRIDE --- */
         #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; object-fit: contain; }
+        
+        /* Lecteur Vidéo (Pour M3U8) */
+        video { width: 100%; height: 100%; object-fit: contain; display: block; }
+        
+        /* Lecteur Web (Pour YouTube, Dailymotion, Sites) - Caché par défaut */
+        iframe { width: 100%; height: 100%; border: none; display: none; background: #000; position: absolute; top:0; left:0; z-index: 1; }
+        
+        /* Bouclier tactile pour le menu sur iframe */
+        #touch-shield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; background: transparent; display: none; }
+        /* ---------------------------------- */
+
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
         #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 8px; pointer-events: none; }
@@ -31,11 +41,13 @@
         .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
         #searchInput { width: 95%; margin: 5px auto; padding: 10px; border-radius: 5px; background: #333; border: none; color: white; display: block; font-size: 14px; }
         
-        /* BARRE DE FILTRES COMPACTE */
+        /* BOUTON MONDE (NOUVEAU) */
+        .btn-world { width: 95%; margin: 0 auto 10px auto; padding: 10px; background: linear-gradient(90deg, #00d2ff, #3a7bd5); color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; }
+        .btn-world:active { transform: scale(0.98); }
+
         .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
         .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .btn-mini.active { background: #333; color: white; border-color: #666; }
-        .btn-mini:active { transform: scale(0.98); }
         .btn-local { background: linear-gradient(45deg, #e50914, #900); color: white; border: none; }
 
         #scan-info { width: 90%; display: none; flex-direction: column; gap: 5px; margin-bottom: 5px; }
@@ -49,13 +61,17 @@
         .channel-row:hover { background: #222; }
         .channel-row.active { background: rgba(229,9,20,0.2); border-left: 3px solid var(--primary); }
         .ch-logo { width: 35px; height: 35px; object-fit: contain; background: #fff; padding: 2px; border-radius: 3px; margin-right: 10px; }
+        
+        .badge { font-size: 9px; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-left: auto; }
+        .badge-web { background: #00d2ff; color: #000; }
+        .badge-iptv { background: #28a745; color: #fff; }
+
         .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; }
         .btn-ctrl { width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
-        .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); animation: pulse 2s infinite; }
         .btn-large { width: 55px; height: 55px; font-size: 22px; background: var(--primary); border: 2px solid white; box-shadow: 0 0 10px rgba(229,9,20,0.5); }
         .desktop-only { display: flex; }
         @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
@@ -120,30 +136,24 @@
         <div class="settings-content">
             <div id="tab-inst" class="tab-content">
                 <h3 style="color:#e50914;"><i class="fas fa-satellite-dish"></i> SATELLITE / IPTV</h3>
-                <p style="color:#aaa; font-size:12px;">Cochez les transpondeurs à scanner.</p>
                 <div id="transponder-list">
-                    <div style="text-align:center; padding:20px;">Chargement des sources...</div>
+                    <div style="text-align:center; padding:20px;">Chargement...</div>
                 </div>
                 <button onclick="scanSelectedTransponders()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold; font-size:16px; margin-top:20px;">
                     <i class="fas fa-search"></i> LANCER LE BALAYAGE
                 </button>
             </div>
-
             <div id="tab-cat" class="tab-content" style="display:none;">
                 <h3>Dossiers</h3>
                 <button onclick="resetFilters()" style="width:100%; background:#444; padding:10px; margin-bottom:15px; border:none; color:white; border-radius:5px;">🔄 TOUT AFFICHER</button>
                 <div id="chips-area" class="chips-container"></div>
                 <button onclick="applyFilters()" style="margin-top:20px; width:100%; background:var(--primary); border:none; color:white; padding:10px; border-radius:5px;">Valider</button>
             </div>
-
             <div id="tab-sub" class="tab-content" style="display:none;">
                 <h3>Abonnement</h3>
-                <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
-                    ID: <span id="sub-id">...</span><br>
-                    Infos: <span id="sub-details">...</span>
-                </div>
-                <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">DÉCONNECTER</button>
-                <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; margin-top:10px; color:#888; text-align:center; text-decoration:none;">Support WhatsApp</a>
+                <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">ID: <span id="sub-id">...</span><br>Infos: <span id="sub-details">...</span></div>
+                <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold;">DÉCONNECTER</button>
+                <a href="https://wa.me/22963828767" target="_blank" style="display:block; margin-top:10px; color:#888; text-align:center;">Support WhatsApp</a>
             </div>
         </div>
     </div>
@@ -158,7 +168,11 @@
     </div>
 </div>
 
-<div id="video-layer"><video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous"></video></div>
+<div id="video-layer">
+    <video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous"></video>
+    <iframe id="web-player" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-popups"></iframe>
+    <div id="touch-shield" onclick="toggleMenu()"></div>
+</div>
 
 <div id="ui-layer">
     <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
@@ -183,6 +197,10 @@
         </div>
         
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
+        
+        <button class="btn-world" onclick="loadWorldChannels()">
+            <i class="fas fa-globe"></i> SCANNER MONDE (+10k)
+        </button>
         
         <div class="filter-bar">
             <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
@@ -209,14 +227,14 @@
 </div>
 
 <script>
-    // =======================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    // =======================================================
-
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
     const DB_NAME = "MyBoxTV_V62_Final"; 
     const DB_VERSION = 1;
+    // PROXIES PUISSANTS
+    const PROXY_FETCH = "https://api.allorigins.win/raw?url=";
+    const PROXY_REPAIR = "https://corsproxy.io/?";
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
@@ -232,6 +250,8 @@
     let isScanning = false;
 
     const video = document.getElementById('video');
+    const iframe = document.getElementById('web-player');
+    const shield = document.getElementById('touch-shield');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
@@ -282,6 +302,14 @@
             if(text.startsWith("MSG:") && text.length>5) { const b=document.getElementById('admin-msg-box'); b.innerText="📢 "+text.replace("MSG:",""); b.style.display="block"; setTimeout(()=>b.style.display="none",8000); }
         } catch(e){}
         setInterval(() => { if(isScanning && (Date.now() - lastActivityTime > 5000)) lastActivityTime = Date.now(); }, 1000);
+    }
+
+    // --- FONCTION BOOST : CHARGER LE MONDE ---
+    function loadWorldChannels() {
+        if(!confirm("Charger la base mondiale IPTV-ORG ?\nCela peut prendre 10 secondes.")) return;
+        document.getElementById('scan-info').style.display = 'flex';
+        document.getElementById('scan-text').innerText = "Téléchargement Mondial...";
+        fetchPlaylistWithWatchdog("https://iptv-org.github.io/iptv/index.m3u");
     }
 
     async function fetchTranspondersList() {
@@ -345,9 +373,11 @@
     async function fetchPlaylistWithWatchdog(url) {
         lastActivityTime = Date.now();
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); 
+        const timeoutId = setTimeout(() => controller.abort(), 20000); 
         try {
-            const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url), { signal: controller.signal });
+            // PROXY PUISSANT COMME DANS LE TEST
+            const finalUrl = PROXY_FETCH + encodeURIComponent(url);
+            const response = await fetch(finalUrl, { signal: controller.signal });
             clearTimeout(timeoutId); if (!response.ok) return;
             const reader = response.body.getReader(); const decoder = new TextDecoder("utf-8");
             let buffer = ""; let newBatch = [];
@@ -378,12 +408,17 @@
                 currentInfo = { name: name, logo: logo, category: cat }; allCategories.add(cat);
             } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
                 if (currentInfo) {
-                    // FILTRE : UNIQUEMENT LES VRAIES VIDEOS
+                    // DÉTECTION INTELLIGENTE HYBRIDE (Web vs IPTV)
+                    let isWeb = true;
                     if (line.includes('.m3u8') || line.includes('.ts') || line.includes('.mp4') || line.includes('.mkv')) {
-                        const ch = { ...currentInfo, url: line };
-                        if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
-                            batch.push(ch); loadedUrls.add(ch.url); 
-                        }
+                        isWeb = false;
+                    }
+                    
+                    const ch = { ...currentInfo, url: line, isWeb: isWeb };
+                    
+                    // On filtre les doublons mais on laisse passer le Web
+                    if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
+                        batch.push(ch); loadedUrls.add(ch.url); 
                     }
                     currentInfo = null;
                 }
@@ -413,7 +448,8 @@
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         const frag = document.createDocumentFragment();
-        let limit = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
+        // On limite l'affichage pour ne pas planter si 10k chaines
+        let limit = displayedChannels.length > 500 ? 500 : displayedChannels.length;
         
         displayedChannels.slice(0, limit).forEach((ch) => {
             const isFav = favorites.includes(ch.url);
@@ -421,9 +457,14 @@
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             const div = document.createElement('div');
             div.className = 'channel-row ' + (isPlaying ? 'active' : '');
+            
+            // Badge pour savoir si c'est WEB ou TV
+            let badge = ch.isWeb ? '<span class="badge badge-web">WEB</span>' : '';
+            
             div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                              <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
-                             <div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`;
+                             <div style="flex:1;"><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>
+                             ${badge}`;
             div.onclick = () => tryPlayChannel(ch);
             frag.appendChild(div);
         });
@@ -457,6 +498,7 @@
     function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
+    // --- LECTEUR HYBRIDE INTELLIGENT (DU FICHIER TEST) ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -464,15 +506,50 @@
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
+        // CAS 1 : CHAINE WEB (Iframe)
+        if (ch.isWeb) {
+            video.style.display = "none";
+            video.pause();
+            if(hls) hls.destroy();
+            
+            let sep = ch.url.includes('?') ? '&' : '?';
+            iframe.src = ch.url + sep + "autoplay=1&muted=1&playsinline=1";
+            iframe.style.display = "block";
+            shield.style.display = "block"; // Active le bouclier
+            led.className = "green";
+            return;
+        }
+
+        // CAS 2 : CHAINE IPTV (Video)
+        iframe.style.display = "none";
+        iframe.src = "";
+        shield.style.display = "none"; // Désactive le bouclier
+        video.style.display = "block";
+        
         if(Hls.isSupported()) {
-            if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
+            if(hls) hls.destroy(); 
+            hls = new Hls({manifestLoadingMaxRetry: 3, manifestLoadingTimeOut: 10000});
             hls.loadSource(ch.url); hls.attachMedia(video);
+            
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(index===0){ setTimeout(()=>playChannel(0),2000); } else handleError(); } });
+            
+            // SYSTEME DE REPARATION AUTO (PROXY)
+            hls.on(Hls.Events.ERROR, (e,d) => { 
+                if(d.fatal) { 
+                    console.log("Erreur -> Réparation Proxy...");
+                    statusText.innerText = "Réparation...";
+                    hls.destroy();
+                    hls = new Hls();
+                    hls.loadSource(PROXY_REPAIR + encodeURIComponent(ch.url));
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play(); led.className = "green"; statusText.innerText = ch.name + " (R)"; });
+                } 
+            });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
         
         if(isAutoZap && index !== 0) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
     }
+
     let autoZapTimeout;
     function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
@@ -492,4 +569,3 @@
 </script>
 </body>
 </html>
-
