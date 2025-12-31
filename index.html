@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Décodeur V62 (TITAN ENGINE)</title>
+    <title>My Box TV - Décodeur V62 (NETLIFY FIX)</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -13,27 +13,20 @@
     <style>
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
-        
-        /* SCROLLBAR MODERNE */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* LAYERS */
+        /* Layers */
         #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        /* STATUS */
+        /* Status & LED */
         #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 8px; pointer-events: none; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
 
-        /* MENU (DESIGN V62 CONSERVÉ) */
+        /* Menu Principal */
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
 
@@ -51,23 +44,16 @@
         #scan-bar { position: absolute; left: 0; top: 0; height: 100%; width: 50%; background: #0f0; animation: scanAnim 1s infinite linear; }
         @keyframes scanAnim { 0% {left: -50%;} 100% {left: 100%;} }
 
-        /* --- MOTEUR VIRTUEL (TITAN) INTÉGRÉ DANS LE DESIGN V62 --- */
-        #channel-list-viewport { flex: 1; overflow-y: auto; padding: 0; width:100%; position: relative; will-change: transform; contain: strict; }
-        #channel-list-content { position: relative; width: 100%; overflow: hidden; }
-        
-        .channel-row { 
-            position: absolute; left: 0; width: 100%; height: 60px; /* HAUTEUR FIXE REQUISE */
-            display: flex; align-items: center; padding: 0 15px; 
-            border-bottom: 1px solid #222; cursor: pointer; 
-            background: transparent;
-        }
+        /* Liste des chaînes */
+        #channel-list { flex: 1; overflow-y: auto; padding: 0; width:100%; }
+        .channel-row { display: flex; align-items: center; padding: 10px 15px; margin: 0; border-bottom: 1px solid #222; cursor: pointer; contain: content; }
         .channel-row:hover { background: #222; }
         .channel-row.active { background: rgba(229,9,20,0.2); border-left: 3px solid var(--primary); }
         .ch-logo { width: 35px; height: 35px; object-fit: contain; background: #fff; padding: 2px; border-radius: 3px; margin-right: 10px; }
         .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
-        /* BARRE CONTROLE */
+        /* Bottom Bar */
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; }
         .btn-ctrl { width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
@@ -76,7 +62,7 @@
         .desktop-only { display: flex; }
         @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
 
-        /* MODALS */
+        /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .pin-input { font-size: 30px; letter-spacing: 10px; width: 150px; text-align: center; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; margin: 20px 0; }
@@ -89,6 +75,7 @@
         .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
         .chip.selected { background: var(--primary); color: white; }
+        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
         @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
 
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
@@ -140,12 +127,12 @@
                     <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
                 </label>
 
-                <p style="color:#aaa; font-size:12px;">Transpondeurs Online :</p>
+                <p style="color:#aaa; font-size:12px;">Cochez les transpondeurs à scanner.</p>
                 <div id="transponder-list">
-                    <div style="text-align:center; padding:20px;">Chargement...</div>
+                    <div style="text-align:center; padding:20px;">Chargement des sources...</div>
                 </div>
                 <button onclick="scanSelectedTransponders()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold; font-size:16px; margin-top:20px;">
-                    <i class="fas fa-search"></i> LANCER LE BALAYAGE ONLINE
+                    <i class="fas fa-search"></i> LANCER LE BALAYAGE
                 </button>
             </div>
 
@@ -208,14 +195,12 @@
             <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
                 <i class="fas fa-star" style="color:gold;"></i> Favoris
             </button>
-            <button onclick="window.location.reload()" class="btn-mini btn-local">
-                <i class="fas fa-sync"></i> Refresh
+            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
+                <i class="fas fa-map-marker-alt"></i> Chaînes Locales
             </button>
         </div>
 
-        <div id="channel-list-viewport">
-            <div id="channel-list-content"></div>
-        </div>
+        <div id="channel-list"></div>
     </div>
 
     <div id="bottom-bar">
@@ -232,10 +217,8 @@
 
 <script>
     // =======================================================
-    // CONFIGURATIONS CRITIQUES
     const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    const CORS_PROXY = "https://corsproxy.io/?"; // C'EST CA QUI REPARE ARAS TV ET LES AUTRES
-    const ROW_HEIGHT = 60; // Pour le moteur graphique
+    const CORS_PROXY = "https://corsproxy.io/?"; // CLÉ POUR FIXER NETLIFY
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
@@ -251,18 +234,15 @@
     let isFavFilter = false, hls = null, pendingChannelIndex = -1, isAutoZap = false;
     let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
+    
     let availableTransponders = []; 
     let lastActivityTime = Date.now();
     let isScanning = false;
 
-    // DOM References pour le Virtual Scroll
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
-    const viewport = document.getElementById('channel-list-viewport');
-    const content = document.getElementById('channel-list-content');
 
-    // --- DB UTILS ---
     function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror=()=>reject("DB Error"); r.onsuccess=e=>resolve(e.target.result); r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
     async function saveChannelsToDB(channels) { const db=await openDB(); const tx=db.transaction("channels","readwrite"); const store=tx.objectStore("channels"); channels.forEach(ch=>{try{store.put(ch);}catch(e){}}); }
     async function loadChannelsFromDB() { const db=await openDB(); return new Promise(r=>{ const tx=db.transaction("channels","readonly"); const req=tx.objectStore("channels").getAll(); req.onsuccess=()=>r(req.result||[]); req.onerror=()=>r([]); }); }
@@ -276,7 +256,6 @@
         }
     }
 
-    // --- AUTHENTIFICATION ---
     if(localStorage.getItem('mybox_auth') === 'OK') { 
         document.getElementById('login-screen').style.display = 'none'; 
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); 
@@ -301,6 +280,7 @@
         try {
             const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text = await res.text();
+            if(text.includes("MAINTENANCE")) { alert("Maintenance"); return; }
             if(text.includes("SUCCESS")) { 
                 localStorage.setItem('mybox_auth', 'OK'); 
                 localStorage.setItem('mybox_key', key); 
@@ -328,109 +308,39 @@
         fetchTranspondersList();
     }
 
-    // --- MOTEUR VIRTUEL (TITAN SCROLL) - FIXE LE LAG ---
-    viewport.addEventListener('scroll', requestRender);
-    window.addEventListener('resize', requestRender);
-    document.getElementById('searchInput').addEventListener('input', renderList);
+    async function fetchTranspondersList() {
+        try {
+            const res = await fetch(`${API_URL}?action=get_playlists`);
+            availableTransponders = await res.json();
+            renderTranspondersUI();
+            if(allChannels.length < 5) {
+                availableTransponders.forEach((tp, i) => { setTimeout(() => fetchPlaylistWithWatchdog(tp.url), i * 1000); });
+            }
+        } catch(e) { console.log("TP Error"); }
+    }
 
-    function requestRender() { window.requestAnimationFrame(renderList); }
-
-    function renderList() {
-        enforceNovelasIntegrity();
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        
-        // 1. Filtrage
-        displayedChannels = allChannels.filter(ch => {
-            let catOK = true;
-            if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
-            return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
+    function renderTranspondersUI() {
+        const container = document.getElementById('transponder-list');
+        container.innerHTML = "";
+        availableTransponders.forEach((tp, idx) => {
+            const div = document.createElement('div');
+            div.className = "tp-item";
+            div.innerHTML = `<span class="tp-name">${tp.name}</span><input type="checkbox" class="tp-checkbox" value="${tp.url}" checked>`;
+            container.appendChild(div);
         });
-
-        document.getElementById('count-display').innerText = displayedChannels.length + " trouvées";
-
-        // 2. Calcul d'affichage (Virtualization)
-        const scrollTop = viewport.scrollTop;
-        const viewportHeight = viewport.clientHeight;
-        const startIndex = Math.floor(scrollTop / ROW_HEIGHT);
-        const endIndex = Math.min(displayedChannels.length, Math.floor((scrollTop + viewportHeight) / ROW_HEIGHT) + 5);
-
-        content.style.height = `${displayedChannels.length * ROW_HEIGHT}px`;
-
-        // 3. Dessin HTML
-        let html = '';
-        for(let i = startIndex; i < endIndex; i++) {
-            const ch = displayedChannels[i];
-            if(!ch) continue;
-
-            const isFav = favorites.includes(ch.url);
-            const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
-            const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
-            const rowClass = isPlaying ? 'channel-row active' : 'channel-row';
-            const favClass = isFav ? 'active' : '';
-            
-            // On retrouve l'index réel dans la grande liste
-            let globalIndex = allChannels.indexOf(ch);
-
-            html += `
-                <div class="${rowClass}" style="transform: translateY(${i * ROW_HEIGHT}px)" onclick="tryPlayChannel(${globalIndex})">
-                    <i class="fas fa-star fav-icon ${favClass}" onclick="toggleFavorite('${ch.url}', event)"></i>
-                    <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
-                    <div>
-                        <div style="font-weight:600; font-size:14px;">${ch.name}</div>
-                        <div style="font-size:10px; color:#888;">${ch.category}</div>
-                    </div>
-                </div>
-            `;
-        }
-        content.innerHTML = html;
     }
 
-    // --- LECTEUR INTELLIGENT (PROXY FALLBACK) - REPARE ARAS TV ---
-    function playChannel(index) {
-        if(!allChannels[index]) return;
-        const ch = allChannels[index];
-        currentChannelIndex = index;
-        
-        if(window.innerWidth < 900) document.body.classList.remove('menu-open');
-        renderList(); 
-        statusText.innerText = ch.name; led.className = "orange";
-        
-        if(Hls.isSupported()) {
-            if(hls) hls.destroy(); 
-            hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
-            
-            // TENTATIVE 1 : DIRECTE (Standard)
-            hls.loadSource(ch.url); 
-            hls.attachMedia(video);
-            
-            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            
-            // TENTATIVE 2 : SI ERREUR, ON PASSE PAR LE PROXY (Fix ARAS TV)
-            hls.on(Hls.Events.ERROR, (e,d) => { 
-                if(d.fatal) { 
-                    console.log("Erreur flux direct, activation Proxy...");
-                    statusText.innerText = "Déblocage Proxy...";
-                    hls.loadSource(CORS_PROXY + encodeURIComponent(ch.url));
-                    hls.startLoad();
-                } 
-            });
-        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
-        
-        if(isAutoZap && index !== 0) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
-    }
-
-    // --- SCANNER LOCAL (TITAN) ---
+    // --- INTEGRATION TITAN SCAN (SCANNER DOSSIER) ---
     async function handleTitanScan(input) {
         const files = input.files;
         if(!files.length) return;
         document.getElementById('settings-modal').style.display = 'none';
         document.getElementById('scan-info').style.display = 'flex';
-        
         const regex = /(https?:\/\/[^\s"';,<>]+)/gi;
         
         for(let i=0; i<files.length; i++) {
             const file = files[i];
-            document.getElementById('scan-text').innerText = `Scan: ${file.name}`;
+            document.getElementById('scan-text').innerText = `Titan Scan: ${file.name}`;
             await new Promise(r => setTimeout(r, 0)); 
 
             if(file.size < 50000000 && (file.name.includes('.') || file.type.includes('text'))) {
@@ -453,12 +363,159 @@
         document.getElementById('scan-info').style.display = 'none';
         alert("Scan Terminé !");
     }
-
+    
     function readFile(file) { return new Promise(r => { let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsText(file); }); }
 
-    // --- UI HELPERS ---
+    async function scanSelectedTransponders() {
+        const checkboxes = document.querySelectorAll('.tp-checkbox:checked');
+        document.getElementById('settings-modal').style.display = 'none';
+        document.getElementById('scan-info').style.display = "flex";
+        isScanning = true;
+        for (let i = 0; i < checkboxes.length; i++) {
+            document.getElementById('scan-text').innerText = `TP ${i+1}/${checkboxes.length}...`;
+            await fetchPlaylistWithWatchdog(checkboxes[i].value);
+        }
+        isScanning = false;
+        document.getElementById('scan-info').style.display = "none";
+        saveChannelsToDB(allChannels);
+        alert("Balayage terminé !");
+    }
+
+    async function quickScan() { scanSelectedTransponders(); }
+
+    async function fetchPlaylistWithWatchdog(url) {
+        lastActivityTime = Date.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); 
+        try {
+            // Utiliser CORS Proxy pour contourner la sécurité HTTPS si besoin
+            let targetUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+            const response = await fetch(targetUrl, { signal: controller.signal });
+            clearTimeout(timeoutId); if (!response.ok) return;
+            const reader = response.body.getReader(); const decoder = new TextDecoder("utf-8");
+            let buffer = ""; let newBatch = [];
+            while (true) {
+                const { done, value } = await reader.read(); if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let lines = buffer.split("\n"); buffer = lines.pop(); 
+                processLines(lines, newBatch);
+                if (newBatch.length >= 50) { flushBatch(newBatch); await new Promise(r => setTimeout(r, 10)); }
+            }
+            processLines([buffer], newBatch); flushBatch(newBatch);
+        } catch (e) { console.log("Skip"); }
+    }
+
+    function processLines(lines, batch) {
+        let currentInfo = null;
+        for (let line of lines) {
+            line = line.trim(); if(!line) continue;
+            if (line.startsWith('#EXTINF:')) {
+                const parts = line.split(',');
+                let name = parts[1] || "Sans Nom";
+                let logo = (line.match(/tvg-logo=["']?([^"']*)["']?/) || [])[1];
+                let cat = "Autres";
+                const grpMatch = line.match(/group-title=["']?([^"']*)["']?/);
+                if(grpMatch) cat = grpMatch[1].replace(/;/g, " ").trim();
+                currentInfo = { name: name, logo: logo, category: cat }; allCategories.add(cat);
+            } else if (line.startsWith('http') && !line.endsWith('.m3u')) {
+                if (currentInfo) {
+                    if (line.includes('.m3u8') || line.includes('.ts') || line.includes('.mp4') || line.includes('.mkv')) {
+                        const ch = { ...currentInfo, url: line };
+                        if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
+                            batch.push(ch); loadedUrls.add(ch.url); 
+                        }
+                    }
+                    currentInfo = null;
+                }
+            }
+        }
+    }
+
+    function flushBatch(batch) {
+        if(batch.length === 0) return;
+        allChannels = allChannels.concat(batch); batch.length = 0;
+        document.getElementById('count-display').innerText = allChannels.length + " trouvées";
+        enforceNovelasIntegrity();
+        if(document.getElementById('searchInput').value === "") renderList(); 
+        updateCategoryChips();
+    }
+
+    function renderList() {
+        enforceNovelasIntegrity();
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        
+        displayedChannels = allChannels.filter(ch => {
+            let catOK = true;
+            if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
+            return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
+        });
+
+        const list = document.getElementById('channel-list');
+        list.innerHTML = "";
+        const frag = document.createDocumentFragment();
+        // AUGMENTATION DE LA LIMITE POUR TITAN (1000 au lieu de 500)
+        let limit = (term === "" && selectedCategories.length === 0) ? 1000 : displayedChannels.length;
+        
+        displayedChannels.slice(0, limit).forEach((ch) => {
+            const isFav = favorites.includes(ch.url);
+            const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
+            const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
+            const div = document.createElement('div');
+            div.className = 'channel-row ' + (isPlaying ? 'active' : '');
+            div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
+                             <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
+                             <div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`;
+            div.onclick = () => tryPlayChannel(ch);
+            frag.appendChild(div);
+        });
+        list.appendChild(frag);
+        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
+    }
+
+    // --- FONCTION DE LECTURE CORRIGÉE (FIX NETLIFY / HTTPS) ---
+    function playChannel(index) {
+        if(!allChannels[index]) return;
+        const ch = allChannels[index];
+        if(window.innerWidth < 900) document.body.classList.remove('menu-open');
+        renderList(); 
+        statusText.innerText = ch.name; led.className = "orange";
+        
+        // DETECTION MIXED CONTENT (HTTP SUR HTTPS)
+        const isSecure = location.protocol === 'https:';
+        const isHttp = ch.url.startsWith('http:');
+        let playUrl = ch.url;
+
+        // Si on est sur Netlify et que le lien est HTTP, on force le proxy direct
+        if(isSecure && isHttp) {
+            console.log("Forcing Proxy for Mixed Content");
+            playUrl = CORS_PROXY + encodeURIComponent(ch.url);
+        }
+
+        if(Hls.isSupported()) {
+            if(hls) hls.destroy(); 
+            hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
+            hls.loadSource(playUrl); 
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
+            hls.on(Hls.Events.ERROR, (e,d) => { 
+                if(d.fatal) { 
+                    // Fallback ultime : si ça plante encore, on réessaie avec proxy si ce n'était pas déjà fait
+                    if(playUrl === ch.url) {
+                        console.log("Retry with Proxy...");
+                        hls.loadSource(CORS_PROXY + encodeURIComponent(ch.url));
+                        hls.startLoad();
+                    } else if(index===0){ setTimeout(()=>playChannel(0),2000); } 
+                    else handleError(); 
+                } 
+            });
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { 
+            video.src = playUrl; video.play(); 
+        }
+        
+        if(isAutoZap && index !== 0) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
+    }
+
     function updateCategoryChips() {
-        allCategories = new Set(allChannels.map(c => c.category || "Autres"));
         const container = document.getElementById('chips-area');
         if(container.childElementCount === allCategories.size) return;
         let html = '';
@@ -468,35 +525,26 @@
         });
         container.innerHTML = html;
     }
-
-    function flushBatch(batch) {
-        if(batch.length === 0) return;
-        allChannels = allChannels.concat(batch);
-        renderList();
-        updateCategoryChips();
-        saveChannelsToDB(allChannels);
-    }
-
-    // --- FONCTIONS EXISTANTES (SANS CHANGEMENT) ---
+    
+    document.getElementById('searchInput').addEventListener('input', renderList);
     function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
     function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
     function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
-    function tryPlayChannel(idx) {
-        const index = parseInt(idx);
-        const ch = allChannels[index];
+
+    function tryPlayChannel(ch) {
         const name = ch.name.toLowerCase();
-        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = index; document.getElementById('pin-modal').style.display = 'flex'; }
-        else { playChannel(index); }
+        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex'; }
+        else { currentChannelIndex = allChannels.indexOf(ch); playChannel(currentChannelIndex); }
     }
-    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else alert("Code Erroné"); }
+    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
-    let autoZapTimeout;
+
     function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; playChannel(nextIdx); }
-    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; playChannel(prevIdx); }
+    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
+    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
@@ -508,64 +556,6 @@
     function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
     function restoreHidden() { localStorage.removeItem('mybox_hidden'); location.reload(); }
     async function forceReload() { if(confirm("Recharger ?")) { await clearDB(); location.reload(); } }
-    
-    async function fetchTranspondersList() {
-        try {
-            const res = await fetch(`${API_URL}?action=get_playlists`);
-            availableTransponders = await res.json();
-            renderTranspondersUI();
-        } catch(e) { }
-    }
-    function renderTranspondersUI() {
-        const container = document.getElementById('transponder-list');
-        container.innerHTML = "";
-        if(availableTransponders.length === 0) { container.innerHTML = "Aucun signal."; return; }
-        availableTransponders.forEach((tp, idx) => {
-            const div = document.createElement('div');
-            div.className = "tp-item";
-            div.innerHTML = `<span class="tp-name">${tp.name}</span><input type="checkbox" class="tp-checkbox" value="${tp.url}" checked>`;
-            container.appendChild(div);
-        });
-    }
-    async function scanSelectedTransponders() {
-        const checkboxes = document.querySelectorAll('.tp-checkbox:checked');
-        document.getElementById('settings-modal').style.display = 'none';
-        document.getElementById('scan-info').style.display = "flex";
-        isScanning = true;
-        for (let i = 0; i < checkboxes.length; i++) {
-            document.getElementById('scan-text').innerText = `Scan Web...`;
-            await fetchPlaylistWithWatchdog(checkboxes[i].value);
-        }
-        isScanning = false;
-        document.getElementById('scan-info').style.display = "none";
-        saveChannelsToDB(allChannels);
-        alert("Terminé !");
-    }
-    async function quickScan() { scanSelectedTransponders(); }
-    
-    // FETCH WEB AVEC PROXY (Correctif pour lecture online)
-    async function fetchPlaylistWithWatchdog(url) {
-        try {
-            const response = await fetch(CORS_PROXY + encodeURIComponent(url));
-            if (!response.ok) return;
-            const text = await response.text();
-            let lines = text.split("\n");
-            let batch = [];
-            let currentInfo = null;
-            for(let line of lines) {
-                line = line.trim();
-                if(line.startsWith('#EXTINF:')) {
-                    let name = line.split(',')[1] || "Sans Nom";
-                    currentInfo = { name: name, category: "Web Scan", logo: "" };
-                } else if(line.startsWith('http')) {
-                    if(currentInfo && (line.includes('.m3u8') || line.includes('.ts'))) {
-                        batch.push({ ...currentInfo, url: line });
-                    }
-                }
-            }
-            if(batch.length > 0) flushBatch(batch);
-        } catch(e) {}
-    }
 </script>
 </body>
 </html>
