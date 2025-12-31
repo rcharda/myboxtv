@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>My Box TV - V118</title>
+    <title>My Box TV - V118 FINAL</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -12,9 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- DESIGN ORIGINAL V62 (INTACT) --- */
+        /* --- VISUEL ORIGINAL V62 (INTACT) --- */
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
+        /* CURSEUR CACHÉ PAR DÉFAUT */
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; }
         body.active { cursor: default; }
 
@@ -22,6 +24,7 @@
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
+        /* SIGNAL & STATUS */
         #top-right-container { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 10px; z-index: 60; pointer-events: none; }
         #status-pill { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; display: flex; align-items: center; gap: 8px; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
@@ -33,6 +36,7 @@
         .bar:nth-child(1) { height: 4px; } .bar:nth-child(2) { height: 8px; } .bar:nth-child(3) { height: 12px; } .bar:nth-child(4) { height: 16px; }
         .signal-good .bar { background: #0f0; } .signal-mid .bar:nth-child(1), .signal-mid .bar:nth-child(2) { background: #ffcc00; } .signal-bad .bar:nth-child(1) { background: #ff0000; }
 
+        /* MENU */
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
         .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
@@ -50,6 +54,7 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
+        /* BARRE DU BAS (AUTO-HIDE) */
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; opacity: 0; transition: opacity 0.5s; }
         body.active #bottom-bar { opacity: 1; }
         
@@ -103,20 +108,18 @@
 <div id="welcome-modal" class="modal">
     <div class="modal-box" style="max-width:500px;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="app-logo">
-        <h2 style="color:#e50914; margin-top:0;">BIENVENUE</h2>
-        <p style="color:#ccc; font-size:13px; margin-bottom:20px;">Choisissez votre source de chaînes :</p>
+        <h2 style="color:#e50914; margin-top:0;">MODE D'UTILISATION</h2>
+        <p style="color:#ccc; font-size:13px; margin-bottom:20px;">Choisissez comment charger vos chaînes.</p>
         
         <div class="welcome-card" onclick="selectMode('premium')">
             <div class="wc-title" style="color:#2ecc71;">⭐ CHAÎNES PREMIUM (Recommandé)</div>
-            <div class="wc-desc">Chargement rapide. Liste certifiée et stable (Sans erreur).</div>
+            <div class="wc-desc">Chargement rapide. Liste stable et certifiée par l'admin.</div>
         </div>
 
         <div class="welcome-card" onclick="selectMode('full')">
-            <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (Scan)</div>
-            <div class="wc-desc">Scan des liens bruts (M3U). Détecte les dossiers et sous-dossiers.</div>
+            <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (SCAN)</div>
+            <div class="wc-desc">Connexion directe aux serveurs. Scanne les dossiers et sous-dossiers.</div>
         </div>
-        
-        <p style="font-size:10px; color:#666;">Vous pourrez modifier ce choix dans les paramètres.</p>
     </div>
 </div>
 
@@ -134,18 +137,29 @@
             <div id="tab-general" class="tab-content">
                 <h3 style="color:#e50914;">MODE DE RÉCEPTION</h3>
                 <div class="toggle-row" onclick="changeSourceMode('premium')">
-                    <div><div style="font-weight:bold; color:#2ecc71;">⭐ Mode Premium</div><div style="font-size:10px; color:#aaa;">Chaînes certifiées.</div></div>
+                    <div>
+                        <div style="font-weight:bold; color:#2ecc71;">⭐ Mode Premium</div>
+                        <div style="font-size:10px; color:#aaa;">Chaînes certifiées uniquement (Col D/E).</div>
+                    </div>
                     <div id="check-premium" style="color:#2ecc71; font-weight:bold;">✔</div>
                 </div>
                 <div class="toggle-row" onclick="changeSourceMode('full')">
-                    <div><div style="font-weight:bold; color:#3498db;">📡 Mode Transpondeurs</div><div style="font-size:10px; color:#aaa;">Sources brutes.</div></div>
+                    <div>
+                        <div style="font-weight:bold; color:#3498db;">📡 Mode Transpondeurs</div>
+                        <div style="font-size:10px; color:#aaa;">Scanner les sources brutes (Col B).</div>
+                    </div>
                     <div id="check-full" style="display:none; color:#3498db; font-weight:bold;">✔</div>
                 </div>
             </div>
+
             <div id="tab-display" class="tab-content" style="display:none;">
                 <h3>Affichage</h3>
-                <div class="toggle-row"><span>Résolution Max</span><select class="input-dark" style="width:auto;"><option>Auto</option><option>1080p</option><option>720p</option></select></div>
+                <div class="toggle-row">
+                    <span>Résolution Max</span>
+                    <select class="input-dark" style="width:auto;"><option>Auto</option><option>1080p</option><option>720p</option></select>
+                </div>
             </div>
+
             <div id="tab-transponders" class="tab-content" style="display:none;">
                 <h3>Liste des Transpondeurs (Col A)</h3>
                 <div id="tp-list-container" style="max-height: 200px; overflow-y: auto; background: #111; margin-bottom: 20px;"></div>
@@ -154,12 +168,21 @@
                     <i class="fas fa-folder-open"></i> SCANNER FICHIER LOCAL
                     <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
                 </label>
-                <div id="scan-info"><div id="scan-text">Prêt</div><div id="scan-progress"><div id="scan-bar"></div></div></div>
+                <div id="scan-info">
+                    <div id="scan-text">Prêt</div>
+                    <div id="scan-progress"><div id="scan-bar"></div></div>
+                </div>
             </div>
+
             <div id="tab-account" class="tab-content" style="display:none;">
                 <h3>Mon Abonnement</h3>
-                <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">ID: <span id="sub-id">...</span><br>Infos: <span id="sub-details">...</span></div>
-                <a href="https://wa.me/22963828767?text=Bonjour,%20je%20veux%20prolonger%20mon%20abonnement%20MyBoxTV" target="_blank" style="display:block; width:100%; background:#25D366; color:white; text-align:center; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:10px;"><i class="fab fa-whatsapp"></i> CONTACTER SUPPORT</a>
+                <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
+                    ID: <span id="sub-id">...</span><br>
+                    Infos: <span id="sub-details">...</span>
+                </div>
+                <a href="https://wa.me/22963828767?text=Bonjour,%20je%20veux%20prolonger%20mon%20abonnement%20MyBoxTV" target="_blank" style="display:block; width:100%; background:#25D366; color:white; text-align:center; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:10px;">
+                    <i class="fab fa-whatsapp"></i> CONTACTER SUPPORT
+                </a>
                 <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">DÉCONNECTER</button>
             </div>
         </div>
@@ -190,9 +213,13 @@
                 <div style="text-align:left; width:100%;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                        <i class="fas fa-sync-alt" onclick="quickScan()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Scanner (Ajouter chaînes)"></i>
+                        <i class="fas fa-sync-alt" onclick="quickScan()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Scanner (Ajouter)"></i>
                     </div>
                     <div style="font-size:10px; color:#888;" id="count-display">Chargement...</div>
+                    <div id="scan-info" style="margin-top:5px; display:none;">
+                        <div id="scan-text" style="color:lime;">Scan en cours...</div>
+                        <div id="scan-progress" style="width:100%; height:2px; background:#333; position:relative; overflow:hidden;"><div id="scan-bar"></div></div>
+                    </div>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <i class="fas fa-plus-circle" title="Ajouter (Fusion)" onclick="document.getElementById('localFileInput').click()" style="cursor:pointer; color:#aaa; font-size:18px;"></i>
@@ -201,7 +228,9 @@
                 <input type="file" id="localFileInput" accept=".m3u,.m3u8" style="display:none;" onchange="handleTitanScan(this)">
             </div>
         </div>
+        
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
+        
         <div class="filter-bar">
             <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local"><i class="fas fa-map-marker-alt"></i> Locales</button>
             <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter"><i class="fas fa-star" style="color:gold;"></i> Favoris</button>
@@ -222,9 +251,15 @@
 </div>
 
 <script>
+    // URL V15
     const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
+    
+    // MOTEUR LISTE (TEXTE) - DOIT ETRE FIABLE
     const LIST_PROXY = "https://api.allorigins.win/raw?url=";
-    const PROXY = "https://corsproxy.io/?";
+    const LIST_PROXY_BACKUP = "https://corsproxy.io/?";
+    // MOTEUR VIDEO (STREAM)
+    const VIDEO_PROXY = "https://corsproxy.io/?";
+
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "", category: "Start" };
     const PIN_CODE = "0000"; const DB_NAME = "MyBoxTV_Brain"; const DB_VERSION = 1;
     
@@ -283,8 +318,11 @@
             loadedUrls.add(DEFAULT_CHANNEL.url);
             renderList();
             playChannel(0);
+            // Si vide, scan auto
+            performSmartScan();
         }
         
+        // Remplir la liste des transpondeurs (Info dans paramètres)
         loadTranspondersList();
     }
 
@@ -342,42 +380,53 @@
         isScanning = false;
     }
 
+    // PARSER ROBUSTE AVEC FALLBACK
     async function fetchAndParse(url, categoryName) {
         try {
-            // UTILISATION DE ALLORIGINS POUR LE TEXTE (Important !)
-            const res = await fetch(LIST_PROXY + encodeURIComponent(url));
-            if(!res.ok) return;
-            const text = await res.text();
-            
-            let newBatch = [];
-            const lines = text.split('\n');
-            let currentName = "Inconnu";
+            // Tentative 1 : AllOrigins
+            let response = await fetch(LIST_PROXY + encodeURIComponent(url));
+            if(!response.ok) throw new Error("Fail 1");
+            let text = await response.text();
+            parseM3UContent(text, categoryName);
+        } catch(e) {
+            try {
+                // Tentative 2 : CorsProxy
+                let response2 = await fetch(LIST_PROXY_BACKUP + encodeURIComponent(url));
+                if(!response2.ok) return;
+                let text2 = await response2.text();
+                parseM3UContent(text2, categoryName);
+            } catch(e2) {}
+        }
+    }
 
-            for(let l of lines) {
-                l = l.trim();
-                if(l.startsWith('#EXTINF')) {
-                    let parts = l.split(',');
-                    currentName = parts[parts.length-1].trim();
-                } else if(l.startsWith('http') && !l.endsWith('.m3u')) {
-                    if(!loadedUrls.has(l)) {
-                        const ch = { name: currentName, url: l, category: categoryName };
-                        newBatch.push(ch);
-                        loadedUrls.add(l);
-                        saveToDB(ch); 
-                    }
-                    currentName = "Inconnu";
+    function parseM3UContent(text, categoryName) {
+        let batch = [];
+        let name = "Inconnu";
+        const lines = text.split('\n');
+        
+        for(let l of lines) {
+            l = l.trim();
+            if(l.startsWith('#EXTINF')) {
+                let parts = l.split(',');
+                name = parts[parts.length-1].trim();
+            } else if(l.startsWith('http') && !l.endsWith('.m3u')) {
+                if(!loadedUrls.has(l)) {
+                    const ch = { name: name, url: l, category: categoryName };
+                    batch.push(ch);
+                    loadedUrls.add(l);
+                    saveToDB(ch); 
                 }
+                name = "Inconnu";
             }
-
-            if(newBatch.length > 0) {
-                allChannels = allChannels.concat(newBatch);
-                renderList(); 
-            }
-        } catch(e) {}
+        }
+        if(batch.length > 0) {
+            allChannels = allChannels.concat(batch);
+            renderList(); 
+        }
     }
 
     function quickScan() {
-        if(confirm("Scanner pour trouver de nouvelles chaînes ?")) {
+        if(confirm("Scanner pour trouver de nouvelles chaînes ? (Cela n'efface pas les actuelles)")) {
             performSmartScan();
         }
     }
@@ -418,7 +467,7 @@
         let playUrl = ch.url;
         // PROXY POUR LA VIDEO
         if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
-            playUrl = PROXY + encodeURIComponent(ch.url);
+            playUrl = VIDEO_PROXY + encodeURIComponent(ch.url);
         }
 
         if(Hls.isSupported()) {
@@ -427,7 +476,7 @@
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
             hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { 
                 // RETRY AVEC PROXY
-                if(playUrl === ch.url){ hls.loadSource(PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
+                if(playUrl === ch.url){ hls.loadSource(VIDEO_PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
                 else handleError(); 
             }});
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = playUrl; video.play(); }
