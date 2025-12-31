@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN HYBRID EXTRACTOR V110</title>
+    <title>TITAN HYBRID EXTRACTOR V115</title>
     <style>
         body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
         .panel { background: #111; border: 1px solid #333; padding: 20px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; }
@@ -79,7 +79,7 @@
 
 <script>
     // --- CONFIGURATION ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbwdcIs7VDEbulPSPnV6RwvHJjYUN7FNizLd3GWdqtvAZOeQaVsX6-PyCDtHGMbX7eJVRg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
     
     // MOTEURS
     const PROXY_MAIN = "https://corsproxy.io/?";
@@ -99,13 +99,16 @@
         extractedChannels = []; // Reset
         try {
             const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
-            const m3uLinks = await res.json();
+            const data = await res.json();
+            // Le script V13+ renvoie des objets {name, url} ou juste des URLs
             
-            if(m3uLinks.length === 0) return log("Aucun lien M3U trouvé en Colonne B.");
+            if(data.length === 0) return log("Aucun lien M3U trouvé en Colonne B.");
             
-            log(`${m3uLinks.length} playlists trouvées. Extraction...`);
+            log(`${data.length} playlists trouvées. Extraction...`);
             
-            for(let url of m3uLinks) {
+            for(let item of data) {
+                // Compatible avec ancien et nouveau format de script
+                let url = item.url || item;
                 log(`Téléchargement: ${url.substring(0, 30)}...`);
                 try {
                     const txtRes = await fetch(PROXY_MAIN + encodeURIComponent(url));
