@@ -3,350 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN ADMIN PANEL</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Admin - My Box TV V42</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #e50914; --bg: #0f0f0f; --panel: #1a1a1a; --text: #fff; --border: #333; --green: #2ecc71; }
-        * { box-sizing: border-box; outline: none; }
-        body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
-
-        /* SIDEBAR */
-        .sidebar { width: 250px; background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
-        .logo-area { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
-        .nav-item { padding: 15px; cursor: pointer; color: #888; border-radius: 8px; margin-bottom: 5px; transition: 0.2s; font-weight: 600; }
-        .nav-item:hover, .nav-item.active { background: #1a1a1a; color: #fff; border-left: 4px solid var(--primary); }
-
-        /* MAIN */
-        .main { flex: 1; padding: 30px; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .card { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        .card h3 { margin: 0; color: #888; font-size: 12px; }
-        .card .val { font-size: 28px; font-weight: bold; margin-top: 10px; }
-
-        /* TABLES */
-        .table-box { background: var(--panel); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
-        th { background: #111; color: #aaa; text-transform: uppercase; font-size: 11px; }
-        tr:hover { background: #222; }
-
-        /* INPUTS & BTNS */
-        .btn { padding: 10px 20px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; color: white; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
-        .btn-primary { background: var(--primary); }
-        .btn-green { background: var(--green); }
-        .btn-icon { width: 30px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #333; color: #fff; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; margin: 0; }
         
-        input, select { background: #000; border: 1px solid var(--border); padding: 10px; color: #fff; border-radius: 5px; width: 100%; margin-bottom: 10px; }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #1e1e1e; padding: 40px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; margin: 5px 0; }
+        button { padding: 10px 20px; background: #e50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #ff0f1f; }
 
-        /* LOGIN SCREEN */
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { width: 320px; text-align: center; }
+        #dashboard { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        h1 { color: #e50914; margin: 0; display:flex; align-items:center; gap:15px; }
         
-        /* MODAL */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
-        .modal-content { background: var(--panel); padding: 30px; border-radius: 10px; width: 400px; border: 1px solid var(--border); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { background: #333; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .tab-btn.active { background: #e50914; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
 
-        /* TOGGLE SWITCH */
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(26px); }
+        table { width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #252525; color: #aaa; font-size: 12px; text-transform: uppercase; }
+        tr:hover { background: #2a2a2a; }
+        
+        .action-btn { padding: 6px 10px; font-size: 12px; margin-right: 5px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+        .btn-pdf { background: #28a745; }
+        .btn-edit { background: #007bff; }
+        .btn-del { background: #ff4444; }
+
+        .add-form { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        /* MAINTENANCE SWITCH */
+        .maint-status { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+        .maint-on { background: red; color: white; }
+        .maint-off { background: green; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <h1 style="color:var(--primary); margin-bottom:5px;">TITAN ADMIN</h1>
-            <p style="color:#666; margin-bottom:20px;">Connexion Serveur</p>
-            <input type="password" id="admin-pass" placeholder="Mot de passe" style="text-align:center; letter-spacing:3px;">
-            <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="tryLogin()">CONNEXION</button>
-            <div id="login-msg" style="color:#e74c3c; margin-top:10px; font-size:12px;"></div>
-        </div>
+<div id="login-overlay">
+    <div class="login-box">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="100" style="margin-bottom:20px;">
+        <h2 style="color:#e50914; margin-top:0;">ADMIN ACCESS</h2>
+        <input type="password" id="admin-pass" placeholder="Mot de passe">
+        <button onclick="adminLogin()">ENTRER</button>
+        <div id="login-error" style="color:red; margin-top:10px;"></div>
     </div>
+</div>
 
-    <div class="sidebar">
-        <div class="logo-area"><i class="fas fa-shield-alt"></i> ADMIN V2</div>
-        <div class="nav-item active" onclick="switchView('users')"><i class="fas fa-users"></i> Abonnés</div>
-        <div class="nav-item" onclick="switchView('sources')"><i class="fas fa-tv"></i> Sources M3U</div>
-        <div class="nav-item" onclick="switchView('system')"><i class="fas fa-cogs"></i> Système</div>
-        <div class="nav-item" onclick="loadData()" style="margin-top:auto; color:var(--green);"><i class="fas fa-sync"></i> Rafraîchir</div>
-        <div class="nav-item" onclick="location.reload()" style="color:var(--primary);"><i class="fas fa-power-off"></i> Déco</div>
-    </div>
-
-    <div class="main">
-        <div id="view-users">
-            <div class="header">
-                <h2>Gestion des Licences</h2>
-                <button class="btn btn-primary" onclick="openModal('modal-user')"><i class="fas fa-user-plus"></i> Créer Licence</button>
-            </div>
-            <div class="card-grid">
-                <div class="card"><h3>Total</h3><div class="val" id="stat-total">0</div></div>
-                <div class="card" style="border-color:var(--green);"><h3>Actifs</h3><div class="val" id="stat-active" style="color:var(--green);">0</div></div>
-                <div class="card" style="border-color:var(--primary);"><h3>Expirés</h3><div class="val" id="stat-expired" style="color:var(--primary);">0</div></div>
-            </div>
-            <div class="table-box">
-                <div style="padding:15px; border-bottom:1px solid #333;">
-                    <input type="text" id="searchUser" placeholder="🔍 Filtrer par ID ou Appareil..." onkeyup="renderUsers()" style="margin:0;">
-                </div>
-                <table>
-                    <thead><tr><th>ID Licence</th><th>Durée (Jours)</th><th>Appareil (Device)</th><th>Expiration</th><th>Actions</th></tr></thead>
-                    <tbody id="tbody-users"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="view-sources" style="display:none;">
-            <div class="header">
-                <h2>Sources & Transpondeurs</h2>
-                <button class="btn btn-primary" onclick="openModal('modal-source')"><i class="fas fa-plus"></i> Ajouter Source</button>
-            </div>
-            <div class="table-box">
-                <table>
-                    <thead><tr><th>Nom du Bouquet</th><th>Lien M3U</th><th>Actions</th></tr></thead>
-                    <tbody id="tbody-sources"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="view-system" style="display:none;">
-            <div class="header"><h2>Configuration Système</h2></div>
+<div id="dashboard">
+    <div class="header">
+        <h1>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="60"> 
+            MY BOX TV <span style="font-size:14px; color:#aaa;">MANAGER</span>
+        </h1>
+        <div>
+            <button id="maint-btn" onclick="toggleMaintenance()" style="background:#444; font-size:12px;">MODE MAINTENANCE</button>
+            <span id="maint-display" class="maint-status">...</span>
             
-            <div class="card" style="max-width:500px; text-align:left; margin-bottom:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <div>
-                        <h3 style="color:#fff; font-size:16px;">Mode Maintenance</h3>
-                        <span style="color:#666; font-size:12px;">Bloque l'accès à tous les utilisateurs</span>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="maint-switch" onchange="toggleMaintenance()">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
-                
-                <h3 style="color:#fff; font-size:16px; margin-bottom:10px;">Message Global</h3>
-                <input type="text" id="global-msg" placeholder="Message affiché sur l'écran des utilisateurs...">
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-primary" onclick="setMessage()">Envoyer</button>
-                    <button class="btn btn-green" style="background:#333;" onclick="setMessage('')">Effacer</button>
-                </div>
-            </div>
+            <button onclick="downloadBackup()" style="background:#007bff; font-size:12px; margin-left:10px;">💾 SAUVEGARDE EXCEL</button>
+            
+            <button onclick="location.reload()" style="background:#444; font-size:12px; margin-left:10px;">ACTUALISER</button>
         </div>
     </div>
 
-    <div id="modal-user" class="modal">
-        <div class="modal-content">
-            <h2>Nouvelle Licence</h2>
-            <label>ID Utilisateur</label>
-            <input type="text" id="new-key" placeholder="Ex: USER-2026">
-            <label>Durée (Jours)</label>
-            <input type="number" id="new-days" value="30">
-            <label>Ecrans Max</label>
-            <input type="number" id="new-screens" value="1">
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-primary" style="flex:1" onclick="addUser()">VALIDER</button>
-                <button class="btn" style="flex:1; background:#333;" onclick="closeModals()">ANNULER</button>
-            </div>
-        </div>
+    <div class="tabs">
+        <div class="tab-btn active" onclick="showTab('users')"><i class="fas fa-users"></i> UTILISATEURS</div>
+        <div class="tab-btn" onclick="showTab('sources')"><i class="fas fa-link"></i> SOURCES</div>
+        <div class="tab-btn" onclick="showTab('message')"><i class="fas fa-bullhorn"></i> MESSAGE</div>
     </div>
 
-    <div id="modal-source" class="modal">
-        <div class="modal-content">
-            <h2>Nouvelle Source</h2>
-            <label>Nom</label>
-            <input type="text" id="src-name" placeholder="Ex: Canal+">
-            <label>Lien M3U</label>
-            <input type="text" id="src-url" placeholder="http://...">
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-primary" style="flex:1" onclick="addSource()">AJOUTER</button>
-                <button class="btn" style="flex:1; background:#333;" onclick="closeModals()">ANNULER</button>
-            </div>
+    <div id="users" class="section active">
+        <div class="add-form">
+            <h3 style="margin:0; color:#aaa;">Nouveau Client :</h3>
+            <input type="text" id="new-key" placeholder="ID (Vide = Auto)" style="width:200px;">
+            <select id="new-days">
+                <option value="30">30 Jours</option>
+                <option value="365">1 An</option>
+                <option value="VIE">À VIE</option>
+            </select>
+            <select id="new-screens">
+                <option value="1">1 Écran</option>
+                <option value="2">2 Écrans</option>
+                <option value="4">4 Écrans</option>
+            </select>
+            <button onclick="addUser()">CRÉER & IMPRIMER PDF</button>
+        </div>
+        <table id="users-table">
+            <thead><tr><th>CLÉ</th><th>DURÉE</th><th>ÉCRANS</th><th>INFOS</th><th>ACTIONS</th></tr></thead>
+            <tbody id="users-body"></tbody>
+        </table>
+    </div>
+
+    <div id="sources" class="section">
+        <div class="add-form">
+            <h3 style="margin:0; color:#aaa;">Ajouter Source :</h3>
+            <input type="text" id="new-source-name" placeholder="Nom" style="width:200px;">
+            <input type="text" id="new-source-link" placeholder="http://..." style="width:400px;">
+            <button onclick="addSource()">AJOUTER</button>
+        </div>
+        <table id="sources-table"><thead><tr><th>NOM</th><th>LIEN</th><th>ACTIONS</th></tr></thead><tbody id="sources-body"></tbody></table>
+    </div>
+
+    <div id="message" class="section">
+        <div style="background:#222; padding:20px; border-radius:10px;">
+            <h3>Message d'accueil</h3>
+            <input type="text" id="global-msg-input" style="width:100%; padding:15px;" placeholder="Message...">
+            <button onclick="saveMessage()" style="width:100%; margin-top:10px;">METTRE À JOUR</button>
         </div>
     </div>
+</div>
 
 <script>
-    // ==========================================
-    // METS L'URL DE TON SCRIPT GOOGLE ICI 👇
-    const API = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    // ==========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
+    let globalData = null;
 
-    let users = [];
-    let sources = [];
-
-    // --- AUTH ---
-    async function tryLogin() {
+    async function adminLogin() {
         const pass = document.getElementById('admin-pass').value;
-        const btn = document.querySelector('#login-screen button');
-        btn.innerText = "VÉRIFICATION...";
-        
+        const btn = document.querySelector('#login-overlay button'); btn.innerText = "...";
         try {
-            // Vérification via le script Google (action=admin_login)
-            const res = await fetch(`${API}?action=admin_login&pass=${encodeURIComponent(pass)}`);
-            const txt = await res.text();
-            
-            if(txt.includes("AUTH:OK")) {
-                document.getElementById('login-screen').style.display = 'none';
+            const res = await fetch(`${API_URL}?action=admin_login&pass=${encodeURIComponent(pass)}`);
+            const text = await res.text();
+            if(text === "AUTH:OK") {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
                 loadData();
-            } else {
-                document.getElementById('login-msg').innerText = "Mot de passe incorrect (Vérifie feuille Config cellule A1)";
-                btn.innerText = "ENTRER";
-            }
-        } catch(e) {
-            alert("Erreur connexion au script Google");
-            btn.innerText = "ENTRER";
-        }
+            } else document.getElementById('login-error').innerText = "Erreur mot de passe";
+        } catch(e) { alert("Erreur"); }
+        btn.innerText = "ENTRER";
     }
 
-    // --- DATA LOADING ---
     async function loadData() {
-        try {
-            // Récupère tout d'un coup via action=get_admin_data (défini dans ton script)
-            const res = await fetch(`${API}?action=get_admin_data`);
-            const data = await res.json();
-            
-            users = data.users;     // Array [Key, Duration, Device, Date, Screens]
-            sources = data.sources; // Array [Name, Link]
-            
-            // Config système
-            document.getElementById('maint-switch').checked = (data.maintenance === "ON");
-            document.getElementById('global-msg').value = data.message;
+        const res = await fetch(`${API_URL}?action=get_admin_data`);
+        const data = await res.json();
+        globalData = data; // Stocker pour le backup
+        
+        // Maintenance Display
+        const m = document.getElementById('maint-display');
+        m.innerText = data.maintenance === "ON" ? "ACTIF ⛔" : "INACTIF ✅";
+        m.className = "maint-status " + (data.maintenance === "ON" ? "maint-on" : "maint-off");
 
-            renderUsers();
-            renderSources();
-            calcStats();
-        } catch(e) {
-            console.log(e);
-            alert("Erreur chargement données. Vérifiez que le script Google est bien publié en 'Web App' -> 'Anyone'.");
-        }
-    }
-
-    // --- RENDERING ---
-    function renderUsers() {
-        const tbody = document.getElementById('tbody-users');
-        tbody.innerHTML = "";
-        const term = document.getElementById('searchUser').value.toLowerCase();
-
-        users.forEach(u => {
-            // Structure de ton script : u[0]=Key, u[1]=Duration, u[2]=Device, u[3]=Date
-            const key = u[0];
-            const duration = u[1];
-            const device = u[2];
-            const startDate = u[3] ? new Date(u[3]) : null;
-            
-            // Calcul expiration
-            let expireTxt = "-";
-            let isExpired = false;
-            if(startDate && duration !== "VIE") {
-                const end = new Date(startDate);
-                end.setDate(end.getDate() + parseInt(duration));
-                expireTxt = end.toISOString().split('T')[0];
-                if(new Date() > end) isExpired = true;
-            }
-
-            if(key.toLowerCase().includes(term)) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight:bold; color:#fff;">${key}</td>
-                    <td>${duration}</td>
-                    <td style="font-family:monospace; color:#888;">${device || "Non connecté"}</td>
-                    <td style="color:${isExpired ? 'red' : 'lightgreen'}">${expireTxt}</td>
-                    <td style="display:flex; gap:5px;">
-                        <div class="btn-icon" onclick="resetUser('${key}')" title="Reset Device"><i class="fas fa-mobile-alt"></i></div>
-                        <div class="btn-icon" style="background:#c0392b;" onclick="deleteUser('${key}')"><i class="fas fa-trash"></i></div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
-        });
-    }
-
-    function renderSources() {
-        const tbody = document.getElementById('tbody-sources');
-        tbody.innerHTML = "";
-        sources.forEach(s => {
-            // Structure : s[0]=Name, s[1]=Link
+        // Users
+        const usersBody = document.getElementById('users-body');
+        usersBody.innerHTML = "";
+        data.users.forEach(u => {
+            const key = u[0], dur = u[1], max = u[4] || 1;
+            const dev = u[2] ? u[2].split(',').length : 0;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><b>${s[0]}</b></td>
-                <td style="color:#888; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s[1]}</td>
-                <td><div class="btn-icon" style="background:#c0392b;" onclick="deleteSource('${s[1]}')"><i class="fas fa-trash"></i></div></td>
-            `;
-            tbody.appendChild(tr);
+                <td style="font-weight:bold; color:white; font-family:monospace;">${key}</td>
+                <td>${dur}</td><td>${max}</td><td>${dev} connecté(s)</td>
+                <td>
+                    <button class="action-btn btn-pdf" onclick="generatePDF('${key}', '${dur}', '${max}')"><i class="fas fa-file-pdf"></i></button>
+                    <button class="action-btn btn-edit" onclick="editUser('${key}', '${dur}', '${max}')"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-del" onclick="deleteUser('${key}')"><i class="fas fa-trash"></i></button>
+                    <button class="action-btn" style="background:#444;" onclick="resetDevices('${key}')"><i class="fas fa-unlock"></i></button>
+                </td>`;
+            usersBody.appendChild(tr);
         });
+
+        // Sources
+        const sBody = document.getElementById('sources-body'); sBody.innerHTML = "";
+        data.sources.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${s[0]}</td><td style="color:#888;">${s[1].substring(0,40)}...</td><td><button class="action-btn btn-del" onclick="deleteSource('${s[1]}')">X</button></td>`;
+            sBody.appendChild(tr);
+        });
+        document.getElementById('global-msg-input').value = data.message;
     }
 
-    function calcStats() {
-        document.getElementById('stat-total').innerText = users.length;
-        // Calcul simple des actifs (ceux qui ont un device connecté)
-        const active = users.filter(u => u[2] && u[2].length > 2).length;
-        document.getElementById('stat-active').innerText = active;
-        document.getElementById('stat-expired').innerText = users.length - active;
-    }
-
-    // --- ACTIONS ---
+    // ACTIONS
     async function addUser() {
-        const k = document.getElementById('new-key').value;
+        let key = document.getElementById('new-key').value.trim().toUpperCase();
+        if(!key) { const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let r=""; for(let i=0;i<6;i++) r+=c.charAt(Math.floor(Math.random()*c.length)); key="BOX-"+r; }
         const d = document.getElementById('new-days').value;
         const s = document.getElementById('new-screens').value;
-        if(!k) return alert("ID requis");
-        
-        await fetch(`${API}?action=admin_user_action&type=add&key=${encodeURIComponent(k)}&days=${d}&screens=${s}`);
-        closeModals(); loadData();
+        if(confirm("Créer " + key + " ?")) {
+            await fetch(`${API_URL}?action=admin_user_action&type=add&key=${encodeURIComponent(key)}&days=${d}&screens=${s}`);
+            generatePDF(key, d, s); loadData();
+        }
     }
-
-    async function deleteUser(key) {
-        if(!confirm("Supprimer " + key + " ?")) return;
-        await fetch(`${API}?action=admin_user_action&type=delete&key=${encodeURIComponent(key)}`);
-        loadData();
+    async function deleteUser(k) { if(confirm("Supprimer ?")) { await fetch(`${API_URL}?action=admin_user_action&type=delete&key=${encodeURIComponent(k)}`); loadData(); } }
+    async function editUser(k, oldD, oldS) {
+        const d = prompt("Jours :", oldD); const s = prompt("Ecrans :", oldS);
+        if(d && s) { await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(k)}&days=${d}&screens=${s}`); loadData(); }
     }
+    async function resetDevices(k) { if(confirm("Reset ID ?")) { await fetch(`${API_URL}?action=admin_user_action&type=edit&key=${encodeURIComponent(k)}&reset=yes`); loadData(); alert("OK"); } }
+    
+    // SOURCES & MSG
+    async function addSource() { const n=document.getElementById('new-source-name').value; const l=document.getElementById('new-source-link').value; if(l){ await fetch(`${API_URL}?action=admin_source_action&type=add&name=${encodeURIComponent(n)}&link=${encodeURIComponent(l)}`); loadData(); } }
+    async function deleteSource(l) { if(confirm("Supprimer ?")) { await fetch(`${API_URL}?action=admin_source_action&type=delete&link=${encodeURIComponent(l)}`); loadData(); } }
+    async function saveMessage() { await fetch(`${API_URL}?action=admin_set_message&msg=${encodeURIComponent(document.getElementById('global-msg-input').value)}`); alert("OK"); }
 
-    async function resetUser(key) {
-        if(!confirm("Reset Device pour " + key + " ?")) return;
-        await fetch(`${API}?action=admin_user_action&type=edit&key=${encodeURIComponent(key)}&reset=yes`);
-        loadData();
-    }
-
-    async function addSource() {
-        const n = document.getElementById('src-name').value;
-        const l = document.getElementById('src-url').value;
-        await fetch(`${API}?action=admin_source_action&type=add&name=${encodeURIComponent(n)}&link=${encodeURIComponent(l)}`);
-        closeModals(); loadData();
-    }
-
-    async function deleteSource(link) {
-        if(!confirm("Supprimer cette source ?")) return;
-        await fetch(`${API}?action=admin_source_action&type=delete&link=${encodeURIComponent(link)}`);
-        loadData();
-    }
-
+    // MAINTENANCE & BACKUP
     async function toggleMaintenance() {
-        const status = document.getElementById('maint-switch').checked ? "ON" : "OFF";
-        await fetch(`${API}?action=set_maintenance&status=${status}`);
+        const current = document.getElementById('maint-display').innerText.includes("ACTIF");
+        const newState = current ? "OFF" : "ON";
+        if(confirm("Passer la maintenance à " + newState + " ?")) {
+            await fetch(`${API_URL}?action=set_maintenance&status=${newState}`);
+            loadData();
+        }
     }
 
-    async function setMessage(val) {
-        const msg = val !== undefined ? val : document.getElementById('global-msg').value;
-        await fetch(`${API}?action=admin_set_message&msg=${encodeURIComponent(msg)}`);
-        if(val === "") document.getElementById('global-msg').value = "";
-        alert("Message mis à jour");
+    function downloadBackup() {
+        if(!globalData || !globalData.users) return alert("Pas de données");
+        let csvContent = "data:text/csv;charset=utf-8,CLE,DUREE,APPAREILS,DATE,ECRANS\n";
+        globalData.users.forEach(row => { csvContent += row.join(",") + "\n"; });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "backup_clients_myboxtv.csv");
+        document.body.appendChild(link);
+        link.click();
     }
 
-    // --- UI ---
-    function switchView(id) {
-        ['users','sources','system'].forEach(v => document.getElementById('view-'+v).style.display='none');
-        document.getElementById('view-'+id).style.display='block';
-        document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-    }
-    function openModal(id) { document.getElementById(id).style.display='flex'; }
-    function closeModals() { document.querySelectorAll('.modal').forEach(e=>e.style.display='none'); }
+    function showTab(id) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); event.currentTarget.classList.add('active'); }
 
+    // PDF GENERATOR
+    function generatePDF(key, days, screens) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF(); 
+        doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 40, 'F'); 
+        doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.setFont("helvetica", "bold"); doc.text("MY BOX TV", 105, 20, null, null, "center");
+        doc.setFontSize(12); doc.setTextColor(229, 9, 20); doc.text("CERTIFICAT D'ABONNEMENT", 105, 30, null, null, "center");
+        doc.setTextColor(0, 0, 0); doc.setFontSize(14); doc.text("VOTRE ID DE CONNEXION :", 105, 60, null, null, "center");
+        doc.setFillColor(240, 240, 240); doc.setDrawColor(229, 9, 20); doc.rect(40, 65, 130, 25, 'FD');
+        doc.setFont("courier", "bold"); doc.setFontSize(30); doc.setTextColor(229, 9, 20); doc.text(key, 105, 82, null, null, "center");
+        doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); doc.setFontSize(12);
+        doc.text(`VALIDITÉ : ${days} Jours`, 50, 105); doc.text(`ÉCRANS : ${screens}`, 120, 105);
+        doc.setDrawColor(200, 200, 200); doc.line(20, 115, 190, 115);
+        doc.setFontSize(14); doc.setFont("helvetica", "bold"); doc.text("INSTRUCTIONS", 20, 125);
+        doc.setFontSize(11); doc.setFont("helvetica", "normal");
+        doc.text("1. Connectez votre appareil à Internet.", 20, 135);
+        doc.text("2. Ouvrez l'application MY BOX TV.", 20, 143);
+        doc.text("3. Entrez votre ID ci-dessus.", 20, 151);
+        doc.text("4. Profitez de +14.000 chaînes !", 20, 159);
+        doc.setFillColor(245, 245, 245); doc.rect(0, 250, 210, 50, 'F');
+        doc.setTextColor(229, 9, 20); doc.setFontSize(12); doc.setFont("helvetica", "bold");
+        doc.text("SUPPORT TECHNIQUE WHATSAPP", 105, 265, null, null, "center");
+        doc.setTextColor(0,0,0); doc.text("63 82 87 67", 105, 275, null, null, "center");
+        doc.save(`Abonnement_${key}.pdf`);
+    }
 </script>
+
 </body>
 </html>
