@@ -4,16 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    
-    <title>My Box TV - V62 BETA (NETLIFY FIX)</title>
+    <title>My Box TV - V98 (VLC SYSTEM)</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0/dist/hls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
+        :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; --vlc: #ff8800; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
@@ -21,28 +20,17 @@
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        /* STATUS & SIGNAL RESEAU */
         #top-bar-info { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 60; pointer-events: none; }
-        
         #status-pill { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; display: flex; align-items: center; gap: 8px; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
 
-        /* SIGNAL TELEPHONE */
         .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 20px; padding: 3px; background: rgba(0,0,0,0.6); border-radius: 5px; border: 1px solid #444; }
         .bar { width: 4px; background: #444; border-radius: 1px; transition: 0.3s; }
-        .bar:nth-child(1) { height: 6px; }
-        .bar:nth-child(2) { height: 9px; }
-        .bar:nth-child(3) { height: 12px; }
-        .bar:nth-child(4) { height: 15px; }
-        
-        /* Signal Levels */
-        .signal-good .bar { background: #0f0; }
-        .signal-mid .bar:nth-child(1), .signal-mid .bar:nth-child(2) { background: #ffcc00; }
-        .signal-bad .bar:nth-child(1) { background: #ff0000; }
+        .bar:nth-child(1) { height: 6px; } .bar:nth-child(2) { height: 9px; } .bar:nth-child(3) { height: 12px; } .bar:nth-child(4) { height: 15px; }
+        .signal-good .bar { background: #0f0; } .signal-mid .bar:nth-child(1), .signal-mid .bar:nth-child(2) { background: #ffcc00; } .signal-bad .bar:nth-child(1) { background: #ff0000; }
 
-        /* MENU */
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
 
@@ -52,7 +40,6 @@
         .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
         .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .btn-mini.active { background: #333; color: white; border-color: #666; }
-        .btn-mini:active { transform: scale(0.98); }
         .btn-local { background: linear-gradient(45deg, #e50914, #900); color: white; border: none; }
 
         #scan-info { width: 90%; display: none; flex-direction: column; gap: 5px; margin-bottom: 5px; }
@@ -74,6 +61,10 @@
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
         .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); animation: pulse 2s infinite; }
         .btn-large { width: 55px; height: 55px; font-size: 22px; background: var(--primary); border: 2px solid white; box-shadow: 0 0 10px rgba(229,9,20,0.5); }
+        /* BOUTON VLC SPECIAL */
+        .btn-vlc { color: var(--vlc); border: 1px solid var(--vlc); }
+        .btn-vlc:hover { background: var(--vlc); color: #000; }
+
         .desktop-only { display: flex; }
         @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
 
@@ -89,15 +80,12 @@
         .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
         .chip.selected { background: var(--primary); color: white; }
-        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
         @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
 
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
         
         .app-logo { max-width: 150px; margin-bottom: 20px; }
-        #maint-screen { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-        
         .tp-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #333; margin-bottom: 5px; border-radius: 5px; }
         .tp-name { color: white; font-weight: bold; }
         .tp-checkbox { width: 20px; height: 20px; accent-color: var(--primary); }
@@ -105,31 +93,11 @@
 </head>
 <body>
 
-<div id="maint-screen">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:120px; margin-bottom:20px;">
-    <h1 style="color:#e50914;">MAINTENANCE</h1>
-    <p>Optimisation en cours...</p>
-</div>
-
-<div id="admin-msg-box">Message...</div>
-
-<div id="pin-modal" class="modal">
-    <div class="modal-box">
-        <h3 style="color:#e50914;"><i class="fas fa-lock"></i> SÉCURITÉ</h3>
-        <input type="password" id="pin-code" class="pin-input" maxlength="4" placeholder="••••">
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button onclick="checkPin()" style="padding:10px 20px; background:#e50914; color:white; border:none; border-radius:5px;">OK</button>
-            <button onclick="closePin()" style="padding:10px 20px; background:#444; color:white; border:none; border-radius:5px;">X</button>
-        </div>
-    </div>
-</div>
-
 <div id="settings-modal" class="modal">
     <div class="settings-panel">
         <div class="settings-sidebar">
             <div style="font-weight:bold; margin-bottom:20px; color:var(--primary)">RÉGLAGES</div>
             <div class="settings-tab active" onclick="showTab('tab-inst')">Installation</div>
-            <div class="settings-tab" onclick="showTab('tab-vpn')">Réseau / VPN</div>
             <div class="settings-tab" onclick="showTab('tab-cat')">Groupes</div>
             <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
             <div class="settings-tab" onclick="forceReload()" style="color:#ff4444; margin-top:20px;">Réinitialiser TV</div>
@@ -139,6 +107,11 @@
             <div id="tab-inst" class="tab-content">
                 <h3 style="color:#e50914;"><i class="fas fa-satellite-dish"></i> SATELLITE / IPTV</h3>
                 
+                <label style="display:block; padding:15px; background:#333; margin-bottom:10px; border-radius:5px; cursor:pointer;">
+                    <i class="fas fa-folder-open"></i> SCANNER DOSSIER LOCAL (PC)
+                    <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
+                </label>
+
                 <p style="color:#aaa; font-size:12px;">Cochez les transpondeurs à scanner.</p>
                 <div id="transponder-list">
                     <div style="text-align:center; padding:20px;">Chargement des sources...</div>
@@ -146,20 +119,6 @@
                 <button onclick="scanSelectedTransponders()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold; font-size:16px; margin-top:20px;">
                     <i class="fas fa-search"></i> LANCER LE BALAYAGE
                 </button>
-            </div>
-
-            <div id="tab-vpn" class="tab-content" style="display:none;">
-                <h3 style="color:#e50914;"><i class="fas fa-shield-alt"></i> VPN & PROXY</h3>
-                <p style="color:#ccc; font-size:12px;">Utilisez ces options si les chaînes affichent "Erreur Flux".</p>
-                
-                <div style="background:#222; padding:15px; border-radius:5px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>Forcer Mode Proxy (Correctif Netlify)</span>
-                    <input type="checkbox" id="force-proxy-toggle" onchange="toggleGlobalProxy(this.checked)" style="width:20px; height:20px;">
-                </div>
-
-                <label>Proxy Personnalisé (Optionnel)</label>
-                <input type="text" id="custom-proxy-url" class="input-dark" placeholder="https://corsproxy.io/?" onchange="saveCustomProxy(this.value)">
-                <p style="color:#666; font-size:10px;">Laissez vide pour utiliser le proxy par défaut.</p>
             </div>
 
             <div id="tab-cat" class="tab-content" style="display:none;">
@@ -176,7 +135,6 @@
                     Infos: <span id="sub-details">...</span>
                 </div>
                 <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">DÉCONNECTER</button>
-                <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; margin-top:10px; color:#888; text-align:center; text-decoration:none;">Support WhatsApp</a>
             </div>
         </div>
     </div>
@@ -226,7 +184,7 @@
             <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
                 <i class="fas fa-star" style="color:gold;"></i> Favoris
             </button>
-            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
+            <button onclick="window.location.reload()" class="btn-mini btn-local">
                 <i class="fas fa-map-marker-alt"></i> Chaînes Locales
             </button>
         </div>
@@ -240,21 +198,20 @@
         <button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
         <button class="btn-ctrl desktop-only" onclick="adjustVol(0.1)"><i class="fas fa-plus"></i></button>
         <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
-        <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
+        
+        <button class="btn-ctrl btn-vlc" onclick="openCurrentInVLC()" title="Ouvrir dans VLC"><i class="fas fa-cone"></i></button>
+        
         <button class="btn-ctrl" onclick="hideCurrentChannel()" style="color:#ff4444;"><i class="fas fa-trash"></i></button>
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
 </div>
 
 <script>
-    // =======================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    const DEFAULT_PROXY = "https://corsproxy.io/?"; 
-    // =======================================================
-
+    const CORS_PROXY = "https://corsproxy.io/?"; 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
-    const DB_NAME = "MyBoxTV_V62_Final"; 
+    const DB_NAME = "MyBoxTV_V98"; 
     const DB_VERSION = 1;
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -265,21 +222,21 @@
     let isFavFilter = false, hls = null, pendingChannelIndex = -1, isAutoZap = false;
     let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
-    
     let availableTransponders = []; 
     let lastActivityTime = Date.now();
     let isScanning = false;
     
-    // NOUVELLES VARIABLES BETA
-    let forceProxy = localStorage.getItem('mybox_force_proxy') === 'true';
-    let customProxy = localStorage.getItem('mybox_custom_proxy') || DEFAULT_PROXY;
-    let networkStatus = 0; // 0=Bad, 1=Mid, 2=Good
+    // Infinite Scroll
+    let renderLimit = 50; 
+    const RENDER_BATCH = 50;
+    const listDiv = document.getElementById('channel-list');
 
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror=()=>reject("DB Error"); r.onsuccess=e=>resolve(e.target.result); r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
+    // --- DB ---
+    function openDB() { return new Promise((r, j) => { const req = indexedDB.open(DB_NAME, DB_VERSION); req.onerror=()=>j(); req.onsuccess=e=>r(e.target.result); req.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
     async function saveChannelsToDB(channels) { const db=await openDB(); const tx=db.transaction("channels","readwrite"); const store=tx.objectStore("channels"); channels.forEach(ch=>{try{store.put(ch);}catch(e){}}); }
     async function loadChannelsFromDB() { const db=await openDB(); return new Promise(r=>{ const tx=db.transaction("channels","readonly"); const req=tx.objectStore("channels").getAll(); req.onsuccess=()=>r(req.result||[]); req.onerror=()=>r([]); }); }
     async function clearDB() { const db=await openDB(); try{db.transaction("channels","readwrite").objectStore("channels").clear();}catch(e){} }
@@ -297,36 +254,26 @@
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); 
         initApp();
         startRealTimeCheck();
-        // Init Settings UI
-        document.getElementById('force-proxy-toggle').checked = forceProxy;
-        document.getElementById('custom-proxy-url').value = customProxy === DEFAULT_PROXY ? "" : customProxy;
-        // Init Network Monitoring
         monitorNetwork();
     }
 
-    // --- SYSTEME DE MONITORING RESEAU ---
     function monitorNetwork() {
         setInterval(async () => {
             const start = Date.now();
             try {
-                // Ping léger vers Google (via image pour éviter CORS) ou autre API
-                // Ici on utilise fetch HEAD sur un fichier statique rapide
                 await fetch("https://www.google.com/favicon.ico", {mode: 'no-cors', cache: 'no-store'});
                 const duration = Date.now() - start;
                 updateSignalUI(duration);
-            } catch(e) {
-                updateSignalUI(9999); // Error
-            }
+            } catch(e) { updateSignalUI(9999); }
         }, 5000);
     }
 
     function updateSignalUI(ms) {
         const barDiv = document.getElementById('signal-display');
-        barDiv.className = 'signal-bars';
-        
-        if(ms < 200) { barDiv.classList.add('signal-good'); networkStatus=2; }
-        else if(ms < 800) { barDiv.classList.add('signal-mid'); networkStatus=1; }
-        else { barDiv.classList.add('signal-bad'); networkStatus=0; }
+        const bars = document.querySelectorAll('.signal-bars .bar');
+        if(ms < 200) { document.getElementById('signal-display').className='signal-bars signal-good'; }
+        else if(ms < 800) { document.getElementById('signal-display').className='signal-bars signal-mid'; }
+        else { document.getElementById('signal-display').className='signal-bars signal-bad'; }
     }
 
     function startRealTimeCheck() {
@@ -346,7 +293,6 @@
         try {
             const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text = await res.text();
-            if(text.includes("MAINTENANCE")) { alert("Maintenance"); return; }
             if(text.includes("SUCCESS")) { 
                 localStorage.setItem('mybox_auth', 'OK'); 
                 localStorage.setItem('mybox_key', key); 
@@ -373,15 +319,7 @@
             allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
             updateCategoryChips(); renderList();
         } 
-        
         fetchTranspondersList();
-
-        try {
-            const res = await fetch(`${API_URL}?action=get_message`); const text = await res.text();
-            if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
-            if(text.startsWith("MSG:") && text.length>5) { const b=document.getElementById('admin-msg-box'); b.innerText="📢 "+text.replace("MSG:",""); b.style.display="block"; setTimeout(()=>b.style.display="none",8000); }
-        } catch(e){}
-        setInterval(() => { if(isScanning && (Date.now() - lastActivityTime > 5000)) lastActivityTime = Date.now(); }, 1000);
     }
 
     async function fetchTranspondersList() {
@@ -390,19 +328,15 @@
             const json = await res.json();
             availableTransponders = json;
             renderTranspondersUI();
-            
             if(allChannels.length < 5) {
-                availableTransponders.forEach((tp, i) => {
-                    setTimeout(() => fetchPlaylistWithWatchdog(tp.url), i * 1000);
-                });
+                availableTransponders.forEach((tp, i) => { setTimeout(() => fetchPlaylistWithWatchdog(tp.url), i * 1000); });
             }
-        } catch(e) { console.log("TP Error", e); }
+        } catch(e) { }
     }
 
     function renderTranspondersUI() {
         const container = document.getElementById('transponder-list');
         container.innerHTML = "";
-        if(availableTransponders.length === 0) { container.innerHTML = "Aucun signal détecté."; return; }
         availableTransponders.forEach((tp, idx) => {
             const div = document.createElement('div');
             div.className = "tp-item";
@@ -413,19 +347,17 @@
 
     async function scanSelectedTransponders() {
         const checkboxes = document.querySelectorAll('.tp-checkbox:checked');
-        if(checkboxes.length === 0) return alert("Sélectionnez au moins un transpondeur.");
         document.getElementById('settings-modal').style.display = 'none'; 
         document.getElementById('scan-info').style.display = "flex";
         isScanning = true;
         for (let i = 0; i < checkboxes.length; i++) {
-            const url = checkboxes[i].value;
-            document.getElementById('scan-text').innerText = `Balayage TP ${i+1}/${checkboxes.length}...`;
-            await fetchPlaylistWithWatchdog(url);
+            document.getElementById('scan-text').innerText = `Scan Web...`;
+            await fetchPlaylistWithWatchdog(checkboxes[i].value);
         }
         isScanning = false;
         document.getElementById('scan-info').style.display = "none";
         saveChannelsToDB(allChannels);
-        alert("Balayage terminé !");
+        alert("Terminé !");
     }
 
     async function quickScan() {
@@ -447,9 +379,7 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); 
         try {
-            // Utiliser CORS PROXY pour contourner HTTPS -> HTTP lors du SCAN
-            let target = (location.protocol==='https:' && url.startsWith('http:')) ? (customProxy + encodeURIComponent(url)) : url;
-            
+            let target = (location.protocol==='https:' && url.startsWith('http:')) ? (CORS_PROXY + encodeURIComponent(url)) : url;
             const response = await fetch(target, { signal: controller.signal });
             clearTimeout(timeoutId); if (!response.ok) return;
             const reader = response.body.getReader(); const decoder = new TextDecoder("utf-8");
@@ -502,6 +432,16 @@
         updateCategoryChips();
     }
 
+    // --- INFINITE SCROLL ---
+    listDiv.addEventListener('scroll', () => {
+        if(listDiv.scrollTop + listDiv.clientHeight >= listDiv.scrollHeight - 100) {
+            if(renderLimit < displayedChannels.length) {
+                renderLimit += RENDER_BATCH;
+                appendItems();
+            }
+        }
+    });
+
     function renderList() {
         enforceNovelasIntegrity();
         const term = document.getElementById('searchInput').value.toLowerCase();
@@ -512,25 +452,31 @@
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
-        const list = document.getElementById('channel-list');
-        list.innerHTML = "";
+        listDiv.innerHTML = "";
+        renderLimit = 50; 
+        appendItems();
+        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
+    }
+
+    function appendItems() {
         const frag = document.createDocumentFragment();
-        let limit = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
-        
-        displayedChannels.slice(0, limit).forEach((ch) => {
+        const currentCount = listDiv.childElementCount;
+        const items = displayedChannels.slice(currentCount, renderLimit);
+
+        items.forEach(ch => {
+            const globalIndex = allChannels.indexOf(ch);
             const isFav = favorites.includes(ch.url);
-            const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
+            const isPlaying = (globalIndex === currentChannelIndex);
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             const div = document.createElement('div');
             div.className = 'channel-row ' + (isPlaying ? 'active' : '');
             div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                              <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
                              <div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`;
-            div.onclick = () => tryPlayChannel(ch);
+            div.onclick = () => tryPlayChannel(globalIndex);
             frag.appendChild(div);
         });
-        list.appendChild(frag);
-        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
+        listDiv.appendChild(frag);
     }
 
     function updateCategoryChips() {
@@ -551,87 +497,71 @@
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
     function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
 
-    function tryPlayChannel(ch) {
+    function tryPlayChannel(idx) {
+        const index = parseInt(idx);
+        const ch = allChannels[index];
         const name = ch.name.toLowerCase();
-        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex'; }
-        else { currentChannelIndex = allChannels.indexOf(ch); playChannel(currentChannelIndex); }
+        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = index; document.getElementById('pin-modal').style.display = 'flex'; }
+        else { currentChannelIndex = index; playChannel(currentChannelIndex); }
     }
-    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
+    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
-    // --- LECTEUR INTELLIGENT (PROXY + ERREUR DIFF) ---
+    // --- FONCTION VLC BRIDGE (LE SAUVEUR) ---
+    function openCurrentInVLC() {
+        if(!allChannels[currentChannelIndex]) return;
+        const url = allChannels[currentChannelIndex].url;
+        // URI Scheme pour VLC (PC/Android/iOS)
+        window.location.href = "vlc://" + url;
+    }
+
+    // --- LECTEUR INTELLIGENT + FALLBACK VLC ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
+        currentChannelIndex = index;
+        
         if(window.innerWidth < 900) document.body.classList.remove('menu-open');
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
         let playUrl = ch.url;
-        
-        // AUTO-DETECTION : Si Netlify (HTTPS) et lien HTTP ou si FORCE PROXY
-        if(forceProxy || (location.protocol === 'https:' && ch.url.startsWith('http:'))) {
-            playUrl = customProxy + encodeURIComponent(ch.url);
+        // HTTPS Proxy si Netlify
+        if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
+            playUrl = CORS_PROXY + encodeURIComponent(ch.url);
         }
 
         if(Hls.isSupported()) {
             if(hls) hls.destroy(); 
-            hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
+            hls = new Hls({manifestLoadingMaxRetry: 3});
             hls.loadSource(playUrl); 
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) handlePlayerError(d, playUrl, ch.url); });
+            
+            // SYSTEME D'ECHEC EN CASCADE : DIRECT -> PROXY -> VLC
+            hls.on(Hls.Events.ERROR, (e,d) => { 
+                if(d.fatal) { 
+                    if(playUrl === ch.url) {
+                        statusText.innerText = "Essai Proxy...";
+                        hls.loadSource(CORS_PROXY + encodeURIComponent(ch.url));
+                        hls.startLoad();
+                    } else {
+                        // SI TOUT ECHOUE : VLC
+                        statusText.innerText = "Lancement VLC...";
+                        openCurrentInVLC();
+                    }
+                } 
+            });
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { 
             video.src = playUrl; video.play(); 
         }
-        
-        if(isAutoZap && index !== 0) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handlePlayerError({type:'timeout'}, playUrl, ch.url); }, 15000); }
     }
 
     let autoZapTimeout;
-    
-    function handlePlayerError(data, currentUrl, originalUrl) {
-        led.className = "";
-        
-        // 1. Distinction Connexion vs Flux
-        if(networkStatus === 0 || !navigator.onLine) {
-            statusText.innerText = "🔴 Hors Ligne";
-            return;
-        }
-
-        // 2. Tentative Proxy si échec Direct
-        if(data && currentUrl === originalUrl) {
-            console.log("Erreur direct -> Essai Proxy");
-            statusText.innerText = "🛡️ Mode Proxy...";
-            if(hls) hls.destroy(); 
-            hls = new Hls();
-            hls.loadSource(customProxy + encodeURIComponent(originalUrl));
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            return;
-        }
-
-        // 3. Echec Total
-        statusText.innerText = "⚠️ Erreur Flux";
-        if(isAutoZap) { setTimeout(nextChannel, 2000); }
-    }
-
-    // --- REGLAGES PROXY ---
-    function toggleGlobalProxy(val) {
-        forceProxy = val;
-        localStorage.setItem('mybox_force_proxy', val);
-        alert("Mode Proxy Global: " + (val ? "ACTIVÉ" : "DÉSACTIVÉ"));
-    }
-    
-    function saveCustomProxy(val) {
-        if(!val.startsWith("http")) val = DEFAULT_PROXY;
-        customProxy = val;
-        localStorage.setItem('mybox_custom_proxy', val);
-    }
-
+    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
-    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
+    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(nextIdx); }
+    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(prevIdx); }
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
@@ -643,6 +573,41 @@
     function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
     function restoreHidden() { localStorage.removeItem('mybox_hidden'); location.reload(); }
     async function forceReload() { if(confirm("Recharger ?")) { await clearDB(); location.reload(); } }
+
+    async function handleTitanScan(input) {
+        const files = input.files;
+        if(!files.length) return;
+        document.getElementById('settings-modal').style.display = 'none';
+        document.getElementById('scan-info').style.display = 'flex';
+        const regex = /(https?:\/\/[^\s"';,<>]+)/gi;
+        
+        for(let i=0; i<files.length; i++) {
+            const file = files[i];
+            document.getElementById('scan-text').innerText = `Scan: ${file.name}`;
+            await new Promise(r => setTimeout(r, 0));
+
+            if(file.size < 50000000 && (file.name.includes('.') || file.type.includes('text'))) {
+                try {
+                    let text = await readFile(file);
+                    let matches = text.match(regex);
+                    if(matches) {
+                        let batch = [];
+                        matches.forEach(url => {
+                            if(url.length > 10 && !url.includes('w3.org')) {
+                                let name = url.split('/').pop().split('?')[0];
+                                batch.push({ name: name, url: url, category: file.name, logo: "" });
+                            }
+                        });
+                        if(batch.length > 0) flushBatch(batch);
+                    }
+                } catch(e){}
+            }
+        }
+        document.getElementById('scan-info').style.display = 'none';
+        alert("Terminé !");
+    }
+    function readFile(file) { return new Promise(r => { let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsText(file); }); }
+
 </script>
 </body>
 </html>
