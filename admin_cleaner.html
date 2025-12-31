@@ -1,1 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TITAN ADMIN - NETTOYEUR</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #111; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+        h1 { color: #e50914; margin: 0; font-size: 20px; }
+        .stats { display: flex; gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: #222; padding: 10px; border-radius: 5px; flex: 1; text-align: center; border: 1px solid #333; }
+        .stat-num { font-size: 20px; font-weight: bold; display: block; }
+        .stat-label { font-size: 10px; color: #888; }
+        
+        .btn { padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; width: 100%; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-start { background: #e50914; }
+        .btn-start:hover { background: #b20710; }
 
+        .list-container { height: 60vh; overflow-y: auto; background: #000; border: 1px solid #333; border-radius: 5px; margin-top: 20px; }
+        .row { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid #222; font-size: 12px; }
+        .row:hover { background: #1a1a1a; }
+        .col-status { width: 40px; text-align: center; }
+        .col-name { flex: 1; font-weight: bold; }
+        .col-url { flex: 2; color: #666; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: monospace; }
+        
+        .tag { padding: 2px 5px; border-radius: 3px; font-size: 9px; font-weight: bold; }
+        .tag-ok { background: #2ecc71; color: #000; }
+        .tag-hs { background: #e74c3c; color: #fff; }
+        .tag-wait { background: #333; color: #aaa; }
+
+        #progress-area { margin-top: 20px; display: none; }
+        .bar-bg { width: 100%; height: 5px; background: #333; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; background: #2ecc71; width: 0%; transition: width 0.2s; }
+        #log { font-family: monospace; font-size: 11px; color: #0f0; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1><i class="fas fa-biohazard"></i> ZONE DE QUARANTAINE</h1>
+        <button onclick="location.reload()" style="background:#333; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Refresh</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box"><span class="stat-num" id="c-total">0</span><span class="stat-label">TOTAL</span></div>
+        <div class="stat-box" style="border-color:#2ecc71"><span class="stat-num" id="c-ok" style="color:#2ecc71">0</span><span class="stat-label">EN LIGNE</span></div>
+        <div class="stat-box" style="border-color:#e74c3c"><span class="stat-num" id="c-hs" style="color:#e74c3c">0</span><span class="stat-label">HS (CACHÉES)</span></div>
+    </div>
+
+    <button class="btn btn-start" onclick="startScan()" id="btn-scan">
+        <i class="fas fa-search"></i> ANALYSER & NETTOYER
+    </button>
+
+    <div id="progress-area">
+        <div class="bar-bg"><div class="bar-fill" id="prog-bar"></div></div>
+        <div id="log">Préparation...</div>
+    </div>
+
+    <div class="list-container" id="list"></div>
+
+<script>
+    // TON URL MISE A JOUR
+    const API = "https://script.google.com/macros/s/AKfycbyRzTUroGpGdqaR3ZzYT4quYntciR0wclWcmDFLDSSXvuLWtfXTj2q5GLeaZQGAVjHTEA/exec";
+    const PROXY = "https://corsproxy.io/?"; // Indispensable pour tester les liens HTTP
+
+    let sources = [];
+
+    window.onload = async () => {
+        document.getElementById('list').innerHTML = '<div style="padding:20px;text-align:center;color:#666">Chargement...</div>';
+        try {
+            // On récupère TOUT (action=admin_get_all_sources)
+            const res = await fetch(`${API}?action=admin_get_all_sources`);
+            sources = await res.json();
+            render();
+        } catch(e) { alert("Erreur chargement: " + e); }
+    };
+
+    function render() {
+        const list = document.getElementById('list');
+        list.innerHTML = "";
+        let ok=0, hs=0;
+
+        sources.forEach(s => {
+            if(s.status === 'OK') ok++; else if(s.status === 'HS') hs++;
+            let badge = s.status === 'HS' ? '<span class="tag tag-hs">HS</span>' : '<span class="tag tag-ok">OK</span>';
+            if(!s.status) badge = '<span class="tag tag-wait">?</span>';
+
+            const div = document.createElement('div');
+            div.className = "row";
+            div.id = `row-${s.row}`;
+            div.innerHTML = `<div class="col-status">${badge}</div><div class="col-name">${s.name}</div><div class="col-url">${s.url}</div>`;
+            list.appendChild(div);
+        });
+
+        document.getElementById('c-total').innerText = sources.length;
+        document.getElementById('c-ok').innerText = ok;
+        document.getElementById('c-hs').innerText = hs;
+    }
+
+    async function startScan() {
+        document.getElementById('btn-scan').style.display = 'none';
+        document.getElementById('progress-area').style.display = 'block';
+        
+        for(let i=0; i<sources.length; i++) {
+            const item = sources[i];
+            document.getElementById('log').innerText = `Test: ${item.name}...`;
+            
+            // TEST DE CONNEXION (HEAD REQUEST VIA PROXY)
+            let isWorking = false;
+            try {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 5000);
+                const res = await fetch(PROXY + encodeURIComponent(item.url), { method: 'HEAD', signal: controller.signal });
+                clearTimeout(id);
+                if(res.ok) isWorking = true;
+            } catch(e) {}
+
+            const newStatus = isWorking ? "OK" : "HS";
+            
+            // Si le statut change, on met à jour Google Sheet
+            if(item.status !== newStatus) {
+                document.getElementById('log').innerText = `> Mise à jour: ${item.name} -> ${newStatus}`;
+                await fetch(`${API}?action=admin_update_status&row=${item.row}&status=${newStatus}`, {method:'POST'});
+                item.status = newStatus;
+                
+                // Update visuel ligne
+                const rowDiv = document.getElementById(`row-${item.row}`);
+                rowDiv.querySelector('.col-status').innerHTML = newStatus === 'HS' ? '<span class="tag tag-hs">HS</span>' : '<span class="tag tag-ok">OK</span>';
+            }
+
+            // Progress Bar
+            let pct = Math.round(((i+1) / sources.length) * 100);
+            document.getElementById('prog-bar').style.width = pct + "%";
+        }
+        
+        document.getElementById('log').innerText = "TERMINE ! Les chaînes HS sont masquées pour les clients.";
+        alert("Maintenance terminée.");
+        location.reload();
+    }
+</script>
+</body>
+</html>
