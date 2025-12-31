@@ -1,19 +1,18 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Décodeur V62 (GAMER FIX)</title>
+    <meta name="referrer" content="no-referrer">
+    
+    <title>My Box TV - V96 GHOST</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* TON CSS ORIGINAL V62 - SANS CHANGEMENT */
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
@@ -36,7 +35,6 @@
         .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
         .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .btn-mini.active { background: #333; color: white; border-color: #666; }
-        .btn-mini:active { transform: scale(0.98); }
         .btn-local { background: linear-gradient(45deg, #e50914, #900); color: white; border: none; }
 
         #scan-info { width: 90%; display: none; flex-direction: column; gap: 5px; margin-bottom: 5px; }
@@ -218,7 +216,7 @@
 <script>
     // =======================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    const CORS_PROXY = "https://corsproxy.io/?"; // CLÉ POUR FIXER NETLIFY/ARAS TV
+    const CORS_PROXY = "https://corsproxy.io/?"; 
     // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
@@ -234,19 +232,19 @@
     let isFavFilter = false, hls = null, pendingChannelIndex = -1, isAutoZap = false;
     let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
-    
     let availableTransponders = []; 
     let lastActivityTime = Date.now();
     let isScanning = false;
 
-    // SCROLL INFINI (Variable)
-    let renderLimit = 50;
+    // --- INFINITE SCROLL VARS ---
+    let renderLimit = 50; 
     const RENDER_BATCH = 50;
+    const listDiv = document.getElementById('channel-list');
 
+    // --- DOM ---
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
-    const listDiv = document.getElementById('channel-list');
 
     function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror=()=>reject("DB Error"); r.onsuccess=e=>resolve(e.target.result); r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
     async function saveChannelsToDB(channels) { const db=await openDB(); const tx=db.transaction("channels","readwrite"); const store=tx.objectStore("channels"); channels.forEach(ch=>{try{store.put(ch);}catch(e){}}); }
@@ -437,13 +435,12 @@
         updateCategoryChips();
     }
 
-    // --- MOTEUR SCROLL INFINI (FIX LIMITE) ---
-    // Ecouteur de scroll pour charger la suite
+    // --- INFINITE SCROLL (LISTE ILLIMITÉE) ---
     listDiv.addEventListener('scroll', () => {
         if(listDiv.scrollTop + listDiv.clientHeight >= listDiv.scrollHeight - 100) {
             if(renderLimit < displayedChannels.length) {
                 renderLimit += RENDER_BATCH;
-                appendItems(); // Ajoute la suite
+                appendItems();
             }
         }
     });
@@ -458,11 +455,10 @@
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
-        document.getElementById('count-display').innerText = displayedChannels.length + " Chaînes";
-        
-        listDiv.innerHTML = ""; // Reset
-        renderLimit = 50; // Reset pagination
-        appendItems(); // Affiche les 50 premiers
+        listDiv.innerHTML = "";
+        renderLimit = 50; 
+        appendItems();
+        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
     }
 
     function appendItems() {
@@ -471,15 +467,16 @@
         const items = displayedChannels.slice(currentCount, renderLimit);
 
         items.forEach(ch => {
+            const globalIndex = allChannels.indexOf(ch);
             const isFav = favorites.includes(ch.url);
-            const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
+            const isPlaying = (globalIndex === currentChannelIndex);
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             const div = document.createElement('div');
             div.className = 'channel-row ' + (isPlaying ? 'active' : '');
             div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                              <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
                              <div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`;
-            div.onclick = () => tryPlayChannel(ch);
+            div.onclick = () => tryPlayChannel(globalIndex);
             frag.appendChild(div);
         });
         listDiv.appendChild(frag);
@@ -503,15 +500,17 @@
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
     function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
 
-    function tryPlayChannel(ch) {
+    function tryPlayChannel(idx) {
+        const index = parseInt(idx);
+        const ch = allChannels[index];
         const name = ch.name.toLowerCase();
-        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = allChannels.indexOf(ch); document.getElementById('pin-modal').style.display = 'flex'; }
-        else { currentChannelIndex = allChannels.indexOf(ch); playChannel(currentChannelIndex); }
+        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = index; document.getElementById('pin-modal').style.display = 'flex'; }
+        else { currentChannelIndex = index; playChannel(currentChannelIndex); }
     }
-    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); currentChannelIndex = pendingChannelIndex; playChannel(currentChannelIndex); } else alert("Code Erroné"); }
+    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
-    // --- LECTEUR CORRIGÉ (FIX NETLIFY ARAS TV) ---
+    // --- LECTEUR INTELLIGENT (PROXY FALLBACK) ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -519,11 +518,10 @@
         renderList(); 
         statusText.innerText = ch.name; led.className = "orange";
         
-        // CHECK HTTP vs HTTPS
         let playUrl = ch.url;
+        // Détection Netlify/HTTPS -> HTTP Stream
         if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
-            // Netlify est en HTTPS, la chaine est en HTTP -> On force le Proxy
-            statusText.innerText = "Déblocage Proxy...";
+            console.log("Securing HTTP stream...");
             playUrl = CORS_PROXY + encodeURIComponent(ch.url);
         }
 
@@ -533,12 +531,11 @@
             hls.loadSource(playUrl); 
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            
-            // Si erreur, on re-tente avec le Proxy si ce n'est pas déjà fait
             hls.on(Hls.Events.ERROR, (e,d) => { 
                 if(d.fatal) { 
-                    if(playUrl === ch.url) { // Si on était en direct, on passe au proxy
-                        statusText.innerText = "Essai Proxy...";
+                    // Si échec, on tente le proxy (même si déjà essayé, parfois CORS)
+                    if(playUrl === ch.url) {
+                        statusText.innerText = "Proxy...";
                         hls.loadSource(CORS_PROXY + encodeURIComponent(ch.url));
                         hls.startLoad();
                     } else if(index===0){ setTimeout(()=>playChannel(0),2000); } 
@@ -555,8 +552,8 @@
     let autoZapTimeout;
     function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
     function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(allChannels[nextIdx]); }
-    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(allChannels[prevIdx]); }
+    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; tryPlayChannel(nextIdx); }
+    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(prevIdx); }
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
@@ -569,13 +566,12 @@
     function restoreHidden() { localStorage.removeItem('mybox_hidden'); location.reload(); }
     async function forceReload() { if(confirm("Recharger ?")) { await clearDB(); location.reload(); } }
 
-    // --- SCANNER DOSSIER TITAN (AJOUTÉ) ---
+    // --- SCANNER LOCAL ---
     async function handleTitanScan(input) {
         const files = input.files;
         if(!files.length) return;
         document.getElementById('settings-modal').style.display = 'none';
         document.getElementById('scan-info').style.display = 'flex';
-        
         const regex = /(https?:\/\/[^\s"';,<>]+)/gi;
         
         for(let i=0; i<files.length; i++) {
@@ -601,7 +597,7 @@
             }
         }
         document.getElementById('scan-info').style.display = 'none';
-        alert("Scan Terminé !");
+        alert("Terminé !");
     }
     function readFile(file) { return new Promise(r => { let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsText(file); }); }
 
