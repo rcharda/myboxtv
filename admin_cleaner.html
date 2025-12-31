@@ -2,257 +2,198 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN EXTRACTOR V1</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>TITAN EXTRACTOR - COLONNES D/E</title>
     <style>
-        body { background: #050505; color: #fff; font-family: sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
-        
+        body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; }
         .panel { background: #111; border: 1px solid #333; padding: 20px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; }
-        .panel-full { flex: 2; }
-        
-        h2 { margin-top: 0; color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        
-        input, select { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box; }
-        
-        .btn { width: 100%; padding: 12px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 5px; }
-        .btn-blue { background: #007bff; } .btn-green { background: #27ae60; } .btn-red { background: #c0392b; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
+        h2 { color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 16px; margin-top: 0; }
+        .btn { width: 100%; padding: 15px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 13px; }
+        .btn-orange { background: #d35400; } .btn-blue { background: #007bff; } .btn-green { background: #27ae60; } 
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .list-box { flex: 1; overflow-y: auto; border: 1px solid #333; background: #000; font-family: monospace; font-size: 11px; padding: 5px; }
-        .item { padding: 5px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
-        .item.ok { color: #2ecc71; }
-        .item.dead { color: #e74c3c; text-decoration: line-through; }
-        .item.waiting { color: #888; }
-
-        .progress-container { height: 20px; background: #333; border-radius: 10px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { height: 100%; background: #e50914; width: 0%; transition: width 0.1s; }
-        
-        .stats { display: flex; gap: 10px; font-size: 12px; margin-bottom: 10px; }
-        .stat { background: #222; padding: 5px 10px; border-radius: 4px; flex: 1; text-align: center; }
+        .item { padding: 4px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+        .item.ok { color: #2ecc71; } .item.dead { color: #555; text-decoration: line-through; }
+        .progress-bar { height: 5px; background: #e50914; width: 0%; margin: 10px 0; transition: width 0.2s; }
+        .log-area { height: 100px; overflow-y: auto; color: #888; font-size: 10px; border-top: 1px solid #333; padding-top: 10px; font-family: monospace; }
+        .stats { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="panel">
-        <h2>1. SOURCE</h2>
-        <p style="font-size:12px; color:#aaa;">Collez un lien M3U global ou choisissez un fichier.</p>
+        <h2>1. SOURCES (COLONNE B)</h2>
+        <p style="font-size:11px; color:#aaa;">Le système va lire les liens M3U présents dans la colonne B de votre Google Sheet.</p>
         
-        <input type="text" id="urlInput" placeholder="https://exemple.com/playlist.m3u">
-        <button class="btn btn-blue" onclick="loadFromUrl()">CHARGER URL</button>
-        
-        <div style="text-align:center; margin: 10px 0;">OU</div>
-        
-        <input type="file" id="fileInput" onchange="loadFromFile()">
-        
-        <div id="log" style="margin-top:20px; font-size:11px; color:#aaa; height:150px; overflow:auto; border:1px solid #333; padding:5px;">
-            > En attente...
-        </div>
+        <button class="btn btn-orange" onclick="fetchSourcesFromGoogle()">
+            <i class="fas fa-download"></i> RÉCUPÉRER & EXTRAIRE
+        </button>
+
+        <div class="log-area" id="log">En attente...</div>
     </div>
 
-    <div class="panel panel-full">
-        <h2>2. ANALYSE & FILTRAGE</h2>
+    <div class="panel" style="flex: 2;">
+        <h2>2. TRAITEMENT VERS COLONNES D/E</h2>
         
         <div class="stats">
-            <div class="stat">Total: <span id="s-total">0</span></div>
-            <div class="stat" style="color:#2ecc71">Valides: <span id="s-ok">0</span></div>
-            <div class="stat" style="color:#e74c3c">Morts: <span id="s-dead">0</span></div>
+            <span style="color:#fff">Trouvées: <span id="s-total">0</span></span>
+            <span style="color:#2ecc71">Valides: <span id="s-ok">0</span></span>
+            <span style="color:#e74c3c">Morts: <span id="s-dead">0</span></span>
         </div>
 
-        <div class="progress-container">
-            <div class="progress-bar" id="p-bar"></div>
+        <div style="background:#333"><div class="progress-bar" id="p-bar"></div></div>
+        
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-blue" onclick="startTester()" id="btn-test" disabled>2. TESTER LES LIENS</button>
+            <button class="btn btn-green" onclick="sendToGoogle()" id="btn-save" disabled>3. SAUVEGARDER (D/E)</button>
         </div>
-
-        <button class="btn btn-blue" onclick="startScan()" id="btn-scan" disabled>LANCER L'ANALYSE (TESTER LES LIENS)</button>
-        <button class="btn btn-green" onclick="sendToServer()" id="btn-save" disabled>ENREGISTRER LES VALIDES SUR LE SERVEUR</button>
-
-        <div class="list-box" id="result-list">
-            </div>
+        
+        <div class="list-box" id="result-list"></div>
     </div>
 
 <script>
-    // --- CONFIG ---
-    // METS TON LIEN DE SCRIPT GOOGLE ICI 👇
-    const API_URL = "https://script.google.com/macros/s/AKfycbzDIUoEc36v52egABKNnar_kXsHZ2Pb65RKrQlCRnrSZ0OO2y222Vf2IREBGM17VudM/exec";
+    // --- CONFIGURATION ---
+    const API_URL = "https://script.google.com/macros/s/AKfycbyOljxFQou_gl6BsyOJZ1WKiDcaZ0ABe9-wOoBBhOPCcBwqKl3dFVTNi5GL83gcCGfH1w/exec";
     const PROXY = "https://corsproxy.io/?";
 
-    let rawList = []; // Liste brute
-    let cleanList = []; // Liste validée
+    let extractedChannels = []; 
+    let validChannels = [];
 
-    // --- 1. CHARGEMENT ---
-    
-    async function loadFromUrl() {
-        const url = document.getElementById('urlInput').value;
-        if(!url) return;
-        log("Téléchargement du fichier M3U...");
+    // --- 1. RECUPERATION DES M3U (COLONNE B) ---
+    async function fetchSourcesFromGoogle() {
+        log("Lecture de la Colonne B sur le serveur...");
         try {
-            const res = await fetch(PROXY + encodeURIComponent(url));
-            const text = await res.text();
-            parseM3U(text);
-        } catch(e) { log("Erreur téléchargement: " + e); }
-    }
-
-    function loadFromFile() {
-        const file = document.getElementById('fileInput').files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => parseM3U(e.target.result);
-        reader.readAsText(file);
-    }
-
-    function parseM3U(content) {
-        log("Analyse du fichier M3U...");
-        rawList = [];
-        const lines = content.split('\n');
-        let currentName = "Sans Nom";
-
-        for (let i = 0; i < lines.length; i++) {
-            let line = lines[i].trim();
-            if (line.startsWith("#EXTINF")) {
-                // Extraction du nom (tout ce qui est après la dernière virgule)
-                let parts = line.split(',');
-                currentName = parts[parts.length - 1] || "Sans Nom";
-            } else if (line.startsWith("http")) {
-                // C'est un lien
-                rawList.push({ name: currentName, url: line, status: 'waiting' });
+            const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
+            const m3uLinks = await res.json();
+            
+            if(m3uLinks.length === 0) return log("Aucun lien trouvé en Colonne B.");
+            
+            log(`${m3uLinks.length} playlists trouvées. Extraction...`);
+            extractedChannels = [];
+            
+            for(let url of m3uLinks) {
+                log(`Lecture: ${url.substring(0, 40)}...`);
+                await parseM3UContent(url);
             }
-        }
-
-        log(`Extraction terminée. ${rawList.length} chaînes trouvées.`);
-        renderList();
-        
-        if(rawList.length > 0) {
-            document.getElementById('btn-scan').disabled = false;
-            document.getElementById('s-total').innerText = rawList.length;
-        }
+            
+            log(`Extraction Terminée ! ${extractedChannels.length} chaînes prêtes.`);
+            renderList();
+            document.getElementById('btn-test').disabled = false;
+            
+        } catch(e) { log("Erreur: " + e); }
     }
 
-    // --- 2. AFFICHAGE ---
+    async function parseM3UContent(m3uUrl) {
+        try {
+            const res = await fetch(PROXY + encodeURIComponent(m3uUrl));
+            const text = await res.text();
+            const lines = text.split('\n');
+            let currentName = "Sans Nom";
+
+            for(let i=0; i<lines.length; i++) {
+                let line = lines[i].trim();
+                if(line.startsWith("#EXTINF")) {
+                    let parts = line.split(',');
+                    currentName = parts[parts.length - 1].trim(); 
+                } else if(line.startsWith("http") && !line.endsWith(".m3u")) {
+                    // On garde nom et url
+                    extractedChannels.push({ name: currentName, url: line, status: 'waiting' });
+                }
+            }
+        } catch(e) { log("Erreur lecture playlist"); }
+    }
 
     function renderList() {
+        document.getElementById('s-total').innerText = extractedChannels.length;
         const container = document.getElementById('result-list');
-        // Pour ne pas faire ramer le navigateur, on affiche que les 500 premiers si la liste est énorme lors du scan
-        // Mais ici on fait simple
         let html = "";
-        // On limite l'affichage HTML à 2000 items pour la performance, mais le traitement se fera sur tout
-        const displayLimit = Math.min(rawList.length, 2000); 
+        let max = Math.min(extractedChannels.length, 500); // Limite affichage
         
-        for(let i=0; i<displayLimit; i++) {
-            const item = rawList[i];
-            let colorClass = item.status; // waiting, ok, dead
-            let icon = item.status === 'ok' ? '✔' : (item.status === 'dead' ? '✖' : '⏳');
-            html += `<div class="item ${colorClass}" id="item-${i}">
-                <span>${i+1}. ${item.name}</span>
-                <span>${icon}</span>
-            </div>`;
+        for(let i=0; i<max; i++) {
+            let c = extractedChannels[i];
+            let icon = c.status === 'ok' ? '✅' : (c.status==='dead' ? '❌' : '⏳');
+            html += `<div class="item ${c.status}" id="row-${i}"><span>${c.name}</span><span>${icon}</span></div>`;
         }
-        if(rawList.length > 2000) html += `<div style="padding:10px; text-align:center">... et ${rawList.length - 2000} autres (masqués pour performance) ...</div>`;
         container.innerHTML = html;
     }
 
-    // --- 3. ANALYSE (SCANNER) ---
-
-    async function startScan() {
-        document.getElementById('btn-scan').disabled = true;
-        log("Démarrage du test des liens...");
+    // --- 2. TESTEUR ---
+    async function startTester() {
+        document.getElementById('btn-test').disabled = true;
+        validChannels = [];
+        let ok = 0, dead = 0;
+        log("Démarrage du test...");
         
-        cleanList = [];
-        let okCount = 0;
-        let deadCount = 0;
-        const BATCH_SIZE = 10; // Tester 10 liens en même temps (Vitesse vs Stabilité)
-
-        for (let i = 0; i < rawList.length; i += BATCH_SIZE) {
-            const chunk = rawList.slice(i, i + BATCH_SIZE);
-            
+        // Test par lot de 10
+        for(let i=0; i<extractedChannels.length; i+=10) {
+            let chunk = extractedChannels.slice(i, i+10);
             await Promise.all(chunk.map(async (item, idx) => {
-                const globalIndex = i + idx;
-                const isWorking = await checkUrl(item.url);
+                const globalIdx = i + idx;
+                let works = await checkUrl(item.url);
                 
-                if (isWorking) {
+                if(works) {
                     item.status = 'ok';
-                    okCount++;
-                    cleanList.push([item.name, item.url]); // Format pour Google Sheet [Nom, Url]
+                    ok++;
+                    validChannels.push([item.name, item.url]);
                 } else {
                     item.status = 'dead';
-                    deadCount++;
+                    dead++;
                 }
                 
-                // Mise à jour visuelle légère (seulement si l'élément est dans le DOM)
-                const el = document.getElementById(`item-${globalIndex}`);
+                let el = document.getElementById(`row-${globalIdx}`);
                 if(el) {
                     el.className = `item ${item.status}`;
-                    el.innerHTML = `<span>${globalIndex+1}. ${item.name}</span><span>${item.status === 'ok' ? '✔' : '✖'}</span>`;
+                    el.innerHTML = `<span>${item.name}</span><span>${item.status=='ok'?'✅':'❌'}</span>`;
                 }
             }));
-
-            // Barre de progression
-            let pct = Math.round(((i + chunk.length) / rawList.length) * 100);
-            document.getElementById('p-bar').style.width = pct + "%";
-            document.getElementById('s-ok').innerText = okCount;
-            document.getElementById('s-dead').innerText = deadCount;
             
-            // Petite pause pour ne pas figer le navigateur
-            if(i % 50 === 0) await new Promise(r => setTimeout(r, 10));
+            let pct = Math.round(((i+10)/extractedChannels.length)*100);
+            document.getElementById('p-bar').style.width = pct + "%";
+            document.getElementById('s-ok').innerText = ok;
+            document.getElementById('s-dead').innerText = dead;
+            await new Promise(r => setTimeout(r, 10));
         }
-
-        log(`Analyse terminée. ${okCount} chaînes valides prêtes à l'envoi.`);
-        document.getElementById('btn-save').disabled = false;
-        document.getElementById('btn-save').innerText = `ENVOYER ${okCount} CHAÎNES AU SERVEUR`;
+        
+        log(`Scan terminé. ${ok} chaînes valides.`);
+        if(ok > 0) {
+            document.getElementById('btn-save').disabled = false;
+            document.getElementById('btn-save').innerText = `ENVOYER ${ok} CHAÎNES (COL D/E)`;
+        }
     }
 
     async function checkUrl(url) {
         try {
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 3000); // 3 secondes timeout
-            // On utilise le proxy pour le test HEAD (rapide)
+            const id = setTimeout(() => controller.abort(), 4000);
             const res = await fetch(PROXY + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
             clearTimeout(id);
             return res.ok;
-        } catch(e) {
-            return false;
-        }
+        } catch(e) { return false; }
     }
 
-    // --- 4. SAUVEGARDE SUR GOOGLE SHEET ---
-
-    async function sendToServer() {
-        if(cleanList.length === 0) return alert("Aucune chaîne valide à envoyer !");
-        
+    // --- 3. ENVOI (COLONNES D/E) ---
+    async function sendToGoogle() {
         const btn = document.getElementById('btn-save');
         btn.disabled = true;
-        btn.innerText = "ENVOI EN COURS...";
-        log("Envoi des données vers Google Sheets...");
-
-        // On envoie par paquets de 500 pour ne pas dépasser la limite de Google
-        const CHUNK_SIZE = 500;
-        for (let i = 0; i < cleanList.length; i += CHUNK_SIZE) {
-            const chunk = cleanList.slice(i, i + CHUNK_SIZE);
-            log(`Envoi du paquet ${i} à ${i + chunk.length}...`);
-            
-            try {
-                await fetch(`${API_URL}?action=admin_import_bulk`, {
-                    method: 'POST',
-                    body: JSON.stringify(chunk)
-                });
-            } catch(e) {
-                log("Erreur d'envoi: " + e);
-                alert("Erreur lors de l'envoi d'un paquet. Vérifiez la console.");
-                btn.disabled = false;
-                return;
-            }
+        btn.innerText = "ENVOI...";
+        log("Envoi vers Google Sheets (Colonnes D & E)...");
+        
+        for(let i=0; i<validChannels.length; i+=500) {
+            let chunk = validChannels.slice(i, i+500);
+            await fetch(`${API_URL}?action=admin_save_extracted`, {
+                method: 'POST',
+                body: JSON.stringify(chunk)
+            });
+            log(`Paquet ${i} envoyé.`);
         }
-
-        log("✅ TOUT EST SAUVEGARDÉ !");
-        alert("Succès ! Les chaînes valides sont maintenant dans votre application.");
-        btn.innerText = "TERMINE";
+        log("✅ LISTE EN LIGNE !");
+        alert("Les chaînes valides sont maintenant dans les colonnes D et E.");
     }
 
     function log(msg) {
         const div = document.getElementById('log');
-        div.innerHTML += `<div>${msg}</div>`;
+        div.innerHTML += `<div>> ${msg}</div>`;
         div.scrollTop = div.scrollHeight;
     }
-
 </script>
 </body>
 </html>
