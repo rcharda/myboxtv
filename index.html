@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - Décodeur V62 (CORRIGÉ)</title>
+    <title>My Box TV - Décodeur V62 (TITAN ENGINE)</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -13,20 +13,27 @@
     <style>
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
+        /* SCROLLBAR MODERNE */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* Layers */
+        /* LAYERS */
         #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        /* Status & LED */
+        /* STATUS */
         #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 8px; pointer-events: none; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
 
-        /* Menu Principal */
+        /* MENU (DESIGN V62 CONSERVÉ) */
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
 
@@ -44,8 +51,8 @@
         #scan-bar { position: absolute; left: 0; top: 0; height: 100%; width: 50%; background: #0f0; animation: scanAnim 1s infinite linear; }
         @keyframes scanAnim { 0% {left: -50%;} 100% {left: 100%;} }
 
-        /* --- MOTEUR VIRTUEL (CORRECTION FLUIDITÉ) --- */
-        #channel-list-viewport { flex: 1; overflow-y: auto; padding: 0; width:100%; position: relative; will-change: transform; }
+        /* --- MOTEUR VIRTUEL (TITAN) INTÉGRÉ DANS LE DESIGN V62 --- */
+        #channel-list-viewport { flex: 1; overflow-y: auto; padding: 0; width:100%; position: relative; will-change: transform; contain: strict; }
         #channel-list-content { position: relative; width: 100%; overflow: hidden; }
         
         .channel-row { 
@@ -60,7 +67,7 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
-        /* Bottom Bar */
+        /* BARRE CONTROLE */
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; }
         .btn-ctrl { width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
         .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
@@ -69,7 +76,7 @@
         .desktop-only { display: flex; }
         @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
 
-        /* Modals */
+        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .pin-input { font-size: 30px; letter-spacing: 10px; width: 150px; text-align: center; background: #333; color: white; border: none; padding: 10px; border-radius: 5px; margin: 20px 0; }
@@ -224,15 +231,17 @@
 </div>
 
 <script>
-    // --- API & PROXY ---
+    // =======================================================
+    // CONFIGURATIONS CRITIQUES
     const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
-    const CORS_PROXY = "https://corsproxy.io/?"; // LA CLÉ POUR LIRE SANS ERREUR FLUX
+    const CORS_PROXY = "https://corsproxy.io/?"; // C'EST CA QUI REPARE ARAS TV ET LES AUTRES
+    const ROW_HEIGHT = 60; // Pour le moteur graphique
+    // =======================================================
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
     const DB_NAME = "MyBoxTV_V62_Final"; 
     const DB_VERSION = 1;
-    const ROW_HEIGHT = 60; // HAUTEUR FIXE POUR LE MOTEUR GRAPHIQUE
 
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
@@ -246,7 +255,7 @@
     let lastActivityTime = Date.now();
     let isScanning = false;
 
-    // Elements DOM
+    // DOM References pour le Virtual Scroll
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
@@ -267,7 +276,7 @@
         }
     }
 
-    // --- AUTH CHECK ---
+    // --- AUTHENTIFICATION ---
     if(localStorage.getItem('mybox_auth') === 'OK') { 
         document.getElementById('login-screen').style.display = 'none'; 
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); 
@@ -309,7 +318,6 @@
 
     async function initApp() {
         enforceNovelasIntegrity(); renderList(); playChannel(0);
-        
         const cached = await loadChannelsFromDB();
         if(cached.length > 5) {
             const ext = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
@@ -317,11 +325,10 @@
             allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
             updateCategoryChips(); renderList();
         } 
-        
         fetchTranspondersList();
     }
 
-    // --- MOTEUR VIRTUEL POUR 100 000 CHAINES (CORRECTION BUG LIMITE) ---
+    // --- MOTEUR VIRTUEL (TITAN SCROLL) - FIXE LE LAG ---
     viewport.addEventListener('scroll', requestRender);
     window.addEventListener('resize', requestRender);
     document.getElementById('searchInput').addEventListener('input', renderList);
@@ -341,7 +348,7 @@
 
         document.getElementById('count-display').innerText = displayedChannels.length + " trouvées";
 
-        // 2. Calcul Géométrique
+        // 2. Calcul d'affichage (Virtualization)
         const scrollTop = viewport.scrollTop;
         const viewportHeight = viewport.clientHeight;
         const startIndex = Math.floor(scrollTop / ROW_HEIGHT);
@@ -349,7 +356,7 @@
 
         content.style.height = `${displayedChannels.length * ROW_HEIGHT}px`;
 
-        // 3. Rendu DOM
+        // 3. Dessin HTML
         let html = '';
         for(let i = startIndex; i < endIndex; i++) {
             const ch = displayedChannels[i];
@@ -360,12 +367,12 @@
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             const rowClass = isPlaying ? 'channel-row active' : 'channel-row';
             const favClass = isFav ? 'active' : '';
-
-            // Utilisation du dataset pour passer l'index global
+            
+            // On retrouve l'index réel dans la grande liste
             let globalIndex = allChannels.indexOf(ch);
 
             html += `
-                <div class="${rowClass}" style="transform: translateY(${i * ROW_HEIGHT}px)" onclick="playChannel(${globalIndex})">
+                <div class="${rowClass}" style="transform: translateY(${i * ROW_HEIGHT}px)" onclick="tryPlayChannel(${globalIndex})">
                     <i class="fas fa-star fav-icon ${favClass}" onclick="toggleFavorite('${ch.url}', event)"></i>
                     <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
                     <div>
@@ -378,7 +385,7 @@
         content.innerHTML = html;
     }
 
-    // --- LECTEUR AVEC CORRECTION ERREUR FLUX (PROXY FALLBACK) ---
+    // --- LECTEUR INTELLIGENT (PROXY FALLBACK) - REPARE ARAS TV ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -392,16 +399,16 @@
             if(hls) hls.destroy(); 
             hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
             
-            // ESSAI 1 : CHARGEMENT DIRECT
+            // TENTATIVE 1 : DIRECTE (Standard)
             hls.loadSource(ch.url); 
             hls.attachMedia(video);
             
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
             
-            // CORRECTION ERREUR FLUX : SI ECHEC, ON PASSE PAR LE PROXY
+            // TENTATIVE 2 : SI ERREUR, ON PASSE PAR LE PROXY (Fix ARAS TV)
             hls.on(Hls.Events.ERROR, (e,d) => { 
                 if(d.fatal) { 
-                    console.log("Erreur flux direct, tentative Proxy...");
+                    console.log("Erreur flux direct, activation Proxy...");
                     statusText.innerText = "Déblocage Proxy...";
                     hls.loadSource(CORS_PROXY + encodeURIComponent(ch.url));
                     hls.startLoad();
@@ -424,7 +431,7 @@
         for(let i=0; i<files.length; i++) {
             const file = files[i];
             document.getElementById('scan-text').innerText = `Scan: ${file.name}`;
-            await new Promise(r => setTimeout(r, 0)); // Anti-freeze
+            await new Promise(r => setTimeout(r, 0)); 
 
             if(file.size < 50000000 && (file.name.includes('.') || file.type.includes('text'))) {
                 try {
@@ -444,33 +451,12 @@
             }
         }
         document.getElementById('scan-info').style.display = 'none';
-        alert("Terminé !");
+        alert("Scan Terminé !");
     }
 
     function readFile(file) { return new Promise(r => { let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsText(file); }); }
 
-    // --- RESTE DU CODE (SANS CHANGEMENT FONCTIONNEL) ---
-    let autoZapTimeout;
-    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
-    function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; playChannel(nextIdx); }
-    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; playChannel(prevIdx); }
-    function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
-    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
-    function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
-    function hideCurrentChannel() { if(confirm("Supprimer cette chaîne ?")) { const ch = allChannels[currentChannelIndex]; hiddenChannels.push(ch.url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); loadedUrls.delete(ch.url); renderList(); nextChannel(); } }
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
-    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-    function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
-    
-    function flushBatch(batch) {
-        if(batch.length === 0) return;
-        allChannels = allChannels.concat(batch);
-        renderList();
-        updateCategoryChips();
-        saveChannelsToDB(allChannels);
-    }
-
+    // --- UI HELPERS ---
     function updateCategoryChips() {
         allCategories = new Set(allChannels.map(c => c.category || "Autres"));
         const container = document.getElementById('chips-area');
@@ -483,13 +469,45 @@
         container.innerHTML = html;
     }
 
+    function flushBatch(batch) {
+        if(batch.length === 0) return;
+        allChannels = allChannels.concat(batch);
+        renderList();
+        updateCategoryChips();
+        saveChannelsToDB(allChannels);
+    }
+
+    // --- FONCTIONS EXISTANTES (SANS CHANGEMENT) ---
     function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
     function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
     function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
+    function tryPlayChannel(idx) {
+        const index = parseInt(idx);
+        const ch = allChannels[index];
+        const name = ch.name.toLowerCase();
+        if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = index; document.getElementById('pin-modal').style.display = 'flex'; }
+        else { playChannel(index); }
+    }
     function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else alert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
+    let autoZapTimeout;
+    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText = "Zap Auto..."; setTimeout(nextChannel, 1000); } else { statusText.innerText = "Erreur Flux"; } }
+    function toggleMenu() { document.body.classList.toggle('menu-open'); }
+    function nextChannel() { let nextIdx = currentChannelIndex + 1; if(nextIdx >= allChannels.length) nextIdx = 0; playChannel(nextIdx); }
+    function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; playChannel(prevIdx); }
+    function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
+    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
+    function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
+    function hideCurrentChannel() { if(confirm("Supprimer cette chaîne ?")) { const ch = allChannels[currentChannelIndex]; hiddenChannels.push(ch.url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); loadedUrls.delete(ch.url); renderList(); nextChannel(); } }
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
+    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+    function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
+    function addSource() { const url = document.getElementById('custom-source').value.trim(); if(url) { const current = JSON.parse(localStorage.getItem('mybox_custom_sources') || '[]'); current.push(url); localStorage.setItem('mybox_custom_sources', JSON.stringify(current)); alert("Ajouté !"); location.reload(); } }
+    function resetSources() { localStorage.removeItem('mybox_custom_sources'); location.reload(); }
+    function restoreHidden() { localStorage.removeItem('mybox_hidden'); location.reload(); }
+    async function forceReload() { if(confirm("Recharger ?")) { await clearDB(); location.reload(); } }
     
     async function fetchTranspondersList() {
         try {
@@ -525,10 +543,10 @@
     }
     async function quickScan() { scanSelectedTransponders(); }
     
+    // FETCH WEB AVEC PROXY (Correctif pour lecture online)
     async function fetchPlaylistWithWatchdog(url) {
-        // Version simplifiée compatible avec le nouveau moteur
         try {
-            const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
+            const response = await fetch(CORS_PROXY + encodeURIComponent(url));
             if (!response.ok) return;
             const text = await response.text();
             let lines = text.split("\n");
@@ -548,10 +566,6 @@
             if(batch.length > 0) flushBatch(batch);
         } catch(e) {}
     }
-
-    function addInputField() {} // Non utilisé dans V62
-    function copyLink() {} // Non utilisé
-    async function forceReload() { if(confirm("Recharger ?")) { await clearDB(); location.reload(); } }
 </script>
 </body>
 </html>
