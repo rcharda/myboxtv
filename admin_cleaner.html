@@ -3,285 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN ADMIN - MASTER CONTROLLER</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <title>TITAN EXTRACTOR V1</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --accent: #00d2ff; --bg: #050505; --panel: #111; --border: #333; --dead: #ff4444; --live: #00ff00; }
-        * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--accent) #333; }
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-        body { margin: 0; background-color: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', monospace; height: 100vh; overflow: hidden; display: flex; }
+        body { background: #050505; color: #fff; font-family: sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
         
-        .col-controls { width: 320px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 15px; overflow-y: auto; z-index: 10; }
-        .col-list { width: 500px; background: #000; border-right: 1px solid var(--border); display: flex; flex-direction: column; position: relative; }
-        .col-player { flex: 1; background: radial-gradient(circle at center, #151515 0%, #000 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-
-        h3 { margin: 0 0 15px 0; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid var(--accent); padding-bottom: 5px; }
-        .btn { width: 100%; padding: 12px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; transition: 0.2s; }
-        .btn:hover { opacity: 0.8; transform: translateX(2px); }
-        .btn-blue { background: #007bff; } .btn-green { background: #28a745; } .btn-orange { background: #d35400; } .btn-purple { background: #6f42c1; } .btn-red { background: #c0392b; }
-
-        .tabs { display: flex; background: #111; border-bottom: 1px solid #333; height: 45px; }
-        .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 12px; font-weight: bold; color: #666; }
-        .tab.active { background: #000; color: var(--accent); border-bottom: 3px solid var(--accent); }
-        .tab-dead.active { color: var(--dead); border-bottom-color: var(--dead); }
-
-        .virtual-viewport { flex: 1; overflow-y: auto; position: relative; }
-        .virtual-content { position: relative; width: 100%; }
+        .panel { background: #111; border: 1px solid #333; padding: 20px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; }
+        .panel-full { flex: 2; }
         
-        .channel-item { position: absolute; left: 0; width: 100%; height: 40px; padding: 0 15px; border-bottom: 1px solid #1a1a1a; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between; color: #888; }
-        .channel-item:hover { background: #151515; color: #fff; }
-        .channel-item.dead { text-decoration: line-through; color: #555; }
+        h2 { margin-top: 0; color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; }
         
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; margin-right: 10px; }
-        .status-dot.ok { background: var(--live); box-shadow: 0 0 5px var(--live); }
-        .status-dot.hs { background: var(--dead); box-shadow: 0 0 5px var(--dead); }
+        input, select { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box; }
+        
+        .btn { width: 100%; padding: 12px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 5px; }
+        .btn-blue { background: #007bff; } .btn-green { background: #27ae60; } .btn-red { background: #c0392b; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #333; border-radius: 5px; overflow: hidden; }
-        video { width: 100%; height: 100%; }
-        .log-area { margin-top: 15px; width: 100%; height: 150px; background: #080808; border: 1px solid #222; padding: 10px; font-family: monospace; font-size: 10px; color: var(--accent); overflow-y: auto; }
+        .list-box { flex: 1; overflow-y: auto; border: 1px solid #333; background: #000; font-family: monospace; font-size: 11px; padding: 5px; }
+        .item { padding: 5px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+        .item.ok { color: #2ecc71; }
+        .item.dead { color: #e74c3c; text-decoration: line-through; }
+        .item.waiting { color: #888; }
+
+        .progress-container { height: 20px; background: #333; border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: #e50914; width: 0%; transition: width 0.1s; }
+        
+        .stats { display: flex; gap: 10px; font-size: 12px; margin-bottom: 10px; }
+        .stat { background: #222; padding: 5px 10px; border-radius: 4px; flex: 1; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="col-controls">
-    <h3><i class="fas fa-server"></i> TITAN ENGINE V106</h3>
-    
-    <label class="btn btn-orange">
-        <i class="fas fa-folder-open"></i> SCANNER DOSSIERS LOCAUX
-        <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
-    </label>
-    
-    <button class="btn btn-green" onclick="loadFromGoogle()"><i class="fas fa-cloud-download-alt"></i> CHARGER DEPUIS SERVEUR</button>
-    
-    <br><h3>DIAGNOSTIC</h3>
-    <button class="btn btn-purple" onclick="startCheck()" id="btnCheck"><i class="fas fa-stethoscope"></i> VÉRIFIER TOUTES LES CHAÎNES</button>
-    
-    <div id="progress-container" style="background:#222; height:5px; width:100%; margin-bottom:10px; display:none;">
-        <div id="progress-bar" style="background:var(--accent); height:100%; width:0%;"></div>
+    <div class="panel">
+        <h2>1. SOURCE</h2>
+        <p style="font-size:12px; color:#aaa;">Collez un lien M3U global ou choisissez un fichier.</p>
+        
+        <input type="text" id="urlInput" placeholder="https://exemple.com/playlist.m3u">
+        <button class="btn btn-blue" onclick="loadFromUrl()">CHARGER URL</button>
+        
+        <div style="text-align:center; margin: 10px 0;">OU</div>
+        
+        <input type="file" id="fileInput" onchange="loadFromFile()">
+        
+        <div id="log" style="margin-top:20px; font-size:11px; color:#aaa; height:150px; overflow:auto; border:1px solid #333; padding:5px;">
+            > En attente...
+        </div>
     </div>
-    
-    <div style="font-size:10px; color:#666; margin-top:auto;">
-        Connecté à : Google Apps Script<br>Status: <span id="sys-status" style="color:var(--live)">EN LIGNE</span>
-    </div>
-</div>
 
-<div class="col-list">
-    <div class="tabs">
-        <div class="tab active" onclick="switchFilter('ALL')" id="tabAll">TOUT</div>
-        <div class="tab" onclick="switchFilter('OK')" id="tabOk">ACTIFS</div>
-        <div class="tab tab-dead" onclick="switchFilter('HS')" id="tabHs">QUARANTAINE</div>
-    </div>
-    <div style="padding:10px; border-bottom:1px solid #333; display:flex; justify-content:space-between;">
-        <input type="text" id="search" placeholder="Filtrer..." onkeyup="render()" style="background:#222; border:none; color:white; padding:5px; width:60%;">
-        <span id="counter" style="font-size:10px; color:#888;">0 items</span>
-    </div>
-    <div class="virtual-viewport" id="viewport"><div class="virtual-content" id="content"></div></div>
-</div>
+    <div class="panel panel-full">
+        <h2>2. ANALYSE & FILTRAGE</h2>
+        
+        <div class="stats">
+            <div class="stat">Total: <span id="s-total">0</span></div>
+            <div class="stat" style="color:#2ecc71">Valides: <span id="s-ok">0</span></div>
+            <div class="stat" style="color:#e74c3c">Morts: <span id="s-dead">0</span></div>
+        </div>
 
-<div class="col-player">
-    <div class="video-box"><video id="video" controls autoplay></video></div>
-    <div class="log-area" id="log">
-        > SYSTÈME PRÊT.<br>
-        > En attente de données...
+        <div class="progress-container">
+            <div class="progress-bar" id="p-bar"></div>
+        </div>
+
+        <button class="btn btn-blue" onclick="startScan()" id="btn-scan" disabled>LANCER L'ANALYSE (TESTER LES LIENS)</button>
+        <button class="btn btn-green" onclick="sendToServer()" id="btn-save" disabled>ENREGISTRER LES VALIDES SUR LE SERVEUR</button>
+
+        <div class="list-box" id="result-list">
+            </div>
     </div>
-</div>
 
 <script>
     // --- CONFIG ---
+    // METS TON LIEN DE SCRIPT GOOGLE ICI 👇
     const API_URL = "https://script.google.com/macros/s/AKfycbzDIUoEc36v52egABKNnar_kXsHZ2Pb65RKrQlCRnrSZ0OO2y222Vf2IREBGM17VudM/exec";
     const PROXY = "https://corsproxy.io/?";
-    
-    let db = []; // Base locale
-    let filtered = [];
-    let currentFilter = 'ALL';
-    let hls = new Hls();
-    const video = document.getElementById('video');
 
-    // --- 1. CHARGEMENT GOOGLE ---
-    async function loadFromGoogle() {
-        log("Téléchargement de la base de données...");
+    let rawList = []; // Liste brute
+    let cleanList = []; // Liste validée
+
+    // --- 1. CHARGEMENT ---
+    
+    async function loadFromUrl() {
+        const url = document.getElementById('urlInput').value;
+        if(!url) return;
+        log("Téléchargement du fichier M3U...");
         try {
-            const res = await fetch(`${API_URL}?action=admin_get_all`);
-            db = await res.json();
-            // On ajoute un état local pour savoir si c'est modifié
-            db.forEach(i => i.modified = false);
-            log(`Reçu ${db.length} chaînes.`);
-            render();
-        } catch(e) { log("Erreur connexion Google: " + e); }
+            const res = await fetch(PROXY + encodeURIComponent(url));
+            const text = await res.text();
+            parseM3U(text);
+        } catch(e) { log("Erreur téléchargement: " + e); }
     }
 
-    // --- 2. SCANNER LOCAL (DOSSIERS) ---
-    async function handleTitanScan(input) {
-        const files = input.files;
-        if(!files.length) return;
-        log(`Analyse de ${files.length} fichiers/dossiers...`);
-        
-        let newItems = [];
-        const regex = /(https?:\/\/[^\s"';,<>]+)/gi;
+    function loadFromFile() {
+        const file = document.getElementById('fileInput').files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => parseM3U(e.target.result);
+        reader.readAsText(file);
+    }
 
-        for(let i=0; i<files.length; i++) {
-            const file = files[i];
-            if(file.size < 5000000 && (file.name.includes('.') || file.type.includes('text'))) {
-                try {
-                    let text = await readFile(file);
-                    let matches = text.match(regex);
-                    if(matches) {
-                        matches.forEach(url => {
-                            if(url.length > 10 && !url.includes('w3.org')) {
-                                // Format pour envoi Google: [Nom, Url, Statut]
-                                let name = url.split('/').pop().split('?')[0];
-                                newItems.push([name, url, "OK"]);
-                            }
-                        });
-                    }
-                } catch(e){}
+    function parseM3U(content) {
+        log("Analyse du fichier M3U...");
+        rawList = [];
+        const lines = content.split('\n');
+        let currentName = "Sans Nom";
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (line.startsWith("#EXTINF")) {
+                // Extraction du nom (tout ce qui est après la dernière virgule)
+                let parts = line.split(',');
+                currentName = parts[parts.length - 1] || "Sans Nom";
+            } else if (line.startsWith("http")) {
+                // C'est un lien
+                rawList.push({ name: currentName, url: line, status: 'waiting' });
             }
         }
+
+        log(`Extraction terminée. ${rawList.length} chaînes trouvées.`);
+        renderList();
         
-        if(newItems.length > 0) {
-            log(`Trouvé ${newItems.length} nouveaux liens. Envoi au Cloud...`);
-            // Envoi par paquet de 500 pour pas bloquer
-            await fetch(`${API_URL}?action=admin_add_bulk`, {
-                method: 'POST',
-                body: JSON.stringify(newItems)
-            });
-            log("Upload terminé. Rechargement...");
-            loadFromGoogle();
-        } else {
-            log("Aucun lien valide trouvé.");
+        if(rawList.length > 0) {
+            document.getElementById('btn-scan').disabled = false;
+            document.getElementById('s-total').innerText = rawList.length;
         }
     }
-    function readFile(file) { return new Promise(r => { let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsText(file); }); }
 
-    // --- 3. CHECKER INTELLIGENT ---
-    async function startCheck() {
-        if(db.length === 0) return alert("Chargez d'abord la liste");
-        document.getElementById('progress-container').style.display = 'block';
-        let bar = document.getElementById('progress-bar');
+    // --- 2. AFFICHAGE ---
+
+    function renderList() {
+        const container = document.getElementById('result-list');
+        // Pour ne pas faire ramer le navigateur, on affiche que les 500 premiers si la liste est énorme lors du scan
+        // Mais ici on fait simple
+        let html = "";
+        // On limite l'affichage HTML à 2000 items pour la performance, mais le traitement se fera sur tout
+        const displayLimit = Math.min(rawList.length, 2000); 
         
-        log("Démarrage du diagnostic...");
-        
-        let total = db.length;
-        let batchSize = 10; // Requêtes simultanées
-        
-        for(let i=0; i<total; i+=batchSize) {
-            let chunk = db.slice(i, i+batchSize);
-            await Promise.all(chunk.map(checkItem));
-            
-            let pct = Math.round(((i+batchSize)/total)*100);
-            bar.style.width = pct + "%";
-            
-            if(i % 50 === 0) render(); // Rafraichir visuel
+        for(let i=0; i<displayLimit; i++) {
+            const item = rawList[i];
+            let colorClass = item.status; // waiting, ok, dead
+            let icon = item.status === 'ok' ? '✔' : (item.status === 'dead' ? '✖' : '⏳');
+            html += `<div class="item ${colorClass}" id="item-${i}">
+                <span>${i+1}. ${item.name}</span>
+                <span>${icon}</span>
+            </div>`;
         }
-        
-        log("Diagnostic terminé.");
-        document.getElementById('progress-container').style.display = 'none';
-        render();
-        alert("Terminé ! Les chaînes HS sont marquées.");
+        if(rawList.length > 2000) html += `<div style="padding:10px; text-align:center">... et ${rawList.length - 2000} autres (masqués pour performance) ...</div>`;
+        container.innerHTML = html;
     }
 
-    async function checkItem(item) {
-        // Si déjà HS, on re-vérifie quand même
+    // --- 3. ANALYSE (SCANNER) ---
+
+    async function startScan() {
+        document.getElementById('btn-scan').disabled = true;
+        log("Démarrage du test des liens...");
+        
+        cleanList = [];
+        let okCount = 0;
+        let deadCount = 0;
+        const BATCH_SIZE = 10; // Tester 10 liens en même temps (Vitesse vs Stabilité)
+
+        for (let i = 0; i < rawList.length; i += BATCH_SIZE) {
+            const chunk = rawList.slice(i, i + BATCH_SIZE);
+            
+            await Promise.all(chunk.map(async (item, idx) => {
+                const globalIndex = i + idx;
+                const isWorking = await checkUrl(item.url);
+                
+                if (isWorking) {
+                    item.status = 'ok';
+                    okCount++;
+                    cleanList.push([item.name, item.url]); // Format pour Google Sheet [Nom, Url]
+                } else {
+                    item.status = 'dead';
+                    deadCount++;
+                }
+                
+                // Mise à jour visuelle légère (seulement si l'élément est dans le DOM)
+                const el = document.getElementById(`item-${globalIndex}`);
+                if(el) {
+                    el.className = `item ${item.status}`;
+                    el.innerHTML = `<span>${globalIndex+1}. ${item.name}</span><span>${item.status === 'ok' ? '✔' : '✖'}</span>`;
+                }
+            }));
+
+            // Barre de progression
+            let pct = Math.round(((i + chunk.length) / rawList.length) * 100);
+            document.getElementById('p-bar').style.width = pct + "%";
+            document.getElementById('s-ok').innerText = okCount;
+            document.getElementById('s-dead').innerText = deadCount;
+            
+            // Petite pause pour ne pas figer le navigateur
+            if(i % 50 === 0) await new Promise(r => setTimeout(r, 10));
+        }
+
+        log(`Analyse terminée. ${okCount} chaînes valides prêtes à l'envoi.`);
+        document.getElementById('btn-save').disabled = false;
+        document.getElementById('btn-save').innerText = `ENVOYER ${okCount} CHAÎNES AU SERVEUR`;
+    }
+
+    async function checkUrl(url) {
         try {
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 4000);
-            // On utilise le proxy pour simuler une vraie lecture
-            let res = await fetch(PROXY + encodeURIComponent(item.url), { method: 'HEAD', signal: controller.signal });
+            const id = setTimeout(() => controller.abort(), 3000); // 3 secondes timeout
+            // On utilise le proxy pour le test HEAD (rapide)
+            const res = await fetch(PROXY + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
             clearTimeout(id);
-            
-            let newStatus = res.ok ? "OK" : "HS";
-            
-            // Si le statut change, on notifie Google
-            if(item.status !== newStatus) {
-                item.status = newStatus;
-                updateGoogleStatus(item.row, newStatus);
-                log(`> ${item.name} -> ${newStatus}`);
-            }
+            return res.ok;
         } catch(e) {
-            if(item.status !== "HS") {
-                item.status = "HS";
-                updateGoogleStatus(item.row, "HS");
+            return false;
+        }
+    }
+
+    // --- 4. SAUVEGARDE SUR GOOGLE SHEET ---
+
+    async function sendToServer() {
+        if(cleanList.length === 0) return alert("Aucune chaîne valide à envoyer !");
+        
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true;
+        btn.innerText = "ENVOI EN COURS...";
+        log("Envoi des données vers Google Sheets...");
+
+        // On envoie par paquets de 500 pour ne pas dépasser la limite de Google
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < cleanList.length; i += CHUNK_SIZE) {
+            const chunk = cleanList.slice(i, i + CHUNK_SIZE);
+            log(`Envoi du paquet ${i} à ${i + chunk.length}...`);
+            
+            try {
+                await fetch(`${API_URL}?action=admin_import_bulk`, {
+                    method: 'POST',
+                    body: JSON.stringify(chunk)
+                });
+            } catch(e) {
+                log("Erreur d'envoi: " + e);
+                alert("Erreur lors de l'envoi d'un paquet. Vérifiez la console.");
+                btn.disabled = false;
+                return;
             }
         }
+
+        log("✅ TOUT EST SAUVEGARDÉ !");
+        alert("Succès ! Les chaînes valides sont maintenant dans votre application.");
+        btn.innerText = "TERMINE";
     }
 
-    // Mise à jour unitaire sur Google (Non bloquante)
-    function updateGoogleStatus(row, status) {
-        fetch(`${API_URL}?action=admin_update_status&row=${row}&status=${status}`, {method:'POST'});
+    function log(msg) {
+        const div = document.getElementById('log');
+        div.innerHTML += `<div>${msg}</div>`;
+        div.scrollTop = div.scrollHeight;
     }
 
-    // --- 4. INTERFACE ---
-    const ROW_H = 40;
-    const viewport = document.getElementById('viewport');
-    const content = document.getElementById('content');
-    
-    viewport.addEventListener('scroll', () => requestAnimationFrame(renderItems));
-    
-    function render() {
-        const term = document.getElementById('search').value.toLowerCase();
-        filtered = db.filter(item => {
-            if(currentFilter !== 'ALL' && item.status !== currentFilter) return false;
-            if(term && !item.name.toLowerCase().includes(term)) return false;
-            return true;
-        });
-        document.getElementById('counter').innerText = filtered.length;
-        content.style.height = (filtered.length * ROW_H) + "px";
-        renderItems();
-    }
-
-    function renderItems() {
-        const scrollTop = viewport.scrollTop;
-        const start = Math.floor(scrollTop / ROW_H);
-        const end = Math.min(filtered.length, start + 20); // Affiche 20 items
-        
-        let html = '';
-        for(let i=start; i<end; i++) {
-            let item = filtered[i];
-            let statusClass = item.status === 'OK' ? 'ok' : (item.status==='HS'?'hs':'');
-            let deadClass = item.status === 'HS' ? 'dead' : '';
-            
-            html += `
-                <div class="channel-item ${deadClass}" style="transform: translateY(${i*ROW_H}px)" onclick="play('${item.url}')">
-                    <div style="display:flex; align-items:center;">
-                        <div class="status-dot ${statusClass}"></div>
-                        ${item.name}
-                    </div>
-                    <span>${item.status || '?'}</span>
-                </div>
-            `;
-        }
-        content.innerHTML = html;
-    }
-
-    function switchFilter(f) {
-        currentFilter = f;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if(f==='ALL') document.getElementById('tabAll').classList.add('active');
-        if(f==='OK') document.getElementById('tabOk').classList.add('active');
-        if(f==='HS') document.getElementById('tabHs').classList.add('active');
-        render();
-    }
-
-    function play(url) {
-        log("Lecture: " + url);
-        if(Hls.isSupported()) {
-            if(hls) hls.destroy();
-            hls = new Hls();
-            hls.loadSource(PROXY + encodeURIComponent(url));
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-        } else {
-            video.src = PROXY + encodeURIComponent(url);
-            video.play();
-        }
-    }
-
-    function log(m) {
-        const box = document.getElementById('log');
-        box.innerHTML += `> ${m}<br>`;
-        box.scrollTop = box.scrollHeight;
-    }
 </script>
 </body>
 </html>
