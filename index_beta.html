@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>My Box TV - V109</title>
+    <title>My Box TV - V110 (BOOST AUDIO)</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -12,32 +12,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- DESIGN ORIGINAL V62 --- */
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
-        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; } /* Cursor none par défaut */
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; }
         body.active { cursor: default; }
 
         #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        /* SIGNAL & STATUS */
         #top-right-container { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 10px; z-index: 60; pointer-events: none; }
         #status-pill { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; display: flex; align-items: center; gap: 8px; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
+
         .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 18px; padding: 3px; background: rgba(0,0,0,0.6); border-radius: 4px; border: 1px solid #444; }
         .bar { width: 3px; background: #333; border-radius: 1px; transition: 0.3s; }
         .bar:nth-child(1) { height: 4px; } .bar:nth-child(2) { height: 8px; } .bar:nth-child(3) { height: 12px; } .bar:nth-child(4) { height: 16px; }
         .signal-good .bar { background: #0f0; } .signal-mid .bar:nth-child(1), .signal-mid .bar:nth-child(2) { background: #ffcc00; } .signal-bad .bar:nth-child(1) { background: #ff0000; }
 
-        /* MENU */
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
         .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
         #searchInput { width: 95%; margin: 5px auto; padding: 10px; border-radius: 5px; background: #333; border: none; color: white; display: block; font-size: 14px; }
+        
         .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
         .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .btn-mini.active { background: #333; color: white; border-color: #666; }
@@ -51,7 +50,6 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
-        /* BARRE DU BAS (AUTO-HIDE) */
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; opacity: 0; transition: opacity 0.5s; }
         body.active #bottom-bar { opacity: 1; }
         
@@ -62,7 +60,6 @@
         .desktop-only { display: flex; }
         @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
 
-        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .settings-panel { background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh; border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden; }
@@ -78,6 +75,8 @@
         #scan-text { font-size: 10px; color: #0f0; }
         #scan-progress { width: 100%; height: 2px; background: #333; position: relative; overflow: hidden; }
         #scan-bar { position: absolute; left: 0; top: 0; height: 100%; width: 50%; background: #0f0; animation: scanAnim 1s infinite linear; }
+        .tp-list-item { padding: 10px; border-bottom: 1px solid #333; font-size: 12px; color: #ccc; display: flex; justify-content: space-between; }
+        
         @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
     </style>
 </head>
@@ -87,7 +86,7 @@
     <div class="settings-panel">
         <div class="settings-sidebar">
             <div style="font-weight:bold; margin-bottom:20px; color:var(--primary)">PARAMÈTRES</div>
-            <div class="settings-tab active" onclick="showTab('tab-general')">Menu</div>
+            <div class="settings-tab active" onclick="showTab('tab-general')">Sources</div>
             <div class="settings-tab" onclick="showTab('tab-display')">Affichage</div>
             <div class="settings-tab" onclick="showTab('tab-transponders')">Transpondeurs</div>
             <div class="settings-tab" onclick="showTab('tab-account')">Compte</div>
@@ -95,20 +94,18 @@
         </div>
         <div class="settings-content">
             <div id="tab-general" class="tab-content">
-                <h3 style="color:#e50914;">SOURCE DES CHAÎNES</h3>
-                
+                <h3 style="color:#e50914;">MODE DE RÉCEPTION</h3>
                 <div class="toggle-row">
                     <div>
-                        <div style="font-weight:bold;">Mode Transpondeurs (Par Défaut)</div>
-                        <div style="font-size:10px; color:#aaa;">Charge tous les liens bruts (Col B). Contient des doublons et liens morts. Permet de supprimer.</div>
+                        <div style="font-weight:bold;">Mode Complet (Transpondeurs)</div>
+                        <div style="font-size:10px; color:#aaa;">Charge tous les liens (Col B). Permet de supprimer.</div>
                     </div>
                     <input type="radio" name="sourceMode" value="full" onchange="changeSourceMode('full')">
                 </div>
-
                 <div class="toggle-row">
                     <div>
                         <div style="font-weight:bold; color:#2ecc71;">Mode Premium (Recommandé)</div>
-                        <div style="font-size:10px; color:#aaa;">Charge uniquement les chaînes validées par l'Admin (Col D/E). 100% Fonctionnel.</div>
+                        <div style="font-size:10px; color:#aaa;">Chaînes certifiées uniquement (Col D/E).</div>
                     </div>
                     <input type="radio" name="sourceMode" value="premium" onchange="changeSourceMode('premium')">
                 </div>
@@ -123,9 +120,12 @@
             </div>
 
             <div id="tab-transponders" class="tab-content" style="display:none;">
+                <h3>Liste des Transpondeurs (Col A)</h3>
+                <div id="tp-list-container" style="max-height: 200px; overflow-y: auto; background: #111; margin-bottom: 20px;">
+                    </div>
                 <h3>Scan Manuel</h3>
                 <label style="display:block; padding:15px; background:#333; margin-bottom:10px; border-radius:5px; cursor:pointer;">
-                    <i class="fas fa-folder-open"></i> SCANNER DOSSIER LOCAL
+                    <i class="fas fa-folder-open"></i> SCANNER FICHIER LOCAL
                     <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
                 </label>
                 <div id="scan-info">
@@ -137,8 +137,7 @@
             <div id="tab-account" class="tab-content" style="display:none;">
                 <h3>Mon Abonnement</h3>
                 <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
-                    ID: <span id="sub-id">...</span><br>
-                    Infos: <span id="sub-details">...</span>
+                    ID: <span id="sub-id">...</span><br>Infos: <span id="sub-details">...</span>
                 </div>
                 <a href="https://wa.me/22963828767?text=Bonjour,%20je%20veux%20prolonger%20mon%20abonnement%20MyBoxTV" target="_blank" style="display:block; width:100%; background:#25D366; color:white; text-align:center; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:10px;">
                     <i class="fab fa-whatsapp"></i> CONTACTER SUPPORT (+229 63828767)
@@ -154,6 +153,7 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="app-logo">
         <input type="text" id="licenseKey" placeholder="ID ABONNEMENT" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:5px; text-align:center; font-size:18px; margin-bottom:15px;">
         <button onclick="login()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold;">ENTRER</button>
+        <div id="login-msg" style="color:#ff4444; margin-top:10px;"></div>
     </div>
 </div>
 
@@ -171,7 +171,7 @@
             <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                 <div style="text-align:left; width:100%;">
                     <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                    <i class="fas fa-search-plus" onclick="document.getElementById('searchInput').focus()" style="cursor:pointer; font-size:12px; color:#aaa; margin-left:5px;"></i>
+                    <i class="fas fa-sync-alt" onclick="initApp()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recharger"></i>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <i class="fas fa-plus-circle" title="Chaînes Locales" onclick="document.getElementById('localFileInput').click()" style="cursor:pointer; color:#aaa; font-size:18px;"></i>
@@ -185,8 +185,12 @@
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
         
         <div class="filter-bar">
-            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter"><i class="fas fa-star" style="color:gold;"></i> Favoris</button>
-            <button onclick="window.location.reload()" class="btn-mini btn-local"><i class="fas fa-sync"></i> Refresh</button>
+            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
+                <i class="fas fa-map-marker-alt"></i> Locales
+            </button>
+            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
+                <i class="fas fa-star" style="color:gold;"></i> Favoris
+            </button>
         </div>
         <div id="channel-list"></div>
     </div>
@@ -204,7 +208,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwdcIs7VDEbulPSPnV6RwvHJjYUN7FNizLd3GWdqtvAZOeQaVsX6-PyCDtHGMbX7eJVRg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyEBWUOwpCcAyF2dRo2etS76FP4ecEXDQ802JbrNAfkFzlnav7T2VPkpBz9hl7qFWSi2g/exec";
     const PROXY = "https://corsproxy.io/?";
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "", category: "Start" };
     
@@ -217,7 +221,7 @@
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
     
     // GESTION DU MODE
-    let appMode = localStorage.getItem('mybox_mode') || 'full'; // 'full' (col B) ou 'premium' (col D/E)
+    let appMode = localStorage.getItem('mybox_mode') || 'full'; 
     
     // UI Elements
     const video = document.getElementById('video');
@@ -226,19 +230,35 @@
     const listDiv = document.getElementById('channel-list');
     let renderLimit = 50; const RENDER_BATCH = 50;
     
+    // AUDIO BOOSTER
+    let audioCtx, gainNode;
+
     // --- GESTION BARRE BASSE (AUTO-HIDE) ---
     let activityTimeout;
     function handleActivity() {
         document.body.classList.add('active');
         clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(() => {
-            document.body.classList.remove('active');
-        }, 3000); // Disparait après 3s
+        activityTimeout = setTimeout(() => { document.body.classList.remove('active'); }, 3000);
+        
+        // Init Audio Context au premier clic
+        if(!audioCtx) setupAudioBooster(); 
     }
-    document.addEventListener('mousemove', handleActivity);
-    document.addEventListener('keydown', handleActivity);
-    document.addEventListener('click', handleActivity);
-    document.addEventListener('touchstart', handleActivity);
+    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(e => document.addEventListener(e, handleActivity));
+
+    // --- AUDIO BOOSTER SETUP ---
+    function setupAudioBooster() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            const source = audioCtx.createMediaElementSource(video);
+            gainNode = audioCtx.createGain();
+            // BOOST VOLUME x 2 (200%)
+            gainNode.gain.value = 2.0; 
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            console.log("Audio Boost Activé");
+        } catch(e) { console.log("Audio Context Error (Déjà connecté?)"); }
+    }
 
     // --- INIT ---
     if(localStorage.getItem('mybox_auth') === 'OK') { 
@@ -249,14 +269,12 @@
         startNetworkMonitor();
     }
 
-    // GESTION DES MODES DANS PARAMETRES
     function changeSourceMode(mode) {
         localStorage.setItem('mybox_mode', mode);
         appMode = mode;
         alert("Mode changé. Rechargement...");
         initApp();
     }
-    // Set radio button correct on load
     document.querySelectorAll(`input[name="sourceMode"][value="${appMode}"]`).forEach(r => r.checked = true);
 
     async function initApp() {
@@ -264,25 +282,28 @@
         renderList();
         playChannel(0);
         
-        // GESTION BOUTON SUPPRIMER
-        const btnDelete = document.getElementById('btn-delete');
-        if(appMode === 'full') {
-            btnDelete.style.display = 'flex'; // Visible en mode Full
-        } else {
-            btnDelete.style.display = 'none'; // Caché en mode Premium
-        }
+        // Bouton supprimer visible seulement en Full
+        document.getElementById('btn-delete').style.display = (appMode === 'full') ? 'flex' : 'none';
 
         try {
             if(appMode === 'premium') {
-                // MODE PREMIUM : CHARGE COLONNES D/E (DÉJÀ FILTRÉ PAR ADMIN)
                 const res = await fetch(`${API_URL}?action=get_playlists`);
                 const sources = await res.json();
                 sources.forEach(s => allChannels.push({ name: s.name, url: s.url, category: "TV" }));
             } else {
-                // MODE FULL (DÉFAUT) : CHARGE LES M3U DE LA COLONNE B ET SCANNE
                 const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
                 const links = await res.json();
-                for(let link of links) await fetchPlaylistWithWatchdog(link);
+                
+                // Afficher liste noms Transpondeurs dans Paramètres
+                const tpContainer = document.getElementById('tp-list-container');
+                tpContainer.innerHTML = "";
+                links.forEach(l => {
+                    // Si l'objet contient {name, url} (nouveau script) ou juste string (ancien)
+                    let name = l.name || "Source";
+                    let url = l.url || l;
+                    tpContainer.innerHTML += `<div class="tp-list-item"><span>${name}</span><i class="fas fa-check" style="color:#2ecc71"></i></div>`;
+                    fetchPlaylistWithWatchdog(url);
+                });
             }
             renderList();
         } catch(e) { console.log(e); }
@@ -297,7 +318,6 @@
         renderList(); statusText.innerText = ch.name; led.className = "orange";
         
         let playUrl = ch.url;
-        // Auto-Proxy
         if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
             playUrl = PROXY + encodeURIComponent(ch.url);
         }
@@ -317,7 +337,7 @@
     function renderList() {
         const term = document.getElementById('searchInput').value.toLowerCase();
         displayedChannels = allChannels.filter(ch => {
-            if(appMode === 'full' && hiddenChannels.includes(ch.url)) return false; // Filtre suppression locale
+            if(appMode === 'full' && hiddenChannels.includes(ch.url)) return false; 
             return ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
         document.getElementById('count-display').innerText = displayedChannels.length + " Chaînes";
@@ -326,16 +346,31 @@
     listDiv.addEventListener('scroll', () => { if(listDiv.scrollTop + listDiv.clientHeight >= listDiv.scrollHeight - 100) { renderLimit += RENDER_BATCH; appendItems(); } });
     function appendItems() { const frag = document.createDocumentFragment(); const items = displayedChannels.slice(listDiv.childElementCount, renderLimit); items.forEach(ch => { const globalIndex = allChannels.indexOf(ch); const isFav = favorites.includes(ch.url); const isPlaying = (globalIndex === currentChannelIndex); const div = document.createElement('div'); div.className = 'channel-row ' + (isPlaying ? 'active' : ''); div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i><img src="https://via.placeholder.com/40?text=TV" class="ch-logo"><div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category || 'TV'}</div></div>`; div.onclick = () => playChannel(globalIndex); frag.appendChild(div); }); listDiv.appendChild(frag); }
 
-    // --- PARSER POUR MODE FULL ---
+    // --- PARSER ---
     async function fetchPlaylistWithWatchdog(url) { try { const res = await fetch(PROXY + encodeURIComponent(url)); if(!res.ok) return; const text = await res.text(); let batch=[]; let name="Inconnu"; text.split('\n').forEach(l=>{ l=l.trim(); if(l.startsWith('#EXTINF')) name=l.split(',')[1]; else if(l.startsWith('http') && !l.endsWith('.m3u')) { batch.push({name:name, url:l, category:"Scan"}); name="Inconnu"; } }); if(batch.length>0) { allChannels=allChannels.concat(batch); renderList(); } } catch(e){} }
     async function handleTitanScan(input) { const file = input.files[0]; if(!file) return; document.getElementById('scan-info').style.display='flex'; const reader = new FileReader(); reader.onload = (e) => { const text = e.target.result; let batch=[]; let name="Local"; text.split('\n').forEach(l=>{ l=l.trim(); if(l.startsWith('#EXTINF')) name=l.split(',')[1]; else if(l.startsWith('http')) { batch.push({name:name, url:l, category:"Local"}); } }); if(batch.length>0) { allChannels=allChannels.concat(batch); renderList(); alert(batch.length+" ajoutées!"); } document.getElementById('scan-info').style.display='none'; }; reader.readAsText(file); }
+
+    // --- SECURITE (5 SECONDES) ---
+    function startRealTimeCheck() { 
+        setInterval(async () => { 
+            const key = localStorage.getItem('mybox_key'); 
+            if(!key) return; 
+            try { 
+                const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); 
+                const text = await res.text(); 
+                if(!text.includes("SUCCESS")) { 
+                    localStorage.removeItem('mybox_auth'); 
+                    location.reload(); 
+                } 
+            } catch(e) {} 
+        }, 5000); 
+    }
 
     // --- UTILS ---
     function startNetworkMonitor() { setInterval(async () => { const s=Date.now(); try { await fetch("https://www.google.com/favicon.ico", {mode:'no-cors'}); const ms=Date.now()-s; updateSignal(ms); } catch(e) { updateSignal(9999); } }, 5000); }
     function updateSignal(ms) { const b = document.getElementById('signal-bars'); b.className='signal-bars'; if(ms<300) b.classList.add('signal-good'); else if(ms<1000) b.classList.add('signal-mid'); else b.classList.add('signal-bad'); }
-    function startRealTimeCheck() { setInterval(async () => { const key = localStorage.getItem('mybox_key'); if(!key) return; try { const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); const text = await res.text(); if(!text.includes("SUCCESS")) { localStorage.removeItem('mybox_auth'); location.reload(); } } catch(e) {} }, 10000); }
     async function login() { const key = document.getElementById('licenseKey').value.trim(); try { const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); const text = await res.text(); if(text.includes("SUCCESS")) { localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text); updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp(); startRealTimeCheck(); startNetworkMonitor(); } else alert("Erreur ID"); } catch(e) { alert("Erreur Net"); } }
-    function updateAccountDisplay(key, raw) { document.getElementById('sub-id').innerText = key; if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Fin: " + raw.split(':')[1]; }
+    function updateAccountDisplay(key, raw) { document.getElementById('sub-id').innerText = key; if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Fin: " + raw.split(':')[1] + "j"; }
     async function logout() { if(confirm("Sortir ?")) { localStorage.removeItem('mybox_auth'); location.reload(); } }
     
     document.getElementById('searchInput').addEventListener('input', renderList);
@@ -350,12 +385,14 @@
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     function toggleAutoZap() { isAutoZap = !isAutoZap; document.getElementById('btn-autozap').classList.toggle('active-mode'); }
-    function hideCurrentChannel() { if(confirm("Supprimer (Localement) ?")) { hiddenChannels.push(allChannels[currentChannelIndex].url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); renderList(); nextChannel(); } }
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+    function hideCurrentChannel() { if(confirm("Masquer (Localement) ?")) { hiddenChannels.push(allChannels[currentChannelIndex].url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); renderList(); nextChannel(); } }
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
-    function resetFilters() { selectedCategories = []; renderList(); }
-    function applyFilters() { renderList(); closeSettings(); }
+    function updateCategoryChips() { const container = document.getElementById('chips-area'); if(!container) return; container.innerHTML = ''; Array.from(allCategories).sort().forEach(cat => { const active = selectedCategories.includes(cat) ? 'selected' : ''; container.innerHTML += `<div class="chip ${active}" onclick="toggleCat('${cat}')">${cat}</div>`; }); }
+    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
+    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
+    function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     async function forceReload() { if(confirm("Reset ?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
