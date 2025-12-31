@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="referrer" content="no-referrer">
-    <title>My Box TV - V111</title>
+    <title>My Box TV - V112 (FIXED)</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -12,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- VISUEL ORIGINAL V62 --- */
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; }
@@ -102,20 +100,18 @@
 <div id="welcome-modal" class="modal">
     <div class="modal-box" style="max-width:500px;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="app-logo">
-        <h2 style="color:#e50914; margin-top:0;">MODE D'UTILISATION</h2>
-        <p style="color:#ccc; font-size:13px; margin-bottom:20px;">Choisissez comment charger vos chaînes.</p>
+        <h2 style="color:#e50914; margin-top:0;">BIENVENUE</h2>
+        <p style="color:#ccc; font-size:13px; margin-bottom:20px;">Choisissez votre source de chaînes :</p>
         
         <div class="welcome-card" onclick="selectMode('premium')">
-            <div class="wc-title" style="color:#2ecc71;">⭐ CHAÎNES PREMIUM (RECOMMANDÉ)</div>
-            <div class="wc-desc">Chargement ultra-rapide. Uniquement les chaînes vérifiées et stables. Zéro coupure, zéro lien mort. Idéal pour une utilisation quotidienne.</div>
+            <div class="wc-title" style="color:#2ecc71;">⭐ PREMIUM (Recommandé)</div>
+            <div class="wc-desc">Chaînes vérifiées, stables et rapides. Zéro coupure.</div>
         </div>
 
         <div class="welcome-card" onclick="selectMode('full')">
-            <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (BRUT)</div>
-            <div class="wc-desc">Connexion directe aux serveurs sources. Accès à tout le contenu brut. Peut contenir des chaînes inactives ou instables.</div>
+            <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (Brut)</div>
+            <div class="wc-desc">Accès direct aux serveurs IPTV sources. Peut être instable.</div>
         </div>
-
-        <p style="font-size:10px; color:#666; margin-top:15px;">Vous pourrez changer ce choix plus tard dans les Paramètres.</p>
     </div>
 </div>
 
@@ -133,17 +129,11 @@
             <div id="tab-general" class="tab-content">
                 <h3 style="color:#e50914;">MODE DE RÉCEPTION</h3>
                 <div class="toggle-row" onclick="changeSourceMode('premium')">
-                    <div>
-                        <div style="font-weight:bold; color:#2ecc71;">⭐ Mode Premium</div>
-                        <div style="font-size:10px; color:#aaa;">Chaînes stables et vérifiées (Col D/E).</div>
-                    </div>
+                    <div><div style="font-weight:bold; color:#2ecc71;">⭐ Mode Premium</div><div style="font-size:10px; color:#aaa;">Chaînes certifiées.</div></div>
                     <div id="check-premium" style="color:#2ecc71; font-weight:bold;">✔</div>
                 </div>
                 <div class="toggle-row" onclick="changeSourceMode('full')">
-                    <div>
-                        <div style="font-weight:bold; color:#3498db;">📡 Mode Transpondeurs</div>
-                        <div style="font-size:10px; color:#aaa;">Sources brutes (Col B).</div>
-                    </div>
+                    <div><div style="font-weight:bold; color:#3498db;">📡 Mode Transpondeurs</div><div style="font-size:10px; color:#aaa;">Sources brutes.</div></div>
                     <div id="check-full" style="display:none; color:#3498db; font-weight:bold;">✔</div>
                 </div>
             </div>
@@ -161,7 +151,7 @@
                 <div id="tp-list-container" style="max-height: 200px; overflow-y: auto; background: #111; margin-bottom: 20px;"></div>
                 <h3>Scan Manuel</h3>
                 <label style="display:block; padding:15px; background:#333; margin-bottom:10px; border-radius:5px; cursor:pointer;">
-                    <i class="fas fa-folder-open"></i> SCANNER FICHIER LOCAL
+                    <i class="fas fa-folder-open"></i> AJOUTER FICHIER LOCAL (Fusion)
                     <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
                 </label>
                 <div id="scan-info">
@@ -173,11 +163,10 @@
             <div id="tab-account" class="tab-content" style="display:none;">
                 <h3>Mon Abonnement</h3>
                 <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
-                    ID: <span id="sub-id">...</span><br>
-                    Infos: <span id="sub-details">...</span>
+                    ID: <span id="sub-id">...</span><br>Infos: <span id="sub-details">...</span>
                 </div>
                 <a href="https://wa.me/22963828767?text=Bonjour,%20je%20veux%20prolonger%20mon%20abonnement%20MyBoxTV" target="_blank" style="display:block; width:100%; background:#25D366; color:white; text-align:center; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:10px;">
-                    <i class="fab fa-whatsapp"></i> CONTACTER SUPPORT (+229 63828767)
+                    <i class="fab fa-whatsapp"></i> CONTACTER SUPPORT
                 </a>
                 <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">DÉCONNECTER</button>
             </div>
@@ -207,11 +196,14 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:100px;">
             <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
                 <div style="text-align:left; width:100%;">
-                    <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                    <i class="fas fa-sync-alt" onclick="initApp()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recharger tout"></i>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
+                        <i class="fas fa-sync-alt" onclick="initApp()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recharger"></i>
+                    </div>
+                    <div style="font-size:10px; color:#888;" id="count-display">Chargement...</div>
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <i class="fas fa-plus-circle" title="Ajouter Fichier (Fusion)" onclick="document.getElementById('localFileInput').click()" style="cursor:pointer; color:#aaa; font-size:18px;"></i>
+                    <i class="fas fa-plus-circle" title="Ajouter (Fusion)" onclick="document.getElementById('localFileInput').click()" style="cursor:pointer; color:#aaa; font-size:18px;"></i>
                     <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
                 </div>
                 <input type="file" id="localFileInput" accept=".m3u,.m3u8" style="display:none;" onchange="handleTitanScan(this)">
@@ -221,12 +213,8 @@
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
         
         <div class="filter-bar">
-            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
-                <i class="fas fa-map-marker-alt"></i> Locales
-            </button>
-            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
-                <i class="fas fa-star" style="color:gold;"></i> Favoris
-            </button>
+            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local"><i class="fas fa-map-marker-alt"></i> Locales</button>
+            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter"><i class="fas fa-star" style="color:gold;"></i> Favoris</button>
         </div>
         <div id="channel-list"></div>
     </div>
@@ -244,9 +232,16 @@
 </div>
 
 <script>
+    // CONFIGURATION
     const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
-    const PROXY = "https://corsproxy.io/?";
+    
+    // MOTEUR LISTE (TEXTE)
+    const LIST_PROXY = "https://api.allorigins.win/raw?url=";
+    // MOTEUR VIDEO (STREAM)
+    const VIDEO_PROXY = "https://corsproxy.io/?";
+
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "", category: "Start" };
+    const PIN_CODE = "0000"; 
     
     let allChannels = [], displayedChannels = [];
     let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
@@ -256,10 +251,8 @@
     let isFavFilter = false, hls = null, isAutoZap = false;
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
     
-    // GESTION DU MODE
-    let appMode = localStorage.getItem('mybox_mode') || 'premium'; // Par défaut Premium
+    let appMode = localStorage.getItem('mybox_mode') || 'premium'; 
     
-    // UI Elements
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
@@ -268,25 +261,38 @@
     
     let audioCtx, gainNode;
 
-    // --- DEMARRAGE ---
-    function checkWelcome() {
-        // Si le client n'a jamais choisi, on montre le modal
-        if (!localStorage.getItem('mybox_mode_chosen')) {
-            document.getElementById('welcome-modal').style.display = 'flex';
-        } else {
-            initApp();
-        }
+    // --- AUTO-HIDE BAR & AUDIO ---
+    let activityTimeout;
+    function handleActivity() {
+        document.body.classList.add('active');
+        clearTimeout(activityTimeout);
+        activityTimeout = setTimeout(() => { document.body.classList.remove('active'); }, 3000);
+        if(!audioCtx) setupAudioBooster(); 
+    }
+    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(e => document.addEventListener(e, handleActivity));
+
+    function setupAudioBooster() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            const source = audioCtx.createMediaElementSource(video);
+            gainNode = audioCtx.createGain();
+            gainNode.gain.value = 2.0; 
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+        } catch(e) {}
     }
 
+    // --- DEMARRAGE ---
     if(localStorage.getItem('mybox_auth') === 'OK') { 
         document.getElementById('login-screen').style.display = 'none'; 
         updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); 
-        checkWelcome();
+        if(!localStorage.getItem('mybox_mode_chosen')) document.getElementById('welcome-modal').style.display = 'flex';
+        else initApp();
         startRealTimeCheck();
         startNetworkMonitor();
     }
 
-    // --- SELECTION MODE (ONBOARDING & SETTINGS) ---
     function selectMode(mode) {
         localStorage.setItem('mybox_mode', mode);
         localStorage.setItem('mybox_mode_chosen', 'true');
@@ -308,7 +314,7 @@
         document.getElementById('check-full').style.display = (appMode === 'full') ? 'block' : 'none';
     }
 
-    // --- APP CORE ---
+    // --- CHARGEMENT ---
     async function initApp() {
         allChannels = [DEFAULT_CHANNEL];
         renderList();
@@ -329,30 +335,32 @@
                 const res = await fetch(`${API_URL}?action=get_playlists`);
                 const sources = await res.json();
                 sources.forEach(s => allChannels.push({ name: s.name, url: s.url, category: "TV" }));
+                document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
+                renderList();
             } else {
                 const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
                 const links = await res.json();
-                
                 const tpContainer = document.getElementById('tp-list-container');
                 tpContainer.innerHTML = "";
                 
-                // Charger les transpondeurs un par un
+                // Charger Séquentiellement
                 for (const l of links) {
-                    // Ici on affiche le Nom (l.name) et on utilise l'url (l.url)
                     let name = l.name || "Source";
                     let url = l.url || l;
                     tpContainer.innerHTML += `<div class="tp-list-item"><span>${name}</span><i class="fas fa-check" style="color:#2ecc71"></i></div>`;
+                    document.getElementById('count-display').innerText = `Scan ${name}...`;
                     await fetchPlaylistWithWatchdog(url, name);
                 }
+                document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
             }
-            renderList();
         } catch(e) { console.log(e); }
     }
 
-    // --- FUSION ET SCAN ---
+    // --- PARSER (FIXED) ---
     async function fetchPlaylistWithWatchdog(url, category) {
         try {
-            const res = await fetch(PROXY + encodeURIComponent(url));
+            // UTILISATION DE ALLORIGINS POUR LE TEXTE (FIABLE)
+            const res = await fetch(LIST_PROXY + encodeURIComponent(url));
             if(!res.ok) return;
             const text = await res.text();
             parseM3UContent(text, category || "Scan");
@@ -363,18 +371,15 @@
         const file = input.files[0];
         if(!file) return;
         document.getElementById('scan-info').style.display='flex';
-        
         const reader = new FileReader();
         reader.onload = (e) => {
-            const text = e.target.result;
-            parseM3UContent(text, "Local");
-            alert("Chaînes ajoutées !");
+            parseM3UContent(e.target.result, "Local");
+            alert("Chaînes ajoutées (Fusion) !");
             document.getElementById('scan-info').style.display='none';
         };
         reader.readAsText(file);
     }
 
-    // FONCTION DE FUSION (NE SUPPRIME PAS)
     function parseM3UContent(text, categoryName) {
         let batch = [];
         let name = "Inconnu";
@@ -386,44 +391,19 @@
                 let parts = l.split(',');
                 name = parts[parts.length-1].trim();
             } else if(l.startsWith('http') && !l.endsWith('.m3u')) {
-                // Anti-doublon URL
                 if(!allChannels.find(c => c.url === l)) {
                     batch.push({name: name, url: l, category: categoryName});
                 }
                 name = "Inconnu";
             }
         }
-        
         if(batch.length > 0) {
             allChannels = allChannels.concat(batch);
             renderList();
         }
     }
 
-    // --- UI AUTO-HIDE ---
-    let activityTimeout;
-    function handleActivity() {
-        document.body.classList.add('active');
-        clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(() => { document.body.classList.remove('active'); }, 3000);
-        if(!audioCtx) setupAudioBooster(); 
-    }
-    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(e => document.addEventListener(e, handleActivity));
-
-    // --- AUDIO BOOSTER ---
-    function setupAudioBooster() {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-            const source = audioCtx.createMediaElementSource(video);
-            gainNode = audioCtx.createGain();
-            gainNode.gain.value = 2.0; 
-            source.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-        } catch(e) {}
-    }
-
-    // --- PLAYER ---
+    // --- PLAYER (FIXED PROXY) ---
     function playChannel(index) {
         if(!allChannels[index]) return;
         const ch = allChannels[index];
@@ -432,15 +412,20 @@
         renderList(); statusText.innerText = ch.name; led.className = "orange";
         
         let playUrl = ch.url;
+        // PROXY SEULEMENT SI MIXED CONTENT
         if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
-            playUrl = PROXY + encodeURIComponent(ch.url);
+            playUrl = VIDEO_PROXY + encodeURIComponent(ch.url);
         }
 
         if(Hls.isSupported()) {
             if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 3});
             hls.loadSource(playUrl); hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(playUrl===ch.url){ hls.loadSource(PROXY+encodeURIComponent(ch.url)); hls.startLoad(); } else handleError(); } });
+            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { 
+                // RETRY AVEC PROXY SI ECHEC
+                if(playUrl === ch.url){ hls.loadSource(VIDEO_PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
+                else handleError(); 
+            }});
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = playUrl; video.play(); }
         
         if(isAutoZap && index !== 0) setTimeout(() => { if(video.paused) handleError(); }, 15000);
@@ -483,7 +468,7 @@
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
     function resetFilters() { selectedCategories = []; renderList(); }
-    function applyFilters() { renderList(); closeSettings(); }
+    function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     async function forceReload() { if(confirm("Reset ?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
