@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Box TV - V112 (FIXED)</title>
+    <meta name="referrer" content="no-referrer">
+    <title>My Box TV - V113 STABLE</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -11,8 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
+        /* --- VISUEL ORIGINAL V62 (INTACT) --- */
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; }
         body.active { cursor: default; }
 
@@ -20,6 +23,7 @@
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
+        /* SIGNAL & STATUS */
         #top-right-container { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 10px; z-index: 60; pointer-events: none; }
         #status-pill { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; display: flex; align-items: center; gap: 8px; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
@@ -31,6 +35,7 @@
         .bar:nth-child(1) { height: 4px; } .bar:nth-child(2) { height: 8px; } .bar:nth-child(3) { height: 12px; } .bar:nth-child(4) { height: 16px; }
         .signal-good .bar { background: #0f0; } .signal-mid .bar:nth-child(1), .signal-mid .bar:nth-child(2) { background: #ffcc00; } .signal-bad .bar:nth-child(1) { background: #ff0000; }
 
+        /* MENU LATERAL */
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
         .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
@@ -48,6 +53,7 @@
         .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
         .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
 
+        /* BARRE DU BAS (AUTO-HIDE) */
         #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; opacity: 0; transition: opacity 0.5s; }
         body.active #bottom-bar { opacity: 1; }
         
@@ -58,6 +64,7 @@
         .desktop-only { display: flex; }
         @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
 
+        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .settings-panel { background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh; border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden; }
@@ -110,7 +117,7 @@
 
         <div class="welcome-card" onclick="selectMode('full')">
             <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (Brut)</div>
-            <div class="wc-desc">Accès direct aux serveurs IPTV sources. Peut être instable.</div>
+            <div class="wc-desc">Accès direct aux serveurs IPTV sources (Col B).</div>
         </div>
     </div>
 </div>
@@ -147,11 +154,11 @@
             </div>
 
             <div id="tab-transponders" class="tab-content" style="display:none;">
-                <h3>Liste des Transpondeurs</h3>
+                <h3>Liste des Transpondeurs (Col A)</h3>
                 <div id="tp-list-container" style="max-height: 200px; overflow-y: auto; background: #111; margin-bottom: 20px;"></div>
                 <h3>Scan Manuel</h3>
                 <label style="display:block; padding:15px; background:#333; margin-bottom:10px; border-radius:5px; cursor:pointer;">
-                    <i class="fas fa-folder-open"></i> AJOUTER FICHIER LOCAL (Fusion)
+                    <i class="fas fa-folder-open"></i> SCANNER FICHIER LOCAL
                     <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
                 </label>
                 <div id="scan-info">
@@ -198,7 +205,7 @@
                 <div style="text-align:left; width:100%;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                        <i class="fas fa-sync-alt" onclick="initApp()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recharger"></i>
+                        <i class="fas fa-sync-alt" onclick="initApp()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recharger tout"></i>
                     </div>
                     <div style="font-size:10px; color:#888;" id="count-display">Chargement...</div>
                 </div>
@@ -213,8 +220,12 @@
         <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
         
         <div class="filter-bar">
-            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local"><i class="fas fa-map-marker-alt"></i> Locales</button>
-            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter"><i class="fas fa-star" style="color:gold;"></i> Favoris</button>
+            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
+                <i class="fas fa-map-marker-alt"></i> Locales
+            </button>
+            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
+                <i class="fas fa-star" style="color:gold;"></i> Favoris
+            </button>
         </div>
         <div id="channel-list"></div>
     </div>
@@ -232,13 +243,12 @@
 </div>
 
 <script>
-    // CONFIGURATION
+    // URL V15
     const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
-    
-    // MOTEUR LISTE (TEXTE)
+    // MOTEUR LISTE (FIABLE)
     const LIST_PROXY = "https://api.allorigins.win/raw?url=";
-    // MOTEUR VIDEO (STREAM)
-    const VIDEO_PROXY = "https://corsproxy.io/?";
+    // MOTEUR VIDEO
+    const PROXY = "https://corsproxy.io/?";
 
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "", category: "Start" };
     const PIN_CODE = "0000"; 
@@ -356,10 +366,9 @@
         } catch(e) { console.log(e); }
     }
 
-    // --- PARSER (FIXED) ---
+    // --- PARSER (FIXED: Uses AllOrigins for Text) ---
     async function fetchPlaylistWithWatchdog(url, category) {
         try {
-            // UTILISATION DE ALLORIGINS POUR LE TEXTE (FIABLE)
             const res = await fetch(LIST_PROXY + encodeURIComponent(url));
             if(!res.ok) return;
             const text = await res.text();
@@ -412,9 +421,9 @@
         renderList(); statusText.innerText = ch.name; led.className = "orange";
         
         let playUrl = ch.url;
-        // PROXY SEULEMENT SI MIXED CONTENT
+        // PROXY POUR LA VIDEO
         if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
-            playUrl = VIDEO_PROXY + encodeURIComponent(ch.url);
+            playUrl = PROXY + encodeURIComponent(ch.url);
         }
 
         if(Hls.isSupported()) {
@@ -422,8 +431,8 @@
             hls.loadSource(playUrl); hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
             hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { 
-                // RETRY AVEC PROXY SI ECHEC
-                if(playUrl === ch.url){ hls.loadSource(VIDEO_PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
+                // RETRY AVEC PROXY
+                if(playUrl === ch.url){ hls.loadSource(PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
                 else handleError(); 
             }});
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = playUrl; video.play(); }
@@ -464,10 +473,12 @@
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
     function toggleAutoZap() { isAutoZap = !isAutoZap; document.getElementById('btn-autozap').classList.toggle('active-mode'); }
     function hideCurrentChannel() { if(confirm("Masquer (Localement) ?")) { hiddenChannels.push(allChannels[currentChannelIndex].url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); renderList(); nextChannel(); } }
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; }
+    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
-    function resetFilters() { selectedCategories = []; renderList(); }
+    function updateCategoryChips() { const container = document.getElementById('chips-area'); if(!container) return; container.innerHTML = ''; Array.from(allCategories).sort().forEach(cat => { const active = selectedCategories.includes(cat) ? 'selected' : ''; container.innerHTML += `<div class="chip ${active}" onclick="toggleCat('${cat}')">${cat}</div>`; }); }
+    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
+    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     async function forceReload() { if(confirm("Reset ?")) { localStorage.clear(); location.reload(); } }
 </script>
