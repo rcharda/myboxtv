@@ -248,7 +248,46 @@
         }
     }
 
-    if(localStorage.getItem('mybox_auth') === 'OK') { document.getElementById('login-screen').style.display = 'none'; updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); initApp(); }
+    if(localStorage.getItem('mybox_auth') === 'OK') { 
+        document.getElementById('login-screen').style.display = 'none'; 
+        updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); 
+        initApp();
+        // Démarrer la vérification continue de l'abonnement
+        startRealTimeCheck();
+    }
+
+    // --- FONCTION DE VERIFICATION TEMPS REEL (AJOUTÉE) ---
+    function startRealTimeCheck() {
+        // Vérification toutes les 5 secondes (5000 ms)
+        setInterval(async () => {
+            const key = localStorage.getItem('mybox_key');
+            const device = localStorage.getItem('mybox_device_id');
+            
+            // Si pas de clé, on ne fait rien (normalement on est sur l'écran de login)
+            if(!key || !device) return;
+
+            try {
+                // Appel API silencieux
+                const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(device)}`);
+                const text = await res.text();
+
+                // Si la réponse ne contient pas SUCCESS, c'est que c'est fini ou invalide
+                if(!text.includes("SUCCESS")) {
+                    console.log("Abonnement terminé ou invalide:", text);
+                    localStorage.removeItem('mybox_auth');
+                    alert("Votre abonnement est terminé. Déconnexion automatique.");
+                    location.reload(); // Recharge la page pour retourner au login
+                } else {
+                    // Optionnel : Mettre à jour l'affichage des jours restants si ça change
+                    updateAccountDisplay(key, text);
+                }
+            } catch(e) {
+                // En cas d'erreur réseau (coupure internet), on ne déconnecte pas tout de suite pour ne pas gêner
+                console.log("Vérification ignorée (Erreur réseau)");
+            }
+        }, 5000); // 5000 millisecondes = 5 secondes
+    }
+    // ----------------------------------------------------
 
     async function login() {
         const key = document.getElementById('licenseKey').value.trim();
@@ -256,7 +295,16 @@
             const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text = await res.text();
             if(text.includes("MAINTENANCE")) { alert("Maintenance"); return; }
-            if(text.includes("SUCCESS")) { localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text); updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp(); } else alert("Erreur Compte");
+            if(text.includes("SUCCESS")) { 
+                localStorage.setItem('mybox_auth', 'OK'); 
+                localStorage.setItem('mybox_key', key); 
+                localStorage.setItem('mybox_raw_status', text); 
+                updateAccountDisplay(key, text); 
+                document.getElementById('login-screen').style.display = 'none'; 
+                initApp(); 
+                // Démarrer la vérification après login réussi
+                startRealTimeCheck();
+            } else alert("Erreur Compte");
         } catch(e) { alert("Erreur Internet"); }
     }
 
@@ -492,4 +540,3 @@
 </script>
 </body>
 </html>
-
