@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>My Box TV - V106 DIAGNOSTIC</title>
+    <title>My Box TV - V106 MAINTENANCE</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.0/dist/hls.min.js"></script>
@@ -431,17 +431,21 @@
     function resetFilters() { selectedCategories = []; renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     async function forceReload() { if(confirm("Reset ?")) { await clearDB(); location.reload(); } }
+    
+    // Config Proxy
     function toggleForceProxy(val) { forceProxy = val; localStorage.setItem('mybox_force_proxy', val); location.reload(); }
     function saveCustomProxy(val) { if(!val.startsWith("http")) val = DEFAULT_PROXY; customProxy = val; localStorage.setItem('mybox_custom_proxy', val); }
 
-    // SCANNER
+    // SCANNER & SOURCES
     async function fetchTranspondersList() { try { const res = await fetch(`${API_URL}?action=get_playlists`); availableTransponders = await res.json(); renderTranspondersUI(); if(allChannels.length < 5) availableTransponders.forEach(tp => setTimeout(() => fetchPlaylistWithWatchdog(tp.url), 1000)); } catch(e) {} }
     function renderTranspondersUI() { const c = document.getElementById('transponder-list'); c.innerHTML=""; availableTransponders.forEach(tp => { c.innerHTML += `<div class="tp-item"><span class="tp-name">${tp.name}</span><input type="checkbox" class="tp-checkbox" value="${tp.url}" checked></div>`; }); }
     async function scanSelectedTransponders() { const b = document.querySelectorAll('.tp-checkbox:checked'); document.getElementById('settings-modal').style.display='none'; document.getElementById('scan-info').style.display='flex'; for(let i=0; i<b.length; i++) { document.getElementById('scan-text').innerText="Web Scan..."; await fetchPlaylistWithWatchdog(b[i].value); } document.getElementById('scan-info').style.display='none'; saveChannelsToDB(allChannels); }
     async function quickScan() { scanSelectedTransponders(); }
+    
     async function handleTitanScan(input) { const files = input.files; if(!files.length) return; document.getElementById('settings-modal').style.display='none'; document.getElementById('scan-info').style.display='flex'; const regex = /(https?:\/\/[^\s"';,<>]+)/gi; let batch=[]; for(let i=0; i<files.length; i++) { const file = files[i]; document.getElementById('scan-text').innerText=`Scan: ${file.name}`; await new Promise(r=>setTimeout(r,0)); if(file.size<50000000) { try { let text=await readFile(file); let matches=text.match(regex); if(matches) matches.forEach(url=>{ if(url.length>10 && !url.includes('w3.org')) batch.push({name:url.split('/').pop().split('?')[0], url:url, category:file.name, logo:"", status:0}); }); } catch(e){} } } if(batch.length>0) { allChannels=allChannels.concat(batch); saveChannelsToDB(allChannels); renderList(); } document.getElementById('scan-info').style.display='none'; alert("Terminé"); }
     function readFile(file) { return new Promise(r => { let fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsText(file); }); }
     async function fetchPlaylistWithWatchdog(url) { try { const res = await fetch(CORS_PROXY + encodeURIComponent(url)); if(!res.ok) return; const text = await res.text(); let batch=[]; text.split('\n').forEach(l=>{ l=l.trim(); if(l.startsWith('http') && (l.includes('.m3u8')||l.includes('.ts'))) batch.push({name:"WebTV", url:l, category:"Web", logo:"", status:0}); }); if(batch.length>0) { allChannels=allChannels.concat(batch); renderList(); } } catch(e){} }
+
 </script>
 </body>
 </html>
