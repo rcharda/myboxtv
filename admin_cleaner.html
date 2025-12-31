@@ -2,55 +2,69 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN DEEP SCAN V109</title>
+    <title>TITAN HYBRID EXTRACTOR V110</title>
     <style>
         body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
         .panel { background: #111; border: 1px solid #333; padding: 20px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; }
         .panel-full { flex: 2; }
         h2 { margin-top: 0; color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 16px; margin-top: 0; }
         
-        .btn { width: 100%; padding: 15px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
+        .btn { width: 100%; padding: 12px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
         .btn:hover { opacity: 0.9; transform: scale(1.02); }
-        .btn-orange { background: #d35400; } .btn-blue { background: #007bff; } .btn-green { background: #27ae60; } 
+        .btn-orange { background: #d35400; } .btn-blue { background: #007bff; } .btn-green { background: #27ae60; } .btn-grey { background: #444; }
         .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
         
         .list-box { flex: 1; overflow-y: auto; border: 1px solid #333; background: #000; font-family: monospace; font-size: 11px; padding: 5px; }
         .item { padding: 5px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
         .item.ok { color: #2ecc71; border-left: 3px solid #2ecc71; background: rgba(46, 204, 113, 0.1); } 
         .item.dead { color: #555; text-decoration: line-through; }
-        .item.retry { color: #f1c40f; } /* Couleur Jaune pour "Analyse approfondie" */
+        .item.retry { color: #f1c40f; }
 
         .progress-bar { height: 5px; background: #e50914; width: 0%; margin: 10px 0; transition: width 0.2s; }
         .log-area { height: 150px; overflow-y: auto; color: #888; font-size: 10px; border-top: 1px solid #333; padding-top: 10px; font-family: monospace; }
         .stats { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; font-weight: bold; }
         
-        /* Badges */
         .badge { padding: 2px 5px; border-radius: 3px; font-size: 9px; color: #000; font-weight: bold; margin-left: 5px; }
-        .badge-fast { background: #3498db; }
-        .badge-deep { background: #9b59b6; }
-        .badge-rescue { background: #e67e22; }
+        .badge-fast { background: #3498db; } .badge-deep { background: #9b59b6; } .badge-rescue { background: #e67e22; }
+
+        .input-file-zone { border: 1px dashed #444; padding: 10px; margin-bottom: 10px; text-align: center; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div class="panel">
-        <h2>1. SOURCES (COLONNE B)</h2>
-        <p style="font-size:11px; color:#aaa;">Le système va lire les liens M3U présents dans la colonne B de votre Google Sheet.</p>
+        <h2>1. CHOIX DE LA SOURCE</h2>
         
+        <p style="color:#e50914; font-weight:bold; margin-bottom:5px;">OPTION A : SERVEUR</p>
+        <p style="font-size:10px; color:#aaa; margin-top:0;">Lire les liens M3U de la colonne B.</p>
         <button class="btn btn-orange" onclick="fetchSourcesFromGoogle()">
-            <i class="fas fa-download"></i> 1. RÉCUPÉRER & EXTRAIRE
+            <i class="fas fa-cloud-download-alt"></i> IMPORTER DEPUIS COLONNE B
         </button>
 
-        <div class="log-area" id="log">Prêt pour l'analyse approfondie...</div>
+        <hr style="border:0; border-top:1px solid #333; width:100%; margin: 15px 0;">
+
+        <p style="color:#3498db; font-weight:bold; margin-bottom:5px;">OPTION B : FICHIER LOCAL</p>
+        <div class="input-file-zone">
+            <input type="file" id="localFileInput" accept=".m3u,.m3u8" style="display:none;" onchange="handleLocalFile(this)">
+            <label for="localFileInput" style="cursor:pointer; color:#aaa; font-size:12px;">
+                <i class="fas fa-folder-open"></i> Cliquez pour choisir un fichier .m3u
+            </label>
+            <div id="fileName" style="font-size:10px; color:#fff; margin-top:5px;"></div>
+        </div>
+        <button class="btn btn-grey" onclick="processLocalFile()" id="btn-local-start" disabled>
+            <i class="fas fa-file-import"></i> EXTRAIRE LE FICHIER
+        </button>
+
+        <div class="log-area" id="log">En attente de source...</div>
     </div>
 
     <div class="panel panel-full">
-        <h2>2. ANALYSE PROFONDE (DEEP SCAN)</h2>
+        <h2>2. ANALYSE & SAUVEGARDE (ANTI-DOUBLON)</h2>
         
         <div class="stats">
-            <span style="color:#fff">Trouvées: <span id="s-total">0</span></span>
+            <span style="color:#fff">Extraites: <span id="s-total">0</span></span>
             <span style="color:#2ecc71">Validées: <span id="s-ok">0</span></span>
-            <span style="color:#e74c3c">Mortes (100%): <span id="s-dead">0</span></span>
+            <span style="color:#e74c3c">Mortes: <span id="s-dead">0</span></span>
         </div>
 
         <div style="background:#333"><div class="progress-bar" id="p-bar"></div></div>
@@ -65,168 +79,228 @@
 
 <script>
     // --- CONFIGURATION ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbyEBWUOwpCcAyF2dRo2etS76FP4ecEXDQ802JbrNAfkFzlnav7T2VPkpBz9hl7qFWSi2g/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwdcIs7VDEbulPSPnV6RwvHJjYUN7FNizLd3GWdqtvAZOeQaVsX6-PyCDtHGMbX7eJVRg/exec";
     
-    // LISTE DES MOTEURS D'ANALYSE
+    // MOTEURS
     const PROXY_MAIN = "https://corsproxy.io/?";
     const PROXY_BACKUP = "https://api.allorigins.win/raw?url=";
 
     let extractedChannels = []; 
     let validChannels = [];
+    let selectedLocalFile = null;
 
-    // --- 1. RECUPERATION ---
+    // ==========================================
+    // 1. GESTION DES SOURCES
+    // ==========================================
+
+    // OPTION A : SERVEUR GOOGLE
     async function fetchSourcesFromGoogle() {
-        log("Connexion au serveur...");
+        log("Connexion au serveur (Colonne B)...");
+        extractedChannels = []; // Reset
         try {
             const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
             const m3uLinks = await res.json();
             
             if(m3uLinks.length === 0) return log("Aucun lien M3U trouvé en Colonne B.");
             
-            log(`${m3uLinks.length} playlists trouvées. Démarrage extraction...`);
-            extractedChannels = [];
+            log(`${m3uLinks.length} playlists trouvées. Extraction...`);
             
             for(let url of m3uLinks) {
-                log(`Extraction: ${url.substring(0, 30)}...`);
-                await parseM3UContent(url);
+                log(`Téléchargement: ${url.substring(0, 30)}...`);
+                try {
+                    const txtRes = await fetch(PROXY_MAIN + encodeURIComponent(url));
+                    const text = await txtRes.text();
+                    processM3UText(text);
+                } catch(err) { log("Erreur lien: " + err.message); }
             }
-            
-            log(`Extraction Terminée ! ${extractedChannels.length} chaînes prêtes à être analysées.`);
-            renderList();
-            document.getElementById('btn-test').disabled = false;
-            
-        } catch(e) { log("Erreur: " + e); }
+            finishExtraction();
+        } catch(e) { log("Erreur API: " + e); }
     }
 
-    async function parseM3UContent(m3uUrl) {
-        try {
-            const res = await fetch(PROXY_MAIN + encodeURIComponent(m3uUrl));
-            const text = await res.text();
-            const lines = text.split('\n');
-            let currentName = "Sans Nom";
+    // OPTION B : FICHIER LOCAL
+    function handleLocalFile(input) {
+        if(input.files && input.files[0]) {
+            selectedLocalFile = input.files[0];
+            document.getElementById('fileName').innerText = selectedLocalFile.name;
+            document.getElementById('btn-local-start').disabled = false;
+            document.getElementById('btn-local-start').className = "btn btn-blue";
+        }
+    }
 
-            for(let i=0; i<lines.length; i++) {
-                let line = lines[i].trim();
-                if(line.startsWith("#EXTINF")) {
-                    let parts = line.split(',');
-                    currentName = parts[parts.length - 1].trim().replace(/[\r\n]+/gm, ""); 
-                } 
-                else if(line.startsWith("http")) {
-                    if (!line.endsWith(".m3u") && !line.includes("type=m3u")) {
-                        extractedChannels.push({ name: currentName, url: line, status: 'waiting', method: '' });
-                    }
+    function processLocalFile() {
+        if(!selectedLocalFile) return;
+        extractedChannels = []; // Reset
+        log(`Lecture du fichier local : ${selectedLocalFile.name}...`);
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            processM3UText(content);
+            finishExtraction();
+        };
+        reader.readAsText(selectedLocalFile);
+    }
+
+    // --- MOTEUR D'EXTRACTION COMMUN ---
+    function processM3UText(text) {
+        const lines = text.split('\n');
+        let currentName = "Sans Nom";
+        let count = 0;
+
+        for(let i=0; i<lines.length; i++) {
+            let line = lines[i].trim();
+            if(line.startsWith("#EXTINF")) {
+                let parts = line.split(',');
+                currentName = parts[parts.length - 1].trim().replace(/[\r\n]+/gm, ""); 
+            } 
+            else if(line.startsWith("http")) {
+                // Ignore les playlists imbriquées pour éviter les boucles
+                if (!line.endsWith(".m3u") && !line.includes("type=m3u")) {
+                    extractedChannels.push({ name: currentName, url: line, status: 'waiting', method: '' });
+                    count++;
                 }
             }
-        } catch(e) { log("Erreur lecture playlist: " + e.message); }
-    }
-
-    function renderList() {
-        document.getElementById('s-total').innerText = extractedChannels.length;
-        const container = document.getElementById('result-list');
-        let html = "";
-        let max = Math.min(extractedChannels.length, 500); // Limite visuelle
-        
-        for(let i=0; i<max; i++) {
-            let c = extractedChannels[i];
-            let statusIcon = '⏳';
-            if(c.status === 'ok') statusIcon = `✅ <span class="badge ${c.method}">${c.method}</span>`;
-            if(c.status === 'dead') statusIcon = '❌';
-            if(c.status === 'retry') statusIcon = '🔄';
-
-            html += `<div class="item ${c.status}" id="row-${i}"><span>${c.name}</span><span>${statusIcon}</span></div>`;
         }
-        if(extractedChannels.length > 500) html += `<div style="text-align:center; padding:10px;">... et ${extractedChannels.length - 500} autres ...</div>`;
-        container.innerHTML = html;
+        log(`+ ${count} chaînes extraites.`);
     }
 
-    // --- 2. DEEP SCAN (ALGORITHME INTELLIGENT) ---
+    function finishExtraction() {
+        log(`TOTAL : ${extractedChannels.length} chaînes prêtes.`);
+        renderList();
+        document.getElementById('btn-test').disabled = false;
+    }
+
+    // ==========================================
+    // 2. ANALYSE (DEEP SCAN)
+    // ==========================================
+
     async function startDeepScan() {
         document.getElementById('btn-test').disabled = true;
+        document.getElementById('btn-local-start').disabled = true;
         validChannels = [];
         let ok = 0, dead = 0;
-        log("Démarrage de l'analyse approfondie...");
+        log("Démarrage de l'analyse intelligente...");
         
-        // On traite par paquets de 10 pour la stabilité
+        // Paquets de 10
         for(let i=0; i<extractedChannels.length; i+=10) {
             let chunk = extractedChannels.slice(i, i+10);
             
             await Promise.all(chunk.map(async (item, idx) => {
                 const globalIdx = i + idx;
-                
-                // Mettre à jour UI (En cours)
-                updateRow(globalIdx, 'retry', '...');
+                updateRow(globalIdx, 'retry', '...'); // Visuel "En cours"
 
-                // LANCEMENT DE L'ALGORITHME TRIPLE CHECK
                 let result = await deepAnalyzeUrl(item.url);
                 
                 if(result.working) {
                     item.status = 'ok';
-                    item.method = result.method; // badge-fast, badge-deep, badge-rescue
+                    item.method = result.method;
                     ok++;
+                    // Format [Nom, Url] pour l'envoi
                     validChannels.push([item.name, item.url]);
                 } else {
                     item.status = 'dead';
                     dead++;
                 }
-                
-                // Mettre à jour UI (Final)
-                updateRow(globalIdx, item.status, item.method);
+                updateRow(globalIdx, item.status, item.method); // Visuel Final
             }));
             
-            // Mise à jour stats
+            // Progress Bar
             let pct = Math.round(((i+10)/extractedChannels.length)*100);
             document.getElementById('p-bar').style.width = pct + "%";
             document.getElementById('s-ok').innerText = ok;
             document.getElementById('s-dead').innerText = dead;
             
-            await new Promise(r => setTimeout(r, 50)); // Pause pour ne pas saturer le réseau
+            await new Promise(r => setTimeout(r, 50)); // Pause CPU
         }
         
-        log(`Scan terminé. ${ok} chaînes confirmées.`);
+        log(`Analyse terminée. ${ok} chaînes valides.`);
         if(ok > 0) {
             document.getElementById('btn-save').disabled = false;
-            document.getElementById('btn-save').innerText = `ENREGISTRER ${ok} CHAÎNES (COL D/E)`;
+            document.getElementById('btn-save').innerText = `ENREGISTRER ${ok} CHAÎNES (ANTI-DOUBLON)`;
         }
     }
 
-    // --- C'EST ICI QUE LA MAGIE OPERE ---
+    // ALGORITHME TRIPLE CHECK
     async function deepAnalyzeUrl(url) {
-        
-        // 1. TEST RAPIDE (HEAD via Proxy Principal)
+        // 1. FAST HEAD
         try {
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 3000); // 3s
+            const id = setTimeout(() => controller.abort(), 3000);
             const res = await fetch(PROXY_MAIN + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
             clearTimeout(id);
             if(res.ok) return { working: true, method: 'badge-fast' };
         } catch(e) {}
 
-        // 2. TEST APPROFONDI (GET via Proxy Principal - Pour les serveurs qui bloquent HEAD)
+        // 2. DEEP GET (Range request)
         try {
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 5000); // 5s
-            // On demande juste les premiers octets pour ne pas télécharger tout le film
+            const id = setTimeout(() => controller.abort(), 5000);
             const res = await fetch(PROXY_MAIN + encodeURIComponent(url), { 
                 method: 'GET', 
-                headers: { 'Range': 'bytes=0-100' }, // Astuce pour simuler un début de lecture
+                headers: { 'Range': 'bytes=0-100' }, 
                 signal: controller.signal 
             });
             clearTimeout(id);
             if(res.ok || res.status === 206) return { working: true, method: 'badge-deep' };
         } catch(e) {}
 
-        // 3. TEST DE SECOURS (GET via Proxy Backup - Pour contourner les blocages IP)
+        // 3. RESCUE (Backup Proxy)
         try {
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 8000); // 8s (Lent mais sur)
+            const id = setTimeout(() => controller.abort(), 8000);
             const res = await fetch(PROXY_BACKUP + encodeURIComponent(url), { method: 'GET', signal: controller.signal });
             clearTimeout(id);
-            // Backup proxy renvoie souvent du texte ou JSON, on vérifie si la réponse n'est pas vide
             if(res.ok) return { working: true, method: 'badge-rescue' };
         } catch(e) {}
 
-        // SI TOUT ECHOUE
         return { working: false };
+    }
+
+    // ==========================================
+    // 3. SAUVEGARDE & UI
+    // ==========================================
+
+    async function sendToGoogle() {
+        const btn = document.getElementById('btn-save');
+        btn.disabled = true;
+        btn.innerText = "ENVOI EN COURS...";
+        log("Envoi au serveur (Mode Incrémentiel)...");
+        
+        // Envoi par paquets de 500
+        for(let i=0; i<validChannels.length; i+=500) {
+            let chunk = validChannels.slice(i, i+500);
+            try {
+                const rawRes = await fetch(`${API_URL}?action=admin_save_extracted`, {
+                    method: 'POST',
+                    body: JSON.stringify(chunk)
+                });
+                const txt = await rawRes.text();
+                log(`Paquet ${i}: ${txt}`);
+            } catch(e) {
+                alert("Erreur réseau");
+                return;
+            }
+        }
+        log("✅ TERMINE ! Base de données mise à jour.");
+        alert("Opération terminée avec succès.");
+        btn.innerText = "TERMINE";
+    }
+
+    function renderList() {
+        document.getElementById('s-total').innerText = extractedChannels.length;
+        const container = document.getElementById('result-list');
+        let html = "";
+        let max = Math.min(extractedChannels.length, 500);
+        
+        for(let i=0; i<max; i++) {
+            let c = extractedChannels[i];
+            let icon = '⏳';
+            if(c.status === 'ok') icon = '✅';
+            if(c.status === 'dead') icon = '❌';
+            html += `<div class="item ${c.status}" id="row-${i}"><span>${c.name}</span><span>${icon}</span></div>`;
+        }
+        if(extractedChannels.length > 500) html += `<div style="text-align:center; padding:10px;">... et ${extractedChannels.length - 500} autres ...</div>`;
+        container.innerHTML = html;
     }
 
     function updateRow(idx, status, method) {
@@ -236,36 +310,9 @@
             let icon = '⏳';
             if(status === 'ok') icon = `✅ <span class="badge ${method}">${method.replace('badge-', '')}</span>`;
             if(status === 'dead') icon = '❌';
-            if(status === 'retry') icon = '🔄 Analyse...';
-            
-            // On ne change que l'icone pour pas faire clignoter le texte
+            if(status === 'retry') icon = '🔄';
             el.querySelector('span:last-child').innerHTML = icon;
         }
-    }
-
-    // --- 3. ENVOI ---
-    async function sendToGoogle() {
-        const btn = document.getElementById('btn-save');
-        btn.disabled = true;
-        btn.innerText = "ENVOI EN COURS...";
-        log("Envoi des chaînes validées vers Google Sheets...");
-        
-        for(let i=0; i<validChannels.length; i+=500) {
-            let chunk = validChannels.slice(i, i+500);
-            try {
-                await fetch(`${API_URL}?action=admin_save_extracted`, {
-                    method: 'POST',
-                    body: JSON.stringify(chunk)
-                });
-                log(`Paquet ${i} envoyé.`);
-            } catch(e) {
-                alert("Erreur réseau lors de l'envoi.");
-                return;
-            }
-        }
-        log("✅ TERMINE !");
-        alert("Succès ! La liste propre est en ligne.");
-        btn.innerText = "TERMINE";
     }
 
     function log(msg) {
