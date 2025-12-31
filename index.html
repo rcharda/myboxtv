@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>My Box TV - V117 STABLE</title>
+    <title>My Box TV - V118</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- VISUEL ORIGINAL V62 --- */
+        /* --- DESIGN ORIGINAL V62 (INTACT) --- */
         :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; }
@@ -81,6 +81,7 @@
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
         @keyframes slideDown { from { top: -50px; } to { top: 10%; } }
 
+        /* WELCOME CARDS */
         .welcome-card { background:#222; border:2px solid #333; border-radius:10px; padding:20px; margin-bottom:15px; cursor:pointer; transition:0.2s; text-align:left; }
         .welcome-card:hover { border-color:var(--primary); background:#1a1a1a; transform:scale(1.02); }
         .wc-title { font-weight:bold; font-size:16px; margin-bottom:5px; color:#fff; }
@@ -104,14 +105,18 @@
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="app-logo">
         <h2 style="color:#e50914; margin-top:0;">BIENVENUE</h2>
         <p style="color:#ccc; font-size:13px; margin-bottom:20px;">Choisissez votre source de chaînes :</p>
+        
         <div class="welcome-card" onclick="selectMode('premium')">
-            <div class="wc-title" style="color:#2ecc71;">⭐ PREMIUM (Recommandé)</div>
-            <div class="wc-desc">Chaînes vérifiées, stables et rapides. Zéro coupure.</div>
+            <div class="wc-title" style="color:#2ecc71;">⭐ CHAÎNES PREMIUM (Recommandé)</div>
+            <div class="wc-desc">Chargement rapide. Liste certifiée et stable (Sans erreur).</div>
         </div>
+
         <div class="welcome-card" onclick="selectMode('full')">
-            <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (Brut)</div>
-            <div class="wc-desc">Accès direct aux serveurs IPTV sources (Col B).</div>
+            <div class="wc-title" style="color:#3498db;">📡 TRANSPONDEURS (Scan)</div>
+            <div class="wc-desc">Scan des liens bruts (M3U). Détecte les dossiers et sous-dossiers.</div>
         </div>
+        
+        <p style="font-size:10px; color:#666;">Vous pourrez modifier ce choix dans les paramètres.</p>
     </div>
 </div>
 
@@ -185,7 +190,7 @@
                 <div style="text-align:left; width:100%;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                        <i class="fas fa-sync-alt" onclick="quickScan()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Scanner Manquants"></i>
+                        <i class="fas fa-sync-alt" onclick="quickScan()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Scanner (Ajouter chaînes)"></i>
                     </div>
                     <div style="font-size:10px; color:#888;" id="count-display">Chargement...</div>
                 </div>
@@ -217,15 +222,9 @@
 </div>
 
 <script>
-    // URL DE TON SCRIPT GOOGLE (V15)
     const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
-    
-    // MOTEUR LISTE (TEXTE) - DOIT ETRE FIABLE
     const LIST_PROXY = "https://api.allorigins.win/raw?url=";
-    const LIST_PROXY_BACKUP = "https://corsproxy.io/?";
-    // MOTEUR VIDEO (STREAM)
-    const VIDEO_PROXY = "https://corsproxy.io/?";
-
+    const PROXY = "https://corsproxy.io/?";
     const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "", category: "Start" };
     const PIN_CODE = "0000"; const DB_NAME = "MyBoxTV_Brain"; const DB_VERSION = 1;
     
@@ -284,7 +283,6 @@
             loadedUrls.add(DEFAULT_CHANNEL.url);
             renderList();
             playChannel(0);
-            performSmartScan();
         }
         
         loadTranspondersList();
@@ -303,7 +301,7 @@
         } catch(e){}
     }
 
-    // --- SCANNER INTELLIGENT ---
+    // --- SCANNER INTELLIGENT (AJOUT SANS EFFACER) ---
     async function performSmartScan() {
         if(isScanning) return;
         isScanning = true;
@@ -313,18 +311,22 @@
             if (appMode === 'premium') {
                 const res = await fetch(`${API_URL}?action=get_playlists`);
                 const sources = await res.json();
+                let newCount = 0;
                 sources.forEach(s => {
                     if (!loadedUrls.has(s.url)) {
                         const ch = { name: s.name, url: s.url, category: "TV" };
                         allChannels.push(ch); loadedUrls.add(s.url); saveToDB(ch);
+                        newCount++;
                     }
                 });
-                renderList();
+                if (newCount > 0) renderList();
                 document.getElementById('scan-text').innerText = "Terminé.";
             } else {
+                // Mode Transpondeur : Charger depuis Col B
                 const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
                 const links = await res.json();
                 
+                // Charger UN PAR UN (Séquentiel) pour éviter le blocage
                 for (const l of links) {
                     let url = l.url || l;
                     let name = l.name || "Source";
@@ -333,58 +335,49 @@
                 }
                 document.getElementById('scan-text').innerText = "Terminé.";
             }
+            
             setTimeout(() => { document.getElementById('scan-info').style.display = 'none'; }, 2000);
+            
         } catch(e) { console.log(e); }
         isScanning = false;
     }
 
-    // PARSER ROBUSTE AVEC FALLBACK
     async function fetchAndParse(url, categoryName) {
         try {
-            // Tentative 1 : AllOrigins
-            let response = await fetch(LIST_PROXY + encodeURIComponent(url));
-            if(!response.ok) throw new Error("Fail 1");
-            let text = await response.text();
-            parseM3UContent(text, categoryName);
-        } catch(e) {
-            try {
-                // Tentative 2 : CorsProxy
-                let response2 = await fetch(LIST_PROXY_BACKUP + encodeURIComponent(url));
-                if(!response2.ok) return;
-                let text2 = await response2.text();
-                parseM3UContent(text2, categoryName);
-            } catch(e2) {}
-        }
-    }
+            // UTILISATION DE ALLORIGINS POUR LE TEXTE (Important !)
+            const res = await fetch(LIST_PROXY + encodeURIComponent(url));
+            if(!res.ok) return;
+            const text = await res.text();
+            
+            let newBatch = [];
+            const lines = text.split('\n');
+            let currentName = "Inconnu";
 
-    function parseM3UContent(text, categoryName) {
-        let batch = [];
-        let name = "Inconnu";
-        const lines = text.split('\n');
-        
-        for(let l of lines) {
-            l = l.trim();
-            if(l.startsWith('#EXTINF')) {
-                let parts = l.split(',');
-                name = parts[parts.length-1].trim();
-            } else if(l.startsWith('http') && !l.endsWith('.m3u')) {
-                if(!loadedUrls.has(l)) {
-                    const ch = { name: name, url: l, category: categoryName };
-                    batch.push(ch);
-                    loadedUrls.add(l);
-                    saveToDB(ch); 
+            for(let l of lines) {
+                l = l.trim();
+                if(l.startsWith('#EXTINF')) {
+                    let parts = l.split(',');
+                    currentName = parts[parts.length-1].trim();
+                } else if(l.startsWith('http') && !l.endsWith('.m3u')) {
+                    if(!loadedUrls.has(l)) {
+                        const ch = { name: currentName, url: l, category: categoryName };
+                        newBatch.push(ch);
+                        loadedUrls.add(l);
+                        saveToDB(ch); 
+                    }
+                    currentName = "Inconnu";
                 }
-                name = "Inconnu";
             }
-        }
-        if(batch.length > 0) {
-            allChannels = allChannels.concat(batch);
-            renderList(); 
-        }
+
+            if(newBatch.length > 0) {
+                allChannels = allChannels.concat(newBatch);
+                renderList(); 
+            }
+        } catch(e) {}
     }
 
     function quickScan() {
-        if(confirm("Lancer la recherche de nouvelles chaînes ? (Cela n'efface pas les actuelles)")) {
+        if(confirm("Scanner pour trouver de nouvelles chaînes ?")) {
             performSmartScan();
         }
     }
@@ -394,8 +387,22 @@
         if(!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            parseM3UContent(e.target.result, "Local");
-            alert("Chaînes ajoutées (Fusion) !");
+            // Parsing local (Simulation fetchAndParse)
+            let text = e.target.result;
+            let newBatch = [];
+            let currentName = "Local";
+            const lines = text.split('\n');
+            for(let l of lines) {
+                l = l.trim();
+                if(l.startsWith('#EXTINF')) { currentName = l.split(',')[1].trim(); }
+                else if(l.startsWith('http')) {
+                    if(!loadedUrls.has(l)) {
+                        const ch = { name: currentName, url: l, category: "Local" };
+                        newBatch.push(ch); loadedUrls.add(l); saveToDB(ch);
+                    }
+                }
+            }
+            if(newBatch.length > 0) { allChannels = allChannels.concat(newBatch); renderList(); alert(`${newBatch.length} chaînes ajoutées !`); }
         };
         reader.readAsText(file);
     }
@@ -411,7 +418,7 @@
         let playUrl = ch.url;
         // PROXY POUR LA VIDEO
         if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
-            playUrl = VIDEO_PROXY + encodeURIComponent(ch.url);
+            playUrl = PROXY + encodeURIComponent(ch.url);
         }
 
         if(Hls.isSupported()) {
@@ -420,7 +427,7 @@
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
             hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { 
                 // RETRY AVEC PROXY
-                if(playUrl === ch.url){ hls.loadSource(VIDEO_PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
+                if(playUrl === ch.url){ hls.loadSource(PROXY + encodeURIComponent(ch.url)); hls.startLoad(); } 
                 else handleError(); 
             }});
         } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = playUrl; video.play(); }
@@ -439,8 +446,9 @@
         document.getElementById('count-display').innerText = displayedChannels.length + " Chaînes";
         listDiv.innerHTML = ""; renderLimit = 50; appendItems();
     }
-    listDiv.addEventListener('scroll', () => { if(listDiv.scrollTop + listDiv.clientHeight >= listDiv.scrollHeight - 100) { renderLimit += RENDER_BATCH; appendItems(); } });
-    function appendItems() { const frag = document.createDocumentFragment(); const items = displayedChannels.slice(listDiv.childElementCount, renderLimit); items.forEach(ch => { const globalIndex = allChannels.indexOf(ch); const isFav = favorites.includes(ch.url); const isPlaying = (globalIndex === currentChannelIndex); const div = document.createElement('div'); div.className = 'channel-row ' + (isPlaying ? 'active' : ''); div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i><img src="https://via.placeholder.com/40?text=TV" class="ch-logo"><div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category || 'TV'}</div></div>`; div.onclick = () => playChannel(globalIndex); frag.appendChild(div); }); listDiv.appendChild(frag); }
+    let renderLimit = 50;
+    listDiv.addEventListener('scroll', () => { if(listDiv.scrollTop + listDiv.clientHeight >= listDiv.scrollHeight - 100) { renderLimit += 50; appendItems(); } });
+    function appendItems() { const frag = document.createDocumentFragment(); const items = displayedChannels.slice(listDiv.childElementCount, renderLimit); items.forEach(ch => { const globalIndex = allChannels.indexOf(ch); const isFav = favorites.includes(ch.url); const isPlaying = (globalIndex === currentChannelIndex); const div = document.createElement('div'); div.className = 'channel-row ' + (isPlaying ? 'active' : ''); div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i><img src="https://via.placeholder.com/40?text=TV" class="ch-logo"><div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`; div.onclick = () => playChannel(globalIndex); frag.appendChild(div); }); listDiv.appendChild(frag); }
 
     let activityTimeout;
     function handleActivity() { document.body.classList.add('active'); clearTimeout(activityTimeout); activityTimeout = setTimeout(() => { document.body.classList.remove('active'); }, 3000); if(!audioCtx) setupAudioBooster(); }
@@ -470,7 +478,9 @@
     function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
     function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
     function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
-    function resetFilters() { selectedCategories = []; renderList(); }
+    function updateCategoryChips() { const container = document.getElementById('chips-area'); if(!container) return; container.innerHTML = ''; Array.from(allCategories).sort().forEach(cat => { const active = selectedCategories.includes(cat) ? 'selected' : ''; container.innerHTML += `<div class="chip ${active}" onclick="toggleCat('${cat}')">${cat}</div>`; }); }
+    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
+    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
     async function forceReload() { if(confirm("Reset ?")) { await clearDB(); localStorage.clear(); location.reload(); } }
 </script>
