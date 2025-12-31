@@ -2,22 +2,33 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN EXTRACTOR V13</title>
+    <title>TITAN DEEP SCAN V109</title>
     <style>
         body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
         .panel { background: #111; border: 1px solid #333; padding: 20px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; }
         .panel-full { flex: 2; }
         h2 { margin-top: 0; color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 16px; margin-top: 0; }
+        
         .btn { width: 100%; padding: 15px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
         .btn:hover { opacity: 0.9; transform: scale(1.02); }
         .btn-orange { background: #d35400; } .btn-blue { background: #007bff; } .btn-green { background: #27ae60; } 
         .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+        
         .list-box { flex: 1; overflow-y: auto; border: 1px solid #333; background: #000; font-family: monospace; font-size: 11px; padding: 5px; }
-        .item { padding: 4px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
-        .item.ok { color: #2ecc71; } .item.dead { color: #555; text-decoration: line-through; }
+        .item { padding: 5px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .item.ok { color: #2ecc71; border-left: 3px solid #2ecc71; background: rgba(46, 204, 113, 0.1); } 
+        .item.dead { color: #555; text-decoration: line-through; }
+        .item.retry { color: #f1c40f; } /* Couleur Jaune pour "Analyse approfondie" */
+
         .progress-bar { height: 5px; background: #e50914; width: 0%; margin: 10px 0; transition: width 0.2s; }
         .log-area { height: 150px; overflow-y: auto; color: #888; font-size: 10px; border-top: 1px solid #333; padding-top: 10px; font-family: monospace; }
         .stats { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; font-weight: bold; }
+        
+        /* Badges */
+        .badge { padding: 2px 5px; border-radius: 3px; font-size: 9px; color: #000; font-weight: bold; margin-left: 5px; }
+        .badge-fast { background: #3498db; }
+        .badge-deep { background: #9b59b6; }
+        .badge-rescue { background: #e67e22; }
     </style>
 </head>
 <body>
@@ -30,22 +41,22 @@
             <i class="fas fa-download"></i> 1. RÉCUPÉRER & EXTRAIRE
         </button>
 
-        <div class="log-area" id="log">En attente...</div>
+        <div class="log-area" id="log">Prêt pour l'analyse approfondie...</div>
     </div>
 
-    <div class="panel" style="flex: 2;">
-        <h2>2. TRAITEMENT VERS COLONNES D/E</h2>
+    <div class="panel panel-full">
+        <h2>2. ANALYSE PROFONDE (DEEP SCAN)</h2>
         
         <div class="stats">
             <span style="color:#fff">Trouvées: <span id="s-total">0</span></span>
-            <span style="color:#2ecc71">Valides: <span id="s-ok">0</span></span>
-            <span style="color:#e74c3c">Morts: <span id="s-dead">0</span></span>
+            <span style="color:#2ecc71">Validées: <span id="s-ok">0</span></span>
+            <span style="color:#e74c3c">Mortes (100%): <span id="s-dead">0</span></span>
         </div>
 
         <div style="background:#333"><div class="progress-bar" id="p-bar"></div></div>
         
         <div style="display:flex; gap:10px;">
-            <button class="btn btn-blue" onclick="startTester()" id="btn-test" disabled>2. TESTER LES LIENS</button>
+            <button class="btn btn-blue" onclick="startDeepScan()" id="btn-test" disabled>2. SCANNER (INTELLIGENT)</button>
             <button class="btn btn-green" onclick="sendToGoogle()" id="btn-save" disabled>3. SAUVEGARDER (D/E)</button>
         </div>
         
@@ -55,29 +66,32 @@
 <script>
     // --- CONFIGURATION ---
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBWUOwpCcAyF2dRo2etS76FP4ecEXDQ802JbrNAfkFzlnav7T2VPkpBz9hl7qFWSi2g/exec";
-    const PROXY = "https://corsproxy.io/?";
+    
+    // LISTE DES MOTEURS D'ANALYSE
+    const PROXY_MAIN = "https://corsproxy.io/?";
+    const PROXY_BACKUP = "https://api.allorigins.win/raw?url=";
 
     let extractedChannels = []; 
     let validChannels = [];
 
-    // --- 1. RECUPERATION DES M3U (COLONNE B) ---
+    // --- 1. RECUPERATION ---
     async function fetchSourcesFromGoogle() {
-        log("Lecture de la Colonne B sur le serveur...");
+        log("Connexion au serveur...");
         try {
             const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
             const m3uLinks = await res.json();
             
-            if(m3uLinks.length === 0) return log("Aucun lien trouvé en Colonne B.");
+            if(m3uLinks.length === 0) return log("Aucun lien M3U trouvé en Colonne B.");
             
-            log(`${m3uLinks.length} playlists trouvées. Extraction...`);
+            log(`${m3uLinks.length} playlists trouvées. Démarrage extraction...`);
             extractedChannels = [];
             
             for(let url of m3uLinks) {
-                log(`Lecture: ${url.substring(0, 40)}...`);
+                log(`Extraction: ${url.substring(0, 30)}...`);
                 await parseM3UContent(url);
             }
             
-            log(`Extraction Terminée ! ${extractedChannels.length} chaînes prêtes.`);
+            log(`Extraction Terminée ! ${extractedChannels.length} chaînes prêtes à être analysées.`);
             renderList();
             document.getElementById('btn-test').disabled = false;
             
@@ -86,33 +100,20 @@
 
     async function parseM3UContent(m3uUrl) {
         try {
-            // On passe par le proxy pour lire le contenu du fichier texte
-            const res = await fetch(PROXY + encodeURIComponent(m3uUrl));
+            const res = await fetch(PROXY_MAIN + encodeURIComponent(m3uUrl));
             const text = await res.text();
-            
             const lines = text.split('\n');
             let currentName = "Sans Nom";
 
             for(let i=0; i<lines.length; i++) {
                 let line = lines[i].trim();
-                // Lecture du NOM (#EXTINF)
                 if(line.startsWith("#EXTINF")) {
                     let parts = line.split(',');
-                    // On prend tout ce qui est après la virgule comme nom
-                    currentName = parts[parts.length - 1].trim(); 
-                    // Nettoyage des caractères spéciaux si besoin
-                    currentName = currentName.replace(/[\r\n]+/gm, "");
+                    currentName = parts[parts.length - 1].trim().replace(/[\r\n]+/gm, ""); 
                 } 
-                // Lecture du LIEN (http)
                 else if(line.startsWith("http")) {
-                    // On ignore les sous-playlists pour ne pas boucler
-                    if (!line.endsWith(".m3u") && !line.endsWith(".m3u8") && !line.includes("type=m3u")) {
-                        // C'est un lien vidéo direct (.ts, .mkv, .mp4, etc)
-                        extractedChannels.push({ name: currentName, url: line, status: 'waiting' });
-                    } 
-                    // Cas spécial : certains flux m3u8 sont des vidéos, pas des listes
-                    else if (line.indexOf("/live/") > -1 || line.endsWith(".m3u8")) {
-                         extractedChannels.push({ name: currentName, url: line, status: 'waiting' });
+                    if (!line.endsWith(".m3u") && !line.includes("type=m3u")) {
+                        extractedChannels.push({ name: currentName, url: line, status: 'waiting', method: '' });
                     }
                 }
             }
@@ -123,87 +124,132 @@
         document.getElementById('s-total').innerText = extractedChannels.length;
         const container = document.getElementById('result-list');
         let html = "";
-        // Limite visuelle à 500 pour pas faire ramer l'ordi, mais tout est en mémoire
-        let max = Math.min(extractedChannels.length, 500);
+        let max = Math.min(extractedChannels.length, 500); // Limite visuelle
         
         for(let i=0; i<max; i++) {
             let c = extractedChannels[i];
-            let icon = c.status === 'ok' ? '✅' : (c.status==='dead' ? '❌' : '⏳');
-            html += `<div class="item ${c.status}" id="row-${i}"><span>${c.name}</span><span>${icon}</span></div>`;
+            let statusIcon = '⏳';
+            if(c.status === 'ok') statusIcon = `✅ <span class="badge ${c.method}">${c.method}</span>`;
+            if(c.status === 'dead') statusIcon = '❌';
+            if(c.status === 'retry') statusIcon = '🔄';
+
+            html += `<div class="item ${c.status}" id="row-${i}"><span>${c.name}</span><span>${statusIcon}</span></div>`;
         }
         if(extractedChannels.length > 500) html += `<div style="text-align:center; padding:10px;">... et ${extractedChannels.length - 500} autres ...</div>`;
         container.innerHTML = html;
     }
 
-    // --- 2. TESTEUR ---
-    async function startTester() {
+    // --- 2. DEEP SCAN (ALGORITHME INTELLIGENT) ---
+    async function startDeepScan() {
         document.getElementById('btn-test').disabled = true;
         validChannels = [];
         let ok = 0, dead = 0;
-        log("Démarrage du test...");
+        log("Démarrage de l'analyse approfondie...");
         
-        // Test par lot de 20 (Multithread simulé)
-        for(let i=0; i<extractedChannels.length; i+=20) {
-            let chunk = extractedChannels.slice(i, i+20);
+        // On traite par paquets de 10 pour la stabilité
+        for(let i=0; i<extractedChannels.length; i+=10) {
+            let chunk = extractedChannels.slice(i, i+10);
+            
             await Promise.all(chunk.map(async (item, idx) => {
                 const globalIdx = i + idx;
-                let works = await checkUrl(item.url);
                 
-                if(works) {
+                // Mettre à jour UI (En cours)
+                updateRow(globalIdx, 'retry', '...');
+
+                // LANCEMENT DE L'ALGORITHME TRIPLE CHECK
+                let result = await deepAnalyzeUrl(item.url);
+                
+                if(result.working) {
                     item.status = 'ok';
+                    item.method = result.method; // badge-fast, badge-deep, badge-rescue
                     ok++;
-                    // Format [Nom, Url] pour l'envoi futur
                     validChannels.push([item.name, item.url]);
                 } else {
                     item.status = 'dead';
                     dead++;
                 }
                 
-                // Mise à jour visuelle (seulement si visible dans la liste)
-                let el = document.getElementById(`row-${globalIdx}`);
-                if(el) {
-                    el.className = `item ${item.status}`;
-                    el.innerHTML = `<span>${item.name}</span><span>${item.status=='ok'?'✅':'❌'}</span>`;
-                }
+                // Mettre à jour UI (Final)
+                updateRow(globalIdx, item.status, item.method);
             }));
             
             // Mise à jour stats
-            let pct = Math.round(((i+20)/extractedChannels.length)*100);
+            let pct = Math.round(((i+10)/extractedChannels.length)*100);
             document.getElementById('p-bar').style.width = pct + "%";
             document.getElementById('s-ok').innerText = ok;
             document.getElementById('s-dead').innerText = dead;
             
-            // Petite pause pour ne pas figer le navigateur
-            await new Promise(r => setTimeout(r, 10));
+            await new Promise(r => setTimeout(r, 50)); // Pause pour ne pas saturer le réseau
         }
         
-        log(`Scan terminé. ${ok} chaînes valides.`);
+        log(`Scan terminé. ${ok} chaînes confirmées.`);
         if(ok > 0) {
             document.getElementById('btn-save').disabled = false;
             document.getElementById('btn-save').innerText = `ENREGISTRER ${ok} CHAÎNES (COL D/E)`;
-        } else {
-            alert("Aucune chaîne valide trouvée.");
         }
     }
 
-    async function checkUrl(url) {
+    // --- C'EST ICI QUE LA MAGIE OPERE ---
+    async function deepAnalyzeUrl(url) {
+        
+        // 1. TEST RAPIDE (HEAD via Proxy Principal)
         try {
             const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), 4000); // 4 sec timeout
-            const res = await fetch(PROXY + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
+            const id = setTimeout(() => controller.abort(), 3000); // 3s
+            const res = await fetch(PROXY_MAIN + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
             clearTimeout(id);
-            return res.ok;
-        } catch(e) { return false; }
+            if(res.ok) return { working: true, method: 'badge-fast' };
+        } catch(e) {}
+
+        // 2. TEST APPROFONDI (GET via Proxy Principal - Pour les serveurs qui bloquent HEAD)
+        try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 5000); // 5s
+            // On demande juste les premiers octets pour ne pas télécharger tout le film
+            const res = await fetch(PROXY_MAIN + encodeURIComponent(url), { 
+                method: 'GET', 
+                headers: { 'Range': 'bytes=0-100' }, // Astuce pour simuler un début de lecture
+                signal: controller.signal 
+            });
+            clearTimeout(id);
+            if(res.ok || res.status === 206) return { working: true, method: 'badge-deep' };
+        } catch(e) {}
+
+        // 3. TEST DE SECOURS (GET via Proxy Backup - Pour contourner les blocages IP)
+        try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 8000); // 8s (Lent mais sur)
+            const res = await fetch(PROXY_BACKUP + encodeURIComponent(url), { method: 'GET', signal: controller.signal });
+            clearTimeout(id);
+            // Backup proxy renvoie souvent du texte ou JSON, on vérifie si la réponse n'est pas vide
+            if(res.ok) return { working: true, method: 'badge-rescue' };
+        } catch(e) {}
+
+        // SI TOUT ECHOUE
+        return { working: false };
     }
 
-    // --- 3. ENVOI (COLONNES D/E) ---
+    function updateRow(idx, status, method) {
+        let el = document.getElementById(`row-${idx}`);
+        if(el) {
+            el.className = `item ${status}`;
+            let icon = '⏳';
+            if(status === 'ok') icon = `✅ <span class="badge ${method}">${method.replace('badge-', '')}</span>`;
+            if(status === 'dead') icon = '❌';
+            if(status === 'retry') icon = '🔄 Analyse...';
+            
+            // On ne change que l'icone pour pas faire clignoter le texte
+            el.querySelector('span:last-child').innerHTML = icon;
+        }
+    }
+
+    // --- 3. ENVOI ---
     async function sendToGoogle() {
         const btn = document.getElementById('btn-save');
         btn.disabled = true;
         btn.innerText = "ENVOI EN COURS...";
-        log("Envoi vers Google Sheets (Colonnes D & E)...");
+        log("Envoi des chaînes validées vers Google Sheets...");
         
-        // Envoi par tranches de 500 pour ne pas saturer Google
         for(let i=0; i<validChannels.length; i+=500) {
             let chunk = validChannels.slice(i, i+500);
             try {
@@ -213,13 +259,12 @@
                 });
                 log(`Paquet ${i} envoyé.`);
             } catch(e) {
-                log("Erreur envoi: " + e);
-                alert("Erreur lors de l'envoi d'un paquet");
+                alert("Erreur réseau lors de l'envoi.");
                 return;
             }
         }
-        log("✅ LISTE EN LIGNE !");
-        alert("Succès ! Les chaînes valides sont maintenant dans les colonnes D et E.");
+        log("✅ TERMINE !");
+        alert("Succès ! La liste propre est en ligne.");
         btn.innerText = "TERMINE";
     }
 
