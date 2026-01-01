@@ -105,6 +105,22 @@
     </div>
 </div>
 
+<div id="custom-confirm" class="modal" style="z-index: 99999;">
+    <div class="modal-box" style="border: 1px solid #e50914; box-shadow: 0 0 20px rgba(229, 9, 20, 0.3); text-align: center;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:80px; margin-bottom:10px;">
+        <h3 style="color:#e50914; margin: 0 0 15px 0; text-transform: uppercase;">QUESTION</h3>
+        <p id="custom-confirm-text" style="color: white; font-size: 14px; line-height: 1.5; margin-bottom: 25px;">Message...</p>
+        <div style="display:flex; justify-content:center; gap:15px;">
+            <button onclick="closeCustomConfirm(true)" style="background: #e50914; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; font-size: 14px; cursor: pointer;">
+                OUI
+            </button>
+            <button onclick="closeCustomConfirm(false)" style="background: #444; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-weight: bold; font-size: 14px; cursor: pointer;">
+                NON
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="maint-screen">
     <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:120px; margin-bottom:20px;">
     <h1 style="color:#e50914;">MAINTENANCE</h1>
@@ -273,29 +289,43 @@
     let lastActivityTime = Date.now();
     let isScanning = false;
 
-    // GESTION DU MODE DE RECEPTION (MODIFIÉ POUR LA PREMIÈRE CONFIG)
-    // On ne met plus de valeur par défaut 'full' pour détecter le premier lancement
+    // GESTION DU MODE DE RECEPTION
     let appMode = localStorage.getItem('mybox_mode'); 
 
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    // --- GESTION DES ALERTES PERSONNALISÉES (REMPLACE ALERT) ---
+    // --- GESTION DES FENETRES PERSONNALISÉES (REMPLACE ALERT & CONFIRM) ---
     let onAlertCloseAction = null;
+    let onConfirmAction = null;
 
+    // 1. Fenêtre d'INFO (Bouton COMPRIS)
     function showMyAlert(message, actionAfter) {
         document.getElementById('custom-alert-text').innerText = message;
         document.getElementById('custom-alert').style.display = 'flex';
         if (actionAfter) { onAlertCloseAction = actionAfter; }
     }
-
     function closeCustomAlert() {
         document.getElementById('custom-alert').style.display = 'none';
         if (onAlertCloseAction) {
             onAlertCloseAction();
             onAlertCloseAction = null;
         }
+    }
+
+    // 2. Fenêtre de CONFIRMATION (Boutons OUI / NON)
+    function showMyConfirm(message, actionYes) {
+        document.getElementById('custom-confirm-text').innerText = message;
+        document.getElementById('custom-confirm').style.display = 'flex';
+        onConfirmAction = actionYes;
+    }
+    function closeCustomConfirm(choice) {
+        document.getElementById('custom-confirm').style.display = 'none';
+        if (choice && onConfirmAction) {
+            onConfirmAction();
+        }
+        onConfirmAction = null; // Reset
     }
 
     function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror=()=>reject("DB Error"); r.onsuccess=e=>resolve(e.target.result); r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
@@ -335,7 +365,7 @@
     }
 
     function toggleModeQuick() {
-        if(!appMode) return; // Pas encore configuré
+        if(!appMode) return; 
         appMode = (appMode === 'full') ? 'premium' : 'full';
         changeSourceMode(appMode);
     }
@@ -345,10 +375,8 @@
         appMode = mode;
         updateModeUI();
         
-        // Ferme les réglages au cas où c'est le premier lancement
         closeSettings();
         
-        // Utilisation de la nouvelle fenêtre stylée
         showMyAlert("Mode configuré : " + mode.toUpperCase() + ".\nChargement des chaînes...", function() {
             initApp(); 
         });
@@ -362,17 +390,44 @@
     }
 
     function startRealTimeCheck() { setInterval(async () => { const key = localStorage.getItem('mybox_key'); if(!key) return; try { const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); const text = await res.text(); if(!text.includes("SUCCESS")) { localStorage.removeItem('mybox_auth'); location.reload(); } else { updateAccountDisplay(key, text); } } catch(e) {} }, 5000); }
-    async function login() { const key = document.getElementById('licenseKey').value.trim(); try { const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); const text = await res.text(); if(text.includes("MAINTENANCE")) { alert("Maintenance"); return; } if(text.includes("SUCCESS")) { localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text); updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp(); startRealTimeCheck(); } else alert("ABONNEMENT EXPIRER OU ID INVALIDE"); } catch(e) { alert("Erreur Internet"); } }
+    
+    async function login() { 
+        const key = document.getElementById('licenseKey').value.trim(); 
+        try { 
+            const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); 
+            const text = await res.text(); 
+            if(text.includes("MAINTENANCE")) { showMyAlert("Maintenance en cours."); return; } 
+            if(text.includes("SUCCESS")) { 
+                localStorage.setItem('mybox_auth', 'OK'); 
+                localStorage.setItem('mybox_key', key); 
+                localStorage.setItem('mybox_raw_status', text); 
+                updateAccountDisplay(key, text); 
+                document.getElementById('login-screen').style.display = 'none'; 
+                initApp(); 
+                startRealTimeCheck(); 
+            } else {
+                showMyAlert("ABONNEMENT EXPIRÉ OU ID INVALIDE");
+            } 
+        } catch(e) { 
+            showMyAlert("Erreur de connexion Internet"); 
+        } 
+    }
+    
     function updateAccountDisplay(key, raw) { document.getElementById('sub-id').innerText = key; if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Expire: " + raw.split(':')[1] + "j"; }
-    async function logout() { if(confirm("Déconnecter ?")) { try{ await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); }catch(e){} localStorage.removeItem('mybox_auth'); location.reload(); } }
+    
+    async function logout() { 
+        showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async function() {
+            try{ await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); }catch(e){} 
+            localStorage.removeItem('mybox_auth'); 
+            location.reload(); 
+        });
+    }
 
     async function initApp() {
-        // --- DETECTION DU PREMIER LANCEMENT ---
         if (!appMode) {
-            // Pas de mode configuré = Premier lancement
-            openSettings(); // Ouvre la fenêtre de config
-            showMyAlert("Bienvenue sur My Box TV !\nVeuillez choisir un Mode de Réception dans la liste pour commencer.");
-            return; // On arrête tout, on ne charge pas les chaînes tant qu'il n'a pas choisi
+            openSettings(); 
+            showMyAlert("Bienvenue sur My Box TV !\nVeuillez choisir un Mode de Réception pour commencer.");
+            return; 
         }
 
         updateModeUI();
@@ -472,16 +527,18 @@
     async function quickScan() {
         if(appMode === 'premium') { initApp(); return; } 
         if(isScanning) return;
-        if(!confirm("Rechercher les nouvelles chaînes maintenant ?")) return;
-        document.getElementById('scan-info').style.display = "flex";
-        isScanning = true;
-        for(let tpUrl of availableTransponders) {
-            document.getElementById('scan-text').innerText = "Recherche Rapide...";
-            await fetchPlaylistWithWatchdog(tpUrl);
-        }
-        isScanning = false;
-        document.getElementById('scan-info').style.display = "none";
-        saveChannelsToDB(allChannels);
+        
+        showMyConfirm("Rechercher les nouvelles chaînes maintenant ?", async function() {
+            document.getElementById('scan-info').style.display = "flex";
+            isScanning = true;
+            for(let tpUrl of availableTransponders) {
+                document.getElementById('scan-text').innerText = "Recherche Rapide...";
+                await fetchPlaylistWithWatchdog(tpUrl);
+            }
+            isScanning = false;
+            document.getElementById('scan-info').style.display = "none";
+            saveChannelsToDB(allChannels);
+        });
     }
 
     async function fetchPlaylistWithWatchdog(url) {
@@ -600,7 +657,7 @@
         if(name.includes('adult') || name.includes('xxx') || name.includes('porn')) { pendingChannelIndex = index; document.getElementById('pin-modal').style.display = 'flex'; }
         else { currentChannelIndex = index; playChannel(currentChannelIndex); }
     }
-    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else alert("Code Erroné"); }
+    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else showMyAlert("Code Erroné"); }
     function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
 
     function playChannel(index) {
@@ -629,7 +686,7 @@
     function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
     
     function hideCurrentChannel() { 
-        if(confirm("Supprimer cette chaîne ?")) { 
+        showMyConfirm("Supprimer cette chaîne de la liste ?", function() {
             const ch = allChannels[currentChannelIndex]; 
             hiddenChannels.push(ch.url); 
             localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); 
@@ -637,7 +694,7 @@
             loadedUrls.delete(ch.url); 
             renderList(); 
             nextChannel(); 
-        } 
+        });
     }
     
     function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
@@ -658,7 +715,11 @@
         reader.readAsText(file);
     }
 
-    async function forceReload() { if(confirm("Recharger ?")) { await clearDB(); location.reload(); } }
+    async function forceReload() { 
+        showMyConfirm("Voulez-vous réinitialiser et recharger ?", async function() {
+            await clearDB(); location.reload(); 
+        });
+    }
 </script>
 </body>
 </html>
