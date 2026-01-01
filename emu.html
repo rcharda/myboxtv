@@ -2,304 +2,261 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN V116 - DIRECT SCANNER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <title>Chaînes Locales & Monde</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
-        .panel { background: #111; border: 1px solid #333; padding: 20px; border-radius: 8px; flex: 1; display: flex; flex-direction: column; }
-        .panel-full { flex: 2; }
-        h2 { margin-top: 0; color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 16px; display:flex; justify-content:space-between; }
+        :root { --primary: #e50914; --bg: #000000; --card-bg: #1a1a1a; --text: #ffffff; }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         
-        .btn { width: 100%; padding: 12px; border: none; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; margin-bottom: 10px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; transform: scale(1.02); }
-        .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
-        .btn-orange { background: #d35400; } 
-        .btn-blue { background: #007bff; } 
-        .btn-green { background: #27ae60; } 
-        .btn-grey { background: #444; }
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Montserrat', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
         
-        .list-box { flex: 1; overflow-y: auto; border: 1px solid #333; background: #000; font-family: monospace; font-size: 11px; padding: 5px; }
-        .item { padding: 5px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .item.ok { color: #2ecc71; border-left: 3px solid #2ecc71; background: rgba(46, 204, 113, 0.1); } 
-        .item.dead { color: #555; text-decoration: line-through; }
-        .item.retry { color: #f1c40f; }
+        /* HEADER */
+        .header { 
+            background: #1a1a1a; 
+            padding: 15px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            border-bottom: 2px solid #e50914; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+            z-index: 10; 
+        }
+        .back-btn { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size:16px;}
+        .search-bar { flex: 1; padding: 12px; border-radius: 30px; border: 1px solid #444; background: #222; color: white; font-size: 14px; padding-left: 20px; }
+        
+        /* GRILLE DE CONTENU */
+        .content-area { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-content: flex-start; }
+        
+        /* CARTE CHAINE */
+        .card { 
+            background: #1e1e1e; border-radius: 8px; height: 110px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            cursor: pointer; border: 1px solid #333; position: relative; overflow: hidden;
+        }
+        .card:active { background: #e50914; border-color: white; transform: scale(0.98); }
+        .card-img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 8px; border-radius: 5px; background: #fff; padding: 2px; }
+        .card-title { font-size: 10px; text-align: center; font-weight: 600; padding: 0 5px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-cat { font-size: 8px; color: #aaa; margin-top: 2px; }
+        
+        /* LOADING */
+        .loader-bar { width: 100%; height: 3px; background: #222; position: fixed; top: 0; left: 0; z-index: 20; }
+        .progress { height: 100%; background: #e50914; width: 0%; transition: width 0.3s; box-shadow: 0 0 10px #e50914; }
+        .status-pill { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 20px; font-size: 11px; border: 1px solid #444; z-index: 50; display:flex; gap:10px;}
 
-        .progress-bar { height: 5px; background: #e50914; width: 0%; margin: 10px 0; transition: width 0.2s; }
-        .log-area { height: 100px; overflow-y: auto; color: #666; font-size: 10px; border-top: 1px solid #333; padding-top: 10px; font-family: monospace; }
-        .stats { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; font-weight: bold; }
-        
-        .badge { padding: 2px 5px; border-radius: 3px; font-size: 9px; color: #000; font-weight: bold; margin-left: 5px; }
-        .badge-direct { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        /* LECTEUR PLEIN ECRAN */
+        #player-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; display: none; flex-direction: column; }
+        video { width: 100%; height: 100%; object-fit: contain; flex: 1; }
+        .player-controls { padding: 10px; background: rgba(20,20,20,0.9); display: flex; justify-content: space-between; align-items: center; }
+        .close-player { background: #e50914; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="panel">
-        <h2>1. SOURCES (M3U) <span id="source-count" style="color:#888; font-size:12px;">0</span></h2>
-        
-        <p style="font-size:11px; color:#aaa;">Importe les liens M3U de la Colonne B de ton Excel.</p>
-        <button class="btn btn-orange" onclick="fetchSourcesFromGoogle()">
-            <i class="fas fa-cloud-download-alt"></i> IMPORTER DEPUIS SERVEUR
+    <div class="loader-bar"><div class="progress" id="scan-prog"></div></div>
+
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='index.html'">
+            <i class="fas fa-home"></i>
         </button>
-
-        <hr style="border:0; border-top:1px solid #333; width:100%; margin: 15px 0;">
-
-        <p style="font-size:11px; color:#aaa;">Ou utilise un fichier local :</p>
-        <input type="file" id="localFileInput" accept=".m3u,.m3u8" style="display:none;" onchange="handleLocalFile(this)">
-        <button class="btn btn-grey" onclick="document.getElementById('localFileInput').click()">
-            <i class="fas fa-folder-open"></i> CHOISIR FICHIER .M3U
-        </button>
-        <div id="fileName" style="font-size:10px; color:#e50914; text-align:center; margin-bottom:10px;"></div>
-
-        <button class="btn btn-blue" onclick="processLocalFile()" id="btn-extract" disabled>
-            <i class="fas fa-cogs"></i> EXTRAIRE LES CHAINES
-        </button>
-
-        <div class="log-area" id="log">Prêt...</div>
+        <input type="text" class="search-bar" id="searchInput" placeholder="🔍 Rechercher une chaîne...">
     </div>
 
-    <div class="panel panel-full">
-        <h2>2. ANALYSE DIRECTE <span style="font-size:12px; color:#2ecc71;">MODE CERVEAU</span></h2>
-        
-        <div class="stats">
-            <span style="color:#fff">Total: <span id="s-total">0</span></span>
-            <span style="color:#2ecc71">Direct OK: <span id="s-ok">0</span></span>
-            <span style="color:#e74c3c">HS: <span id="s-dead">0</span></span>
-        </div>
+    <div class="content-area" id="grid"></div>
 
-        <div style="background:#222; border-radius:5px; overflow:hidden;"><div class="progress-bar" id="p-bar"></div></div>
-        
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn btn-blue" onclick="startDirectScan()" id="btn-scan" disabled>
-                <i class="fas fa-microchip"></i> LANCER L'ANALYSE
-            </button>
-            <button class="btn btn-green" onclick="sendToGoogle()" id="btn-save" disabled>
-                <i class="fas fa-upload"></i> SAUVEGARDER (COL D/E)
-            </button>
+    <div class="status-pill">
+        <span id="status-text">Connexion...</span>
+        <span id="count" style="color:#e50914; font-weight:bold;">0</span>
+    </div>
+
+    <div id="player-overlay">
+        <div class="player-controls">
+            <span id="playing-title" style="font-weight:bold; font-size:14px;">Lecture...</span>
+            <button class="close-player" onclick="closePlayer()">FERMER</button>
         </div>
-        
-        <div class="list-box" id="result-list"></div>
+        <video id="video" controls autoplay playsinline></video>
     </div>
 
 <script>
     // --- CONFIGURATION ---
-    const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwg49-A8a5q72hnhcf99865CBqAErbxAMUX4TDDsR47anl4ELo6iZhDzS2hH4yMMJ1CcQ/exec";
     const PROXY = "https://corsproxy.io/?";
+    
+    let allChannels = [];
+    let hls = null;
+    const video = document.getElementById('video');
 
-    let extractedChannels = []; 
-    let validChannels = [];
-    let uniqueUrls = new Set(); // Pour anti-doublon global
-    let selectedLocalFile = null;
+    window.onload = fetchTransponders;
 
-    // ==========================================
-    // 1. IMPORTATION (COLONNE B ou LOCAL)
-    // ==========================================
-
-    async function fetchSourcesFromGoogle() {
-        log("Récupération des listes M3U (Colonne B)...");
+    // 1. Récupérer la liste des liens (Transponders) depuis Excel
+    async function fetchTransponders() {
+        document.getElementById('status-text').innerText = "Récupération sources...";
         try {
-            const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
-            const data = await res.json();
+            const res = await fetch(`${API_URL}?action=get_playlists`);
+            const sources = await res.json();
             
-            if(data.length === 0) return log("Aucune source M3U trouvée.");
-            
-            log(`${data.length} sources trouvées. Début extraction...`);
-            
-            for(let item of data) {
-                let url = item.url || item; // Gère les formats objets ou string
-                log(`Lecture: ${url.substring(0, 40)}...`);
-                try {
-                    const txtRes = await fetch(PROXY + encodeURIComponent(url));
-                    const text = await txtRes.text();
-                    processM3UText(text);
-                } catch(err) { log("Erreur lecture source."); }
-            }
-            finishExtraction();
-        } catch(e) { log("Erreur Connexion: " + e); }
-    }
-
-    function handleLocalFile(input) {
-        if(input.files && input.files[0]) {
-            selectedLocalFile = input.files[0];
-            document.getElementById('fileName').innerText = selectedLocalFile.name;
-            document.getElementById('btn-extract').disabled = false;
-        }
-    }
-
-    function processLocalFile() {
-        if(!selectedLocalFile) return;
-        extractedChannels = []; uniqueUrls.clear(); // Reset
-        log(`Lecture fichier local...`);
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            processM3UText(e.target.result);
-            finishExtraction();
-        };
-        reader.readAsText(selectedLocalFile);
-    }
-
-    // --- MOTEUR D'EXTRACTION AVEC ANTI-DOUBLON ---
-    function processM3UText(text) {
-        const lines = text.split('\n');
-        let currentName = "Sans Nom";
-        let count = 0;
-
-        for(let i=0; i<lines.length; i++) {
-            let line = lines[i].trim();
-            if(line.startsWith("#EXTINF")) {
-                let parts = line.split(',');
-                currentName = parts[parts.length - 1].trim();
-            } 
-            else if(line.startsWith("http")) {
-                // FILTRE STRICT : On ne veut pas de playlist imbriquée (.m3u) ni de doublons
-                if (!line.includes(".m3u") && !uniqueUrls.has(line)) {
-                    extractedChannels.push({ name: currentName, url: line, status: 'waiting' });
-                    uniqueUrls.add(line); // Marquer comme vu
-                    count++;
-                }
-            }
-        }
-        log(`+ ${count} nouvelles chaînes uniques.`);
-    }
-
-    function finishExtraction() {
-        log(`TOTAL EXTRAIT : ${extractedChannels.length} chaînes.`);
-        document.getElementById('s-total').innerText = extractedChannels.length;
-        document.getElementById('btn-scan').disabled = false;
-        renderList();
-    }
-
-    // ==========================================
-    // 2. ANALYSE (SCAN DIRECT)
-    // ==========================================
-
-    async function startDirectScan() {
-        const btnScan = document.getElementById('btn-scan');
-        btnScan.disabled = true;
-        btnScan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SCAN EN COURS...';
-        
-        validChannels = [];
-        let ok = 0, dead = 0;
-        
-        // Scan par paquets de 20 (Plus rapide)
-        for(let i=0; i<extractedChannels.length; i+=20) {
-            let chunk = extractedChannels.slice(i, i+20);
-            
-            await Promise.all(chunk.map(async (item, idx) => {
-                const globalIdx = i + idx;
-                updateRowUI(globalIdx, 'retry'); // Indicateur "En cours"
-
-                const isLive = await checkDirectLink(item.url);
-                
-                if(isLive) {
-                    item.status = 'ok';
-                    ok++;
-                    // Format [Nom, Url] pour l'envoi Google
-                    validChannels.push([item.name, item.url]);
-                } else {
-                    item.status = 'dead';
-                    dead++;
-                }
-                updateRowUI(globalIdx, item.status);
-            }));
-            
-            // Mise à jour stats
-            let pct = Math.round(((i+20)/extractedChannels.length)*100);
-            document.getElementById('p-bar').style.width = pct + "%";
-            document.getElementById('s-ok').innerText = ok;
-            document.getElementById('s-dead').innerText = dead;
-        }
-        
-        log(`SCAN TERMINÉ. ${ok} chaînes valides.`);
-        btnScan.innerHTML = "SCAN TERMINÉ";
-        if(ok > 0) {
-            document.getElementById('btn-save').disabled = false;
-            document.getElementById('btn-save').innerText = `ENVOYER ${ok} CHAINES (COL D/E)`;
-        }
-    }
-
-    // TEST DE CONNEXION "DIRECT"
-    async function checkDirectLink(url) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), 4000); // 4 sec max pour répondre
-        try {
-            // On tente un HEAD request via Proxy pour vérifier si le lien est vivant (200 OK)
-            const res = await fetch(PROXY + encodeURIComponent(url), { 
-                method: 'HEAD', 
-                signal: controller.signal 
-            });
-            clearTimeout(id);
-            return res.ok;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    // ==========================================
-    // 3. SAUVEGARDE GOOGLE
-    // ==========================================
-
-    async function sendToGoogle() {
-        const btn = document.getElementById('btn-save');
-        btn.disabled = true;
-        btn.innerText = "ENVOI EN COURS...";
-        
-        // Envoi par paquets de 500 pour ne pas saturer le script
-        for(let i=0; i<validChannels.length; i+=500) {
-            let chunk = validChannels.slice(i, i+500);
-            try {
-                // On utilise une action spécifique du script pour ajouter aux colonnes D/E
-                await fetch(`${API_URL}?action=admin_save_extracted`, {
-                    method: 'POST',
-                    body: JSON.stringify(chunk)
+            let completed = 0;
+            // Scan en parallèle (Ultra Rapide)
+            sources.forEach(src => {
+                fetchStream(src.url, src.name, () => {
+                    completed++;
+                    document.getElementById('scan-prog').style.width = (completed / sources.length * 100) + "%";
+                    if(completed === sources.length) document.getElementById('status-text').innerText = "Terminé.";
                 });
-                log(`Paquet ${i} envoyé.`);
-            } catch(e) {
-                alert("Erreur d'envoi. Vérifiez votre connexion.");
-                btn.disabled = false;
-                return;
+            });
+        } catch(e) {
+            document.getElementById('status-text').innerText = "Erreur connexion";
+        }
+    }
+
+    // 2. Moteur de lecture de flux (Compatible 20k chaines)
+    async function fetchStream(url, sourceName, onComplete) {
+        document.getElementById('status-text').innerText = "Scan: " + sourceName;
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 60000);
+
+        try {
+            const response = await fetch(PROXY + encodeURIComponent(url), { signal: controller.signal });
+            clearTimeout(id);
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+            let batch = [];
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let lines = buffer.split("\n");
+                buffer = lines.pop();
+                processChunk(lines, batch);
+                if(batch.length > 20) flushGrid(batch);
+            }
+            processChunk([buffer], batch);
+            flushGrid(batch);
+        } catch(e) { console.log("Skip " + url); }
+        onComplete();
+    }
+
+    let currentInfo = null;
+    
+    // --- C'EST ICI QUE LA MAGIE OPERE (FILTRAGE) ---
+    function processChunk(lines, batch) {
+        for(let line of lines) {
+            line = line.trim();
+            if(!line) continue;
+            
+            if(line.startsWith('#EXTINF')) {
+                let name = line.split(',')[1] || "Chaîne";
+                let logo = (line.match(/tvg-logo=["']?([^"']*)["']?/) || [])[1];
+                let cat = "Autres";
+                // Détection intelligente du dossier
+                let grp = line.match(/group-title=["']?([^"']*)["']?/);
+                if(grp) cat = grp[1].replace(/;/g, " ").trim();
+                
+                currentInfo = { name: name, logo: logo, cat: cat };
+            } 
+            else if(line.startsWith('http')) {
+                if(currentInfo) {
+                    // --- FILTRE DE COMPATIBILITÉ NAVIGATEUR ---
+                    // On accepte uniquement ce qui a une chance de marcher dans ton lecteur HLS/HTML5
+                    const isCompatible = (line.includes('.m3u8') || line.includes('.mp4')) 
+                                         && !line.includes('.ts') 
+                                         && !line.includes('.mkv')
+                                         && !line.includes('.avi');
+
+                    if(isCompatible) {
+                        batch.push({...currentInfo, url: line});
+                    }
+                    // Si pas compatible, on ignore simplement la chaîne
+                    currentInfo = null;
+                }
             }
         }
+    }
+
+    function flushGrid(batch) {
+        if(batch.length === 0) return;
+        const grid = document.getElementById('grid');
+        const frag = document.createDocumentFragment();
         
-        alert("Succès ! Les chaînes valides sont maintenant dans les colonnes D et E.");
-        btn.innerText = "TERMINE";
-        btn.className = "btn btn-grey";
-    }
-
-    // --- UI HELPERS ---
-    function renderList() {
-        const container = document.getElementById('result-list');
-        let html = "";
-        // On n'affiche que les 200 premiers pour pas faire ramer le navigateur lors du scan
-        let max = Math.min(extractedChannels.length, 200);
+        batch.forEach(ch => {
+            allChannels.push(ch);
+            const div = document.createElement('div');
+            div.className = "card";
+            div.innerHTML = `
+                <img src="${ch.logo || 'https://via.placeholder.com/40'}" class="card-img" loading="lazy" onerror="this.src='https://via.placeholder.com/40'">
+                <div class="card-title">${ch.name}</div>
+                <div class="card-cat">${ch.cat}</div>
+            `;
+            div.onclick = () => openPlayer(ch);
+            frag.appendChild(div);
+        });
         
-        for(let i=0; i<max; i++) {
-            let c = extractedChannels[i];
-            html += `<div class="item ${c.status}" id="row-${i}">
-                <span>${c.name}</span>
-                <span class="status-icon">⏳</span>
-            </div>`;
-        }
-        if(extractedChannels.length > 200) html += `<div style="text-align:center; padding:10px; color:#444;">... ${extractedChannels.length - 200} autres chaînes masquées pour fluidité ...</div>`;
-        container.innerHTML = html;
+        grid.appendChild(frag);
+        document.getElementById('count').innerText = allChannels.length;
+        // On vide le batch pour ne pas ré-ajouter les mêmes
+        batch.length = 0; 
     }
 
-    function updateRowUI(idx, status) {
-        let el = document.getElementById(`row-${idx}`);
-        if(el) {
-            el.className = `item ${status}`;
-            let icon = '⏳';
-            if(status === 'ok') icon = '✅ <span class="badge badge-direct">DIRECT</span>';
-            if(status === 'dead') icon = '❌';
-            if(status === 'retry') icon = '🔄';
-            el.querySelector('.status-icon').innerHTML = icon;
+    // --- RECHERCHE INSTANTANÉE ---
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.card');
+        
+        // Mode optimisé : on masque/affiche via CSS
+        cards.forEach(card => {
+            if(card.innerText.toLowerCase().includes(term)) card.style.display = "flex";
+            else card.style.display = "none";
+        });
+    });
+
+    // --- LECTEUR AVEC AUTO-REPARATION ---
+    function openPlayer(ch) {
+        document.getElementById('player-overlay').style.display = "flex";
+        document.getElementById('playing-title').innerText = ch.name;
+        
+        if(Hls.isSupported()) {
+            if(hls) hls.destroy();
+            hls = new Hls();
+            hls.loadSource(ch.url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            
+            // Si erreur, on tente le proxy de réparation
+            hls.on(Hls.Events.ERROR, (e,d) => {
+                if(d.fatal) {
+                    hls.destroy(); hls = new Hls();
+                    hls.loadSource(PROXY + encodeURIComponent(ch.url));
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                }
+            });
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = ch.url;
+            video.play();
         }
     }
 
-    function log(msg) {
-        const div = document.getElementById('log');
-        div.innerHTML += `<div>> ${msg}</div>`;
-        div.scrollTop = div.scrollHeight;
+    function closePlayer() {
+        document.getElementById('player-overlay').style.display = "none";
+        video.pause(); video.src = "";
+        if(hls) hls.destroy();
     }
 </script>
 </body>
