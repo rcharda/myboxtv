@@ -3,56 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FRANCE TV 2AYER</title>
+    <title>WORLD TV - SCROLL INFINI</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #3498db; /* Bleu France */
+            --primary: #9b59b6; /* Violet moderne */
             --bg: #121212;
             --surface: #1e1e1e;
+            --item-hover: #2c2c2c;
             --text: #ffffff;
-            --accent: #e74c3c;
         }
         
         body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         /* HEADER */
-        header { height: 60px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 2px solid var(--primary); }
-        .logo { font-weight: 900; font-size: 20px; display: flex; align-items: center; gap: 10px; }
-        .flag-icon { font-size: 24px; }
-        
-        .status-badge { font-size: 12px; background: #222; padding: 5px 15px; border-radius: 20px; color: #aaa; border: 1px solid #333; }
-        .status-badge.online { color: #2ecc71; border-color: #2ecc71; }
+        header { height: 60px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 2px solid var(--primary); z-index: 10; }
+        .logo { font-weight: 900; font-size: 20px; display: flex; align-items: center; gap: 10px; letter-spacing: 1px; }
+        .counter { font-size: 12px; background: #333; padding: 5px 12px; border-radius: 15px; color: #ccc; border: 1px solid #444; }
 
-        /* MAIN LAYOUT */
+        /* LAYOUT */
         .container { display: flex; flex: 1; overflow: hidden; }
         
-        /* VIDEO PLAYER */
+        /* PLAYER ZONE */
         .player-area { flex: 2; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; max-height: 100vh; outline: none; }
-        
         .overlay-msg { position: absolute; text-align: center; color: #888; pointer-events: none; }
         
-        /* SIDEBAR LIST */
-        .sidebar { flex: 1; max-width: 350px; background: var(--surface); display: flex; flex-direction: column; border-left: 1px solid #333; }
+        /* SIDEBAR */
+        .sidebar { flex: 1; max-width: 380px; background: var(--surface); display: flex; flex-direction: column; border-left: 1px solid #333; position: relative; }
         
         .search-box { padding: 15px; background: #181818; border-bottom: 1px solid #333; }
         input { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; }
         input:focus { border-color: var(--primary); background: #333; }
-
+        
+        /* LISTE AVEC SCROLL INFINI */
         .channel-list { flex: 1; overflow-y: auto; padding: 0; }
-        .channel-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #252525; transition: 0.2s; }
-        .channel-item:hover { background: #2a2a2a; }
-        .channel-item.active { background: rgba(52, 152, 219, 0.15); border-left: 4px solid var(--primary); }
         
-        .ch-logo { width: 45px; height: 45px; background: #fff; border-radius: 4px; object-fit: contain; margin-right: 15px; padding: 2px; }
+        /* ITEM DESIGN */
+        .channel-item { display: flex; align-items: center; padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #252525; transition: background 0.2s; }
+        .channel-item:hover { background: var(--item-hover); }
+        .channel-item.active { background: rgba(155, 89, 182, 0.2); border-left: 4px solid var(--primary); }
+        
+        .ch-logo { width: 40px; height: 40px; background: #fff; border-radius: 4px; object-fit: contain; margin-right: 15px; padding: 2px; }
         .ch-info { flex: 1; overflow: hidden; }
-        .ch-name { font-weight: 600; font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ch-cat { font-size: 11px; color: #888; margin-top: 3px; }
+        .ch-name { font-weight: 600; font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ch-meta { font-size: 10px; color: #aaa; margin-top: 4px; display: flex; gap: 5px; }
+        .badge { background: #333; padding: 2px 6px; border-radius: 3px; }
 
-        #loader { display: none; color: var(--primary); font-weight: bold; text-transform: uppercase; font-size: 14px; }
-        
+        /* LOADER */
+        #main-loader { display: flex; position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* MOBILE */
         @media (max-width: 768px) {
             .container { flex-direction: column; }
@@ -63,150 +66,188 @@
 </head>
 <body>
 
+<div id="main-loader">
+    <div class="spinner"></div>
+    <div style="color:white; font-weight:bold;">TÉLÉCHARGEMENT MONDIAL...</div>
+    <div style="color:#888; font-size:12px; margin-top:5px;">~30 000 chaînes (Patientez)</div>
+</div>
+
 <header>
     <div class="logo">
-        <span class="flag-icon">🇫🇷</span>
-        <span>FRANCE TV</span>
+        <i class="fas fa-globe-americas"></i>
+        <span>WORLD TV</span>
     </div>
-    <div class="status-badge" id="status-indicator">PRÊT</div>
+    <div class="counter" id="count-badge">0 Chaînes</div>
 </header>
 
 <div class="container">
     <div class="player-area">
         <video id="video" controls autoplay playsinline></video>
         <div class="overlay-msg" id="overlay">
-            <i class="fas fa-tv" style="font-size: 50px; margin-bottom: 20px; color:#333;"></i><br>
-            Sélectionnez une chaîne<br>
-            <span style="font-size: 12px; opacity: 0.5;">Mode: France (VPN OK)</span>
+            <i class="fas fa-play" style="font-size: 40px; margin-bottom: 20px; opacity:0.5;"></i><br>
+            Sélectionnez une chaîne
         </div>
-        <div id="loader">Chargement de la liste...</div>
     </div>
 
     <div class="sidebar">
         <div class="search-box">
-            <input type="text" id="search" placeholder="🔍 Rechercher une chaîne..." oninput="filterList()">
+            <input type="text" id="searchInput" placeholder="Rechercher (Pays, Chaîne, Sport)..." oninput="applyFilter()">
         </div>
-        <div class="channel-list" id="list"></div>
+        <div class="channel-list" id="scrollContainer">
+            <div id="list-content"></div>
+        </div>
     </div>
 </div>
 
 <script>
     // === CONFIGURATION ===
-    // Utilisation de la liste IPTV-ORG France (Github Pages supporte le CORS, donc pas besoin de proxy)
-    // C'est stable et rapide.
-    const PLAYLIST_URL = "https://iptv-org.github.io/iptv/countries/fr.m3u";
+    const PLAYLIST_URL = "https://iptv-org.github.io/iptv/index.m3u";
+    const BATCH_SIZE = 50; // Nombre de chaînes ajoutées à chaque scroll
 
-    let allChannels = [];
+    // === VARIABLES GLOBALES ===
+    let allChannels = [];        // La base de données complète (~30k)
+    let currentList = [];        // La liste filtrée actuelle (recherche)
+    let renderedCount = 0;       // Combien sont affichées actuellement
     let hls = null;
+
+    // === DOM ELEMENTS ===
+    const scrollContainer = document.getElementById('scrollContainer');
+    const listContent = document.getElementById('list-content');
     const video = document.getElementById('video');
-    const listEl = document.getElementById('list');
-    const loader = document.getElementById('loader');
-    const overlay = document.getElementById('overlay');
-    const statusInd = document.getElementById('status-indicator');
+    const loader = document.getElementById('main-loader');
+    const countBadge = document.getElementById('count-badge');
 
-    window.onload = loadPlaylist;
+    // === INITIALISATION ===
+    window.onload = loadDatabase;
 
-    async function loadPlaylist() {
-        loader.style.display = "block";
-        statusInd.innerText = "CHARGEMENT...";
-        
+    async function loadDatabase() {
         try {
-            // Fetch direct (plus fiable que le proxy allorigins pour ce type d'URL)
             const response = await fetch(PLAYLIST_URL);
             if (!response.ok) throw new Error("Erreur réseau");
             const text = await response.text();
-            parseM3U(text);
-            loader.style.display = "none";
-            statusInd.innerText = "LISTE À JOUR";
-            statusInd.classList.add('online');
+            
+            // Parsing asynchrone pour ne pas bloquer
+            setTimeout(() => parseM3U(text), 50);
         } catch (e) {
-            console.error(e);
-            loader.innerText = "ERREUR DE CHARGEMENT";
-            statusInd.innerText = "ERREUR";
-            // Tentative de secours avec proxy si le direct échoue
-            retryWithProxy();
-        }
-    }
-
-    async function retryWithProxy() {
-        try {
-            console.log("Tentative via Proxy...");
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(PLAYLIST_URL);
-            const response = await fetch(proxyUrl);
-            const text = await response.text();
-            parseM3U(text);
-            loader.style.display = "none";
-            statusInd.innerText = "CONNECTÉ (PROXY)";
-            statusInd.classList.add('online');
-        } catch(e) {
-            loader.innerText = "ÉCHEC TOTAL. VÉRIFIEZ INTERNET.";
+            loader.innerHTML = "<div style='color:red'>ERREUR DE CHARGEMENT</div>";
         }
     }
 
     function parseM3U(data) {
         const lines = data.split('\n');
         let currentItem = {};
-        allChannels = []; // Reset
+        allChannels = [];
 
-        lines.forEach(line => {
+        for (let line of lines) {
             line = line.trim();
-            if (!line) return;
+            if (!line) continue;
 
             if (line.startsWith('#EXTINF:')) {
-                const infoPart = line.substring(8); // Enlève #EXTINF:
+                const infoPart = line.substring(8);
                 const props = infoPart.split(',');
                 
-                // Nom (après la dernière virgule)
                 currentItem.name = props[props.length - 1].trim();
                 
-                // Logo
+                // Extraction Logo
                 const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-                currentItem.logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/50?text=TV";
+                currentItem.logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/40?text=TV";
                 
-                // Groupe
+                // Extraction Groupe (Pays/Genre)
                 const groupMatch = line.match(/group-title="([^"]*)"/);
-                currentItem.group = groupMatch ? groupMatch[1] : "Général";
+                currentItem.group = groupMatch ? groupMatch[1] : "International";
 
             } else if (line.startsWith('http')) {
                 currentItem.url = line;
-                if (currentItem.name && !currentItem.url.includes('.mpd')) { // On exclut les formats DASH non supportés simplement
+                if (currentItem.name) {
                     allChannels.push({...currentItem});
                 }
-                currentItem = {}; 
+                currentItem = {};
             }
-        });
+        }
+
+        // Fin du chargement
+        loader.style.display = 'none';
         
-        renderList(allChannels);
+        // Initialisation de la liste
+        currentList = allChannels; 
+        updateCounter();
+        
+        // Premier rendu (Reset)
+        renderBatch(true);
     }
 
-    function renderList(channels) {
-        listEl.innerHTML = "";
-        // On affiche tout (la liste FR est légère ~200 chaînes)
-        channels.forEach(ch => {
+    // === MOTEUR DE RENDU (SCROLL INFINI) ===
+    
+    // Fonction qui ajoute des éléments au DOM
+    function renderBatch(reset = false) {
+        if (reset) {
+            listContent.innerHTML = "";
+            renderedCount = 0;
+            scrollContainer.scrollTop = 0; // Remonter en haut
+        }
+
+        const fragment = document.createDocumentFragment();
+        // Calcul : on va de 'renderedCount' jusqu'à 'renderedCount + 50'
+        const limit = Math.min(renderedCount + BATCH_SIZE, currentList.length);
+
+        for (let i = renderedCount; i < limit; i++) {
+            const ch = currentList[i];
             const div = document.createElement('div');
             div.className = "channel-item";
             div.innerHTML = `
-                <img src="${ch.logo}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/45?text=FR'">
+                <img src="${ch.logo}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
                 <div class="ch-info">
                     <span class="ch-name">${ch.name}</span>
-                    <span class="ch-cat">${ch.group}</span>
+                    <div class="ch-meta">
+                        <span class="badge">${ch.group}</span>
+                    </div>
                 </div>
             `;
             div.onclick = () => playStream(ch.url, div);
-            listEl.appendChild(div);
-        });
+            fragment.appendChild(div);
+        }
+
+        listContent.appendChild(fragment);
+        renderedCount = limit;
     }
 
-    function filterList() {
-        const term = document.getElementById('search').value.toLowerCase();
-        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
-        renderList(filtered);
+    // ÉCOUTEUR DE SCROLL (Le coeur du système infini)
+    scrollContainer.addEventListener('scroll', () => {
+        // Si on est à 200px du bas de la liste
+        if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 200) {
+            // S'il reste des éléments à afficher
+            if (renderedCount < currentList.length) {
+                renderBatch(false); // On ajoute la suite sans effacer
+            }
+        }
+    });
+
+    // === RECHERCHE ===
+    function applyFilter() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        
+        if (term.length < 2) {
+            currentList = allChannels; // Remet tout si vide
+        } else {
+            currentList = allChannels.filter(ch => 
+                ch.name.toLowerCase().includes(term) || 
+                (ch.group && ch.group.toLowerCase().includes(term))
+            );
+        }
+        
+        updateCounter();
+        renderBatch(true); // Reset total de l'affichage avec la nouvelle liste
     }
 
+    function updateCounter() {
+        countBadge.innerText = currentList.length.toLocaleString() + " Chaînes";
+    }
+
+    // === LECTEUR VIDÉO ===
     function playStream(url, element) {
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         if(element) element.classList.add('active');
-        overlay.style.display = "none";
+        document.getElementById('overlay').style.display = 'none';
 
         if (Hls.isSupported()) {
             if (hls) hls.destroy();
@@ -214,12 +255,6 @@
             hls.loadSource(url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-            hls.on(Hls.Events.ERROR, (e, data) => {
-                if(data.fatal) {
-                    console.log("Erreur flux"); 
-                    // Optionnel: passer à la chaine suivante ou afficher un msg
-                }
-            });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
             video.play();
