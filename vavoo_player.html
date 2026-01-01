@@ -3,258 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WORLD TV - SCROLL INFINI</title>
+    <title>VAVOO.TO - EXCLUSIVE PLAYER</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #9b59b6; /* Violet moderne */
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --item-hover: #2c2c2c;
-            --text: #ffffff;
+            --neon: #00ff41; /* Vert Matrix/Hacker */
+            --bg: #050505;
+            --panel: #111;
+            --text: #fff;
         }
         
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { margin: 0; padding: 0; font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* HEADER */
-        header { height: 60px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 2px solid var(--primary); z-index: 10; }
-        .logo { font-weight: 900; font-size: 20px; display: flex; align-items: center; gap: 10px; letter-spacing: 1px; }
-        .counter { font-size: 12px; background: #333; padding: 5px 12px; border-radius: 15px; color: #ccc; border: 1px solid #444; }
+        /* HEADER STYLE HACKER */
+        header { height: 50px; background: #000; border-bottom: 1px solid var(--neon); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; }
+        .brand { font-weight: bold; font-size: 18px; color: var(--neon); text-shadow: 0 0 5px var(--neon); letter-spacing: 2px; }
+        .vpn-alert { font-size: 11px; background: #220000; color: #ff4444; padding: 4px 10px; border: 1px solid #ff4444; border-radius: 3px; }
 
         /* LAYOUT */
-        .container { display: flex; flex: 1; overflow: hidden; }
+        .main-container { display: flex; flex: 1; height: calc(100vh - 50px); }
         
-        /* PLAYER ZONE */
-        .player-area { flex: 2; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; max-height: 100vh; outline: none; }
-        .overlay-msg { position: absolute; text-align: center; color: #888; pointer-events: none; }
+        /* VIDEO */
+        .video-box { flex: 1; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
+        video { width: 100%; height: 100%; outline: none; }
         
         /* SIDEBAR */
-        .sidebar { flex: 1; max-width: 380px; background: var(--surface); display: flex; flex-direction: column; border-left: 1px solid #333; position: relative; }
+        .sidebar { width: 350px; background: var(--panel); border-left: 1px solid #333; display: flex; flex-direction: column; }
         
-        .search-box { padding: 15px; background: #181818; border-bottom: 1px solid #333; }
-        input { width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--primary); background: #333; }
-        
-        /* LISTE AVEC SCROLL INFINI */
-        .channel-list { flex: 1; overflow-y: auto; padding: 0; }
-        
-        /* ITEM DESIGN */
-        .channel-item { display: flex; align-items: center; padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #252525; transition: background 0.2s; }
-        .channel-item:hover { background: var(--item-hover); }
-        .channel-item.active { background: rgba(155, 89, 182, 0.2); border-left: 4px solid var(--primary); }
-        
-        .ch-logo { width: 40px; height: 40px; background: #fff; border-radius: 4px; object-fit: contain; margin-right: 15px; padding: 2px; }
-        .ch-info { flex: 1; overflow: hidden; }
-        .ch-name { font-weight: 600; font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ch-meta { font-size: 10px; color: #aaa; margin-top: 4px; display: flex; gap: 5px; }
-        .badge { background: #333; padding: 2px 6px; border-radius: 3px; }
+        .search-bar { padding: 10px; border-bottom: 1px solid #333; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--neon); padding: 10px; font-family: monospace; box-sizing: border-box; }
+        input:focus { border-color: var(--neon); outline: none; }
 
-        /* LOADER */
-        #main-loader { display: flex; position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .list-container { flex: 1; overflow-y: auto; }
+        
+        .channel { padding: 12px 10px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
+        .channel:hover { background: #1a1a1a; }
+        .channel.active { background: rgba(0, 255, 65, 0.1); border-left: 3px solid var(--neon); }
+        
+        .logo { width: 40px; height: 40px; object-fit: contain; background: #fff; border-radius: 3px; margin-right: 10px; padding: 2px; }
+        .name { font-size: 12px; font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .group { font-size: 10px; color: #888; margin-top: 3px; }
 
-        /* MOBILE */
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .player-area { height: 35vh; flex: none; }
-            .sidebar { max-width: 100%; }
-        }
+        /* LOADING SCREEN */
+        #loading-screen { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .loader-text { color: var(--neon); margin-top: 10px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        @media (max-width: 800px) { .main-container { flex-direction: column; } .sidebar { width: 100%; height: 50%; } }
     </style>
 </head>
 <body>
 
-<div id="main-loader">
-    <div class="spinner"></div>
-    <div style="color:white; font-weight:bold;">TÉLÉCHARGEMENT MONDIAL...</div>
-    <div style="color:#888; font-size:12px; margin-top:5px;">~30 000 chaînes (Patientez)</div>
+<div id="loading-screen">
+    <i class="fas fa-satellite-dish fa-spin" style="font-size: 40px; color: var(--neon);"></i>
+    <div class="loader-text">DÉCHIFFREMENT DES CLÉS VAVOO...</div>
+    <div style="color:#666; font-size:10px; margin-top:5px;">Connexion au serveur Kodinerds</div>
 </div>
 
 <header>
-    <div class="logo">
-        <i class="fas fa-globe-americas"></i>
-        <span>WORLD TV</span>
-    </div>
-    <div class="counter" id="count-badge">0 Chaînes</div>
+    <div class="brand">VAVOO<span style="color:white;">.TO</span></div>
+    <div class="vpn-alert" id="vpn-status">⚠️ VPN ALLEMAGNE REQUIS</div>
 </header>
 
-<div class="container">
-    <div class="player-area">
+<div class="main-container">
+    <div class="video-box">
         <video id="video" controls autoplay playsinline></video>
-        <div class="overlay-msg" id="overlay">
-            <i class="fas fa-play" style="font-size: 40px; margin-bottom: 20px; opacity:0.5;"></i><br>
-            Sélectionnez une chaîne
-        </div>
     </div>
-
     <div class="sidebar">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Rechercher (Pays, Chaîne, Sport)..." oninput="applyFilter()">
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Chercher (Sky, Pro7, DAZN...)" oninput="handleSearch()">
         </div>
-        <div class="channel-list" id="scrollContainer">
+        <div class="list-container" id="scroll-area">
             <div id="list-content"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // === CONFIGURATION ===
-    const PLAYLIST_URL = "https://iptv-org.github.io/iptv/index.m3u";
-    const BATCH_SIZE = 50; // Nombre de chaînes ajoutées à chaque scroll
+    // URL SPÉCIALE VAVOO (KODINERDS)
+    // Cette liste contient les tokens "?n=..." nécessaires pour vavoo.to
+    const VAVOO_URL = "https://raw.githubusercontent.com/jnk22/kodinerds-iptv/master/iptv/clean/vavoo.m3u";
+    
+    // Proxy pour contourner le blocage du téléchargement de la liste M3U
+    const PROXY = "https://api.allorigins.win/raw?url=";
 
-    // === VARIABLES GLOBALES ===
-    let allChannels = [];        // La base de données complète (~30k)
-    let currentList = [];        // La liste filtrée actuelle (recherche)
-    let renderedCount = 0;       // Combien sont affichées actuellement
+    let db = []; // Base de données complète
+    let currentList = []; // Liste filtrée
+    let rendered = 0;
+    const BATCH = 50;
+
+    const listArea = document.getElementById('list-content');
+    const scrollArea = document.getElementById('scroll-area');
+    const loader = document.getElementById('loading-screen');
+    const video = document.getElementById('video');
     let hls = null;
 
-    // === DOM ELEMENTS ===
-    const scrollContainer = document.getElementById('scrollContainer');
-    const listContent = document.getElementById('list-content');
-    const video = document.getElementById('video');
-    const loader = document.getElementById('main-loader');
-    const countBadge = document.getElementById('count-badge');
-
-    // === INITIALISATION ===
-    window.onload = loadDatabase;
-
-    async function loadDatabase() {
+    // 1. Démarrage
+    window.onload = async () => {
         try {
-            const response = await fetch(PLAYLIST_URL);
-            if (!response.ok) throw new Error("Erreur réseau");
-            const text = await response.text();
-            
-            // Parsing asynchrone pour ne pas bloquer
-            setTimeout(() => parseM3U(text), 50);
+            // On passe par le proxy pour récupérer le texte M3U
+            const res = await fetch(PROXY + encodeURIComponent(VAVOO_URL));
+            const text = await res.text();
+            parseM3U(text);
         } catch (e) {
-            loader.innerHTML = "<div style='color:red'>ERREUR DE CHARGEMENT</div>";
+            alert("Erreur: Impossible de charger la liste Vavoo. Vérifiez votre connexion.");
         }
-    }
+    };
 
+    // 2. Parsing M3U
     function parseM3U(data) {
         const lines = data.split('\n');
-        let currentItem = {};
-        allChannels = [];
+        let item = {};
+        db = [];
 
-        for (let line of lines) {
+        for(let line of lines) {
             line = line.trim();
-            if (!line) continue;
-
-            if (line.startsWith('#EXTINF:')) {
-                const infoPart = line.substring(8);
-                const props = infoPart.split(',');
+            if(line.startsWith('#EXTINF:')) {
+                const info = line.split(',');
+                item.name = info[1] || "Vavoo Stream";
                 
-                currentItem.name = props[props.length - 1].trim();
+                const logo = line.match(/tvg-logo="([^"]*)"/);
+                item.logo = logo ? logo[1] : "";
                 
-                // Extraction Logo
-                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
-                currentItem.logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/40?text=TV";
-                
-                // Extraction Groupe (Pays/Genre)
-                const groupMatch = line.match(/group-title="([^"]*)"/);
-                currentItem.group = groupMatch ? groupMatch[1] : "International";
-
-            } else if (line.startsWith('http')) {
-                currentItem.url = line;
-                if (currentItem.name) {
-                    allChannels.push({...currentItem});
-                }
-                currentItem = {};
+                const grp = line.match(/group-title="([^"]*)"/);
+                item.group = grp ? grp[1] : "VAVOO";
+            } 
+            else if(line.startsWith('http')) {
+                item.url = line;
+                // On filtre pour ne garder que les vrais liens
+                if(item.name) db.push({...item});
+                item = {};
             }
         }
 
-        // Fin du chargement
+        currentList = db;
         loader.style.display = 'none';
-        
-        // Initialisation de la liste
-        currentList = allChannels; 
-        updateCounter();
-        
-        // Premier rendu (Reset)
         renderBatch(true);
     }
 
-    // === MOTEUR DE RENDU (SCROLL INFINI) ===
-    
-    // Fonction qui ajoute des éléments au DOM
+    // 3. Affichage (Scroll Infini)
     function renderBatch(reset = false) {
-        if (reset) {
-            listContent.innerHTML = "";
-            renderedCount = 0;
-            scrollContainer.scrollTop = 0; // Remonter en haut
+        if(reset) {
+            listArea.innerHTML = "";
+            rendered = 0;
+            scrollArea.scrollTop = 0;
         }
 
-        const fragment = document.createDocumentFragment();
-        // Calcul : on va de 'renderedCount' jusqu'à 'renderedCount + 50'
-        const limit = Math.min(renderedCount + BATCH_SIZE, currentList.length);
+        const max = Math.min(rendered + BATCH, currentList.length);
+        const frag = document.createDocumentFragment();
 
-        for (let i = renderedCount; i < limit; i++) {
+        for(let i = rendered; i < max; i++) {
             const ch = currentList[i];
             const div = document.createElement('div');
-            div.className = "channel-item";
+            div.className = "channel";
             div.innerHTML = `
-                <img src="${ch.logo}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
-                <div class="ch-info">
-                    <span class="ch-name">${ch.name}</span>
-                    <div class="ch-meta">
-                        <span class="badge">${ch.group}</span>
-                    </div>
+                <img src="${ch.logo}" class="logo" onerror="this.style.display='none'">
+                <div>
+                    <div class="name">${ch.name}</div>
+                    <div class="group">${ch.group}</div>
                 </div>
             `;
-            div.onclick = () => playStream(ch.url, div);
-            fragment.appendChild(div);
+            div.onclick = () => playVavoo(ch.url, div);
+            frag.appendChild(div);
         }
 
-        listContent.appendChild(fragment);
-        renderedCount = limit;
+        listArea.appendChild(frag);
+        rendered = max;
     }
 
-    // ÉCOUTEUR DE SCROLL (Le coeur du système infini)
-    scrollContainer.addEventListener('scroll', () => {
-        // Si on est à 200px du bas de la liste
-        if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 200) {
-            // S'il reste des éléments à afficher
-            if (renderedCount < currentList.length) {
-                renderBatch(false); // On ajoute la suite sans effacer
-            }
+    scrollArea.addEventListener('scroll', () => {
+        if(scrollArea.scrollTop + scrollArea.clientHeight >= scrollArea.scrollHeight - 100) {
+            if(rendered < currentList.length) renderBatch();
         }
     });
 
-    // === RECHERCHE ===
-    function applyFilter() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        
-        if (term.length < 2) {
-            currentList = allChannels; // Remet tout si vide
-        } else {
-            currentList = allChannels.filter(ch => 
-                ch.name.toLowerCase().includes(term) || 
-                (ch.group && ch.group.toLowerCase().includes(term))
-            );
-        }
-        
-        updateCounter();
-        renderBatch(true); // Reset total de l'affichage avec la nouvelle liste
+    // 4. Recherche
+    function handleSearch() {
+        const q = document.getElementById('search').value.toLowerCase();
+        if(q.length < 2) currentList = db;
+        else currentList = db.filter(c => c.name.toLowerCase().includes(q) || c.group.toLowerCase().includes(q));
+        renderBatch(true);
     }
 
-    function updateCounter() {
-        countBadge.innerText = currentList.length.toLocaleString() + " Chaînes";
-    }
+    // 5. Lecteur Vidéo (Spécial Vavoo)
+    function playVavoo(url, el) {
+        document.querySelectorAll('.channel').forEach(e => e.classList.remove('active'));
+        if(el) el.classList.add('active');
 
-    // === LECTEUR VIDÉO ===
-    function playStream(url, element) {
-        document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-        if(element) element.classList.add('active');
-        document.getElementById('overlay').style.display = 'none';
-
+        // Note: Les liens Vavoo contiennent souvent "?n=..." (signature).
+        // Si ça ne marche pas, c'est souvent un blocage User-Agent.
+        
         if (Hls.isSupported()) {
             if (hls) hls.destroy();
-            hls = new Hls();
+            hls = new Hls({
+                xhrSetup: function(xhr, url) {
+                    // Tentative d'optimisation
+                    xhr.withCredentials = false;
+                }
+            });
             hls.loadSource(url);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play();
+                document.getElementById('vpn-status').style.background = "#002200";
+                document.getElementById('vpn-status').style.color = "#00ff00";
+                document.getElementById('vpn-status').style.borderColor = "#00ff00";
+                document.getElementById('vpn-status').innerText = "CONNEXION SÉCURISÉE";
+            });
+            hls.on(Hls.Events.ERROR, (e, data) => {
+                if(data.fatal) {
+                    console.log("Erreur Fatale VAVOO");
+                    // Souvent dû au manque de VPN ou CORS
+                }
+            });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
             video.play();
