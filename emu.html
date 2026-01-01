@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TITAN CLEANER - CERVEAU V117</title>
+    <title>TITAN CLEANER V118 - PLAYER & SEARCH</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body { background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; display: flex; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; }
@@ -33,14 +34,14 @@
         
         .btn { 
             width: 100%; 
-            padding: 15px; 
+            padding: 12px; 
             border: none; 
             cursor: pointer; 
             color: white; 
             font-weight: bold; 
             border-radius: 5px; 
             margin-bottom: 10px; 
-            font-size: 13px; 
+            font-size: 12px; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -51,11 +52,24 @@
         .btn:hover { filter: brightness(1.2); }
         .btn:disabled { opacity: 0.3; cursor: not-allowed; }
         
-        .btn-orange { background: linear-gradient(45deg, #d35400, #e67e22); } 
-        .btn-blue { background: linear-gradient(45deg, #2980b9, #3498db); } 
-        .btn-green { background: linear-gradient(45deg, #27ae60, #2ecc71); } 
+        .btn-orange { background: #d35400; } 
+        .btn-blue { background: #2980b9; } 
+        .btn-green { background: #27ae60; } 
         .btn-grey { background: #444; }
+        .btn-red { background: #c0392b; }
         
+        /* BARRE DE RECHERCHE */
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
         .list-box { 
             flex: 1; 
             overflow-y: auto; 
@@ -66,8 +80,8 @@
             padding: 5px; 
         }
         
-        .item { padding: 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .item:hover { background: #111; }
+        .item { padding: 8px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .item:hover { background: #222; }
         .item.ok { color: #2ecc71; border-left: 3px solid #2ecc71; background: rgba(46, 204, 113, 0.05); } 
         .item.dead { color: #555; text-decoration: line-through; }
         .item.retry { color: #f1c40f; background: rgba(241, 196, 15, 0.05); }
@@ -75,12 +89,20 @@
         .progress-container { background: #333; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
         .progress-bar { height: 100%; background: #e50914; width: 0%; transition: width 0.3s; }
         
-        .log-area { height: 120px; overflow-y: auto; color: #888; font-size: 11px; border-top: 1px solid #333; padding-top: 10px; font-family: monospace; margin-top: auto; }
+        .log-area { height: 100px; overflow-y: auto; color: #888; font-size: 11px; border-top: 1px solid #333; padding-top: 10px; font-family: monospace; margin-top: auto; }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: #222; padding: 10px; border-radius: 5px; text-align: center; }
-        .stat-val { font-size: 18px; font-weight: bold; display: block; }
-        .stat-lbl { font-size: 10px; color: #aaa; text-transform: uppercase; }
+        /* PLAYER OVERLAY */
+        #preview-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #preview-video { width: 80%; height: 60vh; background: #000; border: 2px solid #333; }
+        .player-controls {
+            width: 80%; display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; background: #222; padding: 10px; border-radius: 5px;
+        }
+        .player-info { color: #e50914; font-weight: bold; font-size: 16px; }
 
         .badge { padding: 3px 6px; border-radius: 4px; font-size: 9px; color: #000; font-weight: bold; }
         .badge-live { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
@@ -88,15 +110,21 @@
 </head>
 <body>
 
+    <div id="preview-layer">
+        <div class="player-info" id="player-title">Nom de la chaîne</div>
+        <video id="preview-video" controls autoplay></video>
+        <div class="player-controls">
+            <button class="btn btn-grey" style="width:auto;" onclick="prevChannel()"><i class="fas fa-step-backward"></i> PRÉCÉDENT</button>
+            <button class="btn btn-red" style="width:auto;" onclick="closePlayer()"><i class="fas fa-times"></i> FERMER</button>
+            <button class="btn btn-grey" style="width:auto;" onclick="nextChannel()"><i class="fas fa-step-forward"></i> SUIVANT</button>
+        </div>
+    </div>
+
     <div class="panel">
         <h2>1. SOURCES <i class="fas fa-server"></i></h2>
         
-        <div style="padding:10px; background:#222; border-radius:5px; margin-bottom:15px; font-size:12px; color:#ccc;">
-            <i class="fas fa-info-circle"></i> Le script va lire tous les liens M3U présents dans la <b>Colonne B</b> de ton fichier Excel, extraire les chaînes, et retirer les doublons.
-        </div>
-
         <button class="btn btn-orange" onclick="fetchSourcesFromGoogle()" id="btn-import">
-            <i class="fas fa-cloud-download-alt"></i> IMPORTER DEPUIS EXCEL
+            <i class="fas fa-cloud-download-alt"></i> IMPORTER (COL B)
         </button>
 
         <p style="text-align:center; color:#555; font-size:10px;">OU</p>
@@ -108,42 +136,33 @@
         <div id="fileName" style="text-align:center; font-size:11px; color:#e50914; margin-bottom:10px;"></div>
 
         <button class="btn btn-blue" onclick="processLocalFile()" id="btn-extract" disabled>
-            <i class="fas fa-file-import"></i> 1. EXTRAIRE LES DONNÉES
+            <i class="fas fa-file-import"></i> EXTRAIRE
         </button>
 
-        <div class="log-area" id="log">Prêt. En attente d'action...</div>
+        <div class="log-area" id="log">Prêt...</div>
     </div>
 
     <div class="panel panel-full">
-        <h2>2. LE CERVEAU (TEST & EXPORT) <i class="fas fa-microchip"></i></h2>
+        <h2>
+            2. CERVEAU & VISUALISATION
+            <span style="font-size:12px; color:#aaa;">Clic sur une chaîne pour tester</span>
+        </h2>
         
-        <div class="stats-grid">
-            <div class="stat-box">
-                <span class="stat-val" id="s-total" style="color:#fff">0</span>
-                <span class="stat-lbl">Candidats</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-val" id="s-ok" style="color:#2ecc71">0</span>
-                <span class="stat-lbl">Validés (En ligne)</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-val" id="s-dead" style="color:#e74c3c">0</span>
-                <span class="stat-lbl">Morts / Rejetés</span>
-            </div>
-        </div>
+        <input type="text" id="search-input" class="search-box" placeholder="🔍 Filtrer les chaînes..." oninput="filterList()">
 
         <div class="progress-container"><div class="progress-bar" id="p-bar"></div></div>
         
         <div style="display:flex; gap:10px;">
             <button class="btn btn-blue" onclick="startDirectScan()" id="btn-scan" disabled>
-                <i class="fas fa-stethoscope"></i> 2. LANCER LE TEST (PING)
+                <i class="fas fa-stethoscope"></i> SCAN AUTO (PING)
             </button>
             <button class="btn btn-green" onclick="sendToGoogle()" id="btn-save" disabled>
-                <i class="fas fa-save"></i> 3. ENVOYER VERS EXCEL (D/E)
+                <i class="fas fa-save"></i> SAUVEGARDER (D/E)
             </button>
         </div>
         
         <div class="list-box" id="result-list"></div>
+        <div style="text-align:right; font-size:10px; color:#666; margin-top:5px;" id="total-lbl">0 chaînes</div>
     </div>
 
 <script>
@@ -152,12 +171,17 @@
     const PROXY = "https://corsproxy.io/?";
 
     let extractedChannels = []; 
+    let displayList = []; // Liste filtrée affichée
     let validChannels = [];
-    let uniqueUrls = new Set(); // Anti-doublon
+    let uniqueUrls = new Set(); 
     let selectedLocalFile = null;
+    
+    // PLAYER VARS
+    let hls = null;
+    let currentPreviewIndex = -1; // Index dans displayList
 
     // ==========================================
-    // 1. IMPORTATION & EXTRACTION (Colonne B)
+    // 1. IMPORTATION
     // ==========================================
 
     async function fetchSourcesFromGoogle() {
@@ -168,22 +192,18 @@
             
             if(data.length === 0) return log("ERREUR: La colonne B est vide.");
             
-            log(`${data.length} fichiers M3U trouvés. Démarrage de l'extraction...`);
+            log(`${data.length} fichiers M3U trouvés. Démarrage...`);
             extractedChannels = []; uniqueUrls.clear();
 
-            // On boucle sur chaque lien M3U
             for(let item of data) {
-                let url = item.url || item; // Gère si c'est un objet ou une string
-                log(`Traitement: ${url.substring(0, 40)}...`);
+                let url = item.url || item; 
                 try {
                     const txtRes = await fetch(PROXY + encodeURIComponent(url));
                     if(txtRes.ok) {
                         const text = await txtRes.text();
                         processM3UText(text);
-                    } else {
-                        log("Erreur téléchargement playlist.");
                     }
-                } catch(err) { log("Erreur lien: " + err.message); }
+                } catch(err) { log("Erreur lien."); }
             }
             finishExtraction();
         } catch(e) { log("Erreur Critique API: " + e); }
@@ -200,7 +220,6 @@
     function processLocalFile() {
         if(!selectedLocalFile) return;
         extractedChannels = []; uniqueUrls.clear();
-        log(`Extraction fichier local...`);
         const reader = new FileReader();
         reader.onload = function(e) {
             processM3UText(e.target.result);
@@ -209,7 +228,7 @@
         reader.readAsText(selectedLocalFile);
     }
 
-    // --- MOTEUR D'EXTRACTION INTELLIGENT ---
+    // --- MOTEUR D'EXTRACTION ---
     function processM3UText(text) {
         const lines = text.split('\n');
         let currentName = "Sans Nom";
@@ -222,170 +241,208 @@
                 currentName = parts[parts.length - 1].trim();
             } 
             else if(line.startsWith("http")) {
-                // FILTRE 1 : Anti-Doublon + Anti-Playlist imbriquée
-                if (!uniqueUrls.has(line) && !line.includes(".m3u")) {
-                    
-                    // FILTRE 2 : Format Compatible (Optionnel mais recommandé)
-                    // On peut laisser passer tout pour laisser le "Cerveau" tester,
-                    // mais retirer les .ts/.mkv optimise la vitesse.
-                    const isCompatible = !line.includes('.ts') && !line.includes('.mkv') && !line.includes('.avi');
-                    
-                    if(isCompatible) {
-                        extractedChannels.push({ name: currentName, url: line, status: 'waiting' });
-                        uniqueUrls.add(line);
-                        count++;
-                    }
+                // FILTRE STRICT : Uniquement les formats web-friendly
+                const isCompatible = !line.includes('.ts') && !line.includes('.mkv') && !line.includes('.avi') && !line.includes('.m3u');
+                
+                if (isCompatible && !uniqueUrls.has(line)) {
+                    extractedChannels.push({ name: currentName, url: line, status: 'waiting' });
+                    uniqueUrls.add(line);
+                    count++;
                 }
             }
         }
-        log(`+ ${count} chaînes uniques ajoutées.`);
+        log(`+ ${count} chaînes ajoutées.`);
     }
 
     function finishExtraction() {
         log(`EXTRACTION TERMINÉE.`);
-        document.getElementById('s-total').innerText = extractedChannels.length;
+        displayList = [...extractedChannels]; // Copie pour affichage
         document.getElementById('btn-scan').disabled = false;
         renderList();
     }
 
     // ==========================================
-    // 2. LE CERVEAU (SCAN DE VIE)
+    // 2. GESTION DE LISTE & RECHERCHE
+    // ==========================================
+    
+    function filterList() {
+        const term = document.getElementById('search-input').value.toLowerCase();
+        if(term.length < 2) {
+            displayList = extractedChannels;
+        } else {
+            displayList = extractedChannels.filter(ch => ch.name.toLowerCase().includes(term));
+        }
+        renderList();
+    }
+
+    function renderList() {
+        const container = document.getElementById('result-list');
+        let html = "";
+        let max = Math.min(displayList.length, 500); // Limite affichage pour perf
+        
+        for(let i=0; i<max; i++) {
+            let c = displayList[i];
+            let icon = '<i class="fas fa-play"></i>'; // Icone lecture par défaut
+            
+            if(c.status === 'ok') icon = '✅';
+            if(c.status === 'dead') icon = '❌';
+            if(c.status === 'retry') icon = '🔄';
+
+            // On ajoute un onclick pour lancer le player avec l'index de la liste affichée
+            html += `<div class="item ${c.status}" id="row-${i}" onclick="playFromList(${i})">
+                <span>${c.name}</span>
+                <span class="status-icon">${icon}</span>
+            </div>`;
+        }
+        
+        document.getElementById('total-lbl').innerText = `${displayList.length} chaînes (Total: ${extractedChannels.length})`;
+        container.innerHTML = html;
+    }
+
+    function updateRowUI(idx, status) {
+        // Cette fonction met à jour l'élément visuel lors du scan
+        // Note: Cela marche si l'ordre n'a pas changé. Si recherche active, l'index visuel diffère.
+        // Pour simplifier lors du scan, on peut désactiver la recherche.
+    }
+
+    // ==========================================
+    // 3. LECTEUR VIDEO (PREVIEW)
+    // ==========================================
+    
+    function playFromList(index) {
+        currentPreviewIndex = index;
+        const ch = displayList[index];
+        openPlayer(ch);
+    }
+
+    function openPlayer(ch) {
+        if(!ch) return;
+        
+        const layer = document.getElementById('preview-layer');
+        const video = document.getElementById('preview-video');
+        const title = document.getElementById('player-title');
+        
+        layer.style.display = 'flex';
+        title.innerText = `${currentPreviewIndex + 1}. ${ch.name}`;
+
+        if(Hls.isSupported()) {
+            if(hls) hls.destroy();
+            hls = new Hls();
+            hls.loadSource(ch.url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            hls.on(Hls.Events.ERROR, () => {
+                title.innerText += " (Erreur lecture)";
+            });
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = ch.url;
+            video.play();
+        }
+    }
+
+    function closePlayer() {
+        const video = document.getElementById('preview-video');
+        video.pause();
+        video.src = "";
+        if(hls) hls.destroy();
+        document.getElementById('preview-layer').style.display = 'none';
+    }
+
+    function nextChannel() {
+        if(currentPreviewIndex < displayList.length - 1) {
+            currentPreviewIndex++;
+            openPlayer(displayList[currentPreviewIndex]);
+        }
+    }
+
+    function prevChannel() {
+        if(currentPreviewIndex > 0) {
+            currentPreviewIndex--;
+            openPlayer(displayList[currentPreviewIndex]);
+        }
+    }
+
+    // ==========================================
+    // 4. ANALYSE AUTOMATIQUE
     // ==========================================
 
     async function startDirectScan() {
         const btnScan = document.getElementById('btn-scan');
         btnScan.disabled = true;
-        btnScan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SCAN EN COURS...';
+        btnScan.innerText = 'SCAN EN COURS...';
         
+        // On scanne TOUTE la liste extraite, pas juste celle affichée
         validChannels = [];
-        let ok = 0, dead = 0;
+        let ok = 0;
         
-        // Scan par paquets de 20 (Pour la vitesse)
         for(let i=0; i<extractedChannels.length; i+=20) {
             let chunk = extractedChannels.slice(i, i+20);
             
-            await Promise.all(chunk.map(async (item, idx) => {
-                const globalIdx = i + idx;
-                updateRowUI(globalIdx, 'retry'); // Jaune = En cours
-
-                // LE TEST DE VIE
+            await Promise.all(chunk.map(async (item) => {
                 const isLive = await checkDirectLink(item.url);
-                
                 if(isLive) {
                     item.status = 'ok';
                     ok++;
-                    // On prépare le paquet pour Excel : [Nom, Url]
                     validChannels.push([item.name, item.url]);
                 } else {
                     item.status = 'dead';
-                    dead++;
                 }
-                updateRowUI(globalIdx, item.status);
             }));
             
-            // Stats
+            // Mise à jour barre progression
             let pct = Math.round(((i+20)/extractedChannels.length)*100);
             document.getElementById('p-bar').style.width = pct + "%";
             document.getElementById('s-ok').innerText = ok;
-            document.getElementById('s-dead').innerText = dead;
+            
+            // Rafraichir la liste visuelle de temps en temps
+            if(i % 100 === 0) renderList();
         }
         
-        log(`SCAN TERMINÉ. ${ok} chaînes valides.`);
-        btnScan.innerHTML = '<i class="fas fa-check"></i> SCAN TERMINÉ';
-        btnScan.className = "btn btn-grey"; // Désactivé visuellement
+        renderList(); // Final refresh
+        log(`SCAN TERMINÉ. ${ok} valides.`);
+        btnScan.innerText = 'SCAN TERMINÉ';
         
         if(ok > 0) {
             document.getElementById('btn-save').disabled = false;
-            document.getElementById('btn-save').innerText = `ENVOYER ${ok} CHAÎNES VERS EXCEL`;
-            alert("Scan terminé ! Vous pouvez maintenant envoyer les résultats vers Excel.");
-        } else {
-            alert("Aucune chaîne valide trouvée.");
+            document.getElementById('btn-save').innerText = `ENVOYER ${ok} CHAINES`;
         }
     }
 
-    // FONCTION DE TEST (PING)
     async function checkDirectLink(url) {
         const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), 5000); // 5 sec timeout
+        const id = setTimeout(() => controller.abort(), 4000); 
         try {
-            // On utilise HEAD pour ne pas télécharger la vidéo, juste vérifier si elle existe
-            const res = await fetch(PROXY + encodeURIComponent(url), { 
-                method: 'HEAD', 
-                signal: controller.signal 
-            });
+            const res = await fetch(PROXY + encodeURIComponent(url), { method: 'HEAD', signal: controller.signal });
             clearTimeout(id);
-            return res.ok; // Renvoie TRUE si 200 OK
-        } catch(e) {
-            return false;
-        }
+            return res.ok;
+        } catch(e) { return false; }
     }
 
     // ==========================================
-    // 3. ENVOI VERS EXCEL (Colonnes D/E)
+    // 5. SAUVEGARDE
     // ==========================================
 
     async function sendToGoogle() {
         const btn = document.getElementById('btn-save');
         btn.disabled = true;
-        btn.innerText = "ENVOI EN COURS...";
+        btn.innerText = "ENVOI...";
         
-        log("Début de l'envoi vers Excel (Colonnes D et E)...");
-        
-        // Envoi par gros paquets (1000 chaînes max par requête pour éviter timeout Google)
-        const CHUNK_SIZE = 1000;
-        
-        for(let i=0; i<validChannels.length; i+=CHUNK_SIZE) {
-            let chunk = validChannels.slice(i, i+CHUNK_SIZE);
+        for(let i=0; i<validChannels.length; i+=500) {
+            let chunk = validChannels.slice(i, i+500);
             try {
-                // Appel API spécifique pour sauvegarder
-                const res = await fetch(`${API_URL}?action=admin_save_extracted`, {
+                await fetch(`${API_URL}?action=admin_save_extracted`, {
                     method: 'POST',
                     body: JSON.stringify(chunk)
                 });
-                const txt = await res.text();
-                log(`Paquet ${i/CHUNK_SIZE + 1} : ${txt}`);
+                log(`Paquet ${i} envoyé.`);
             } catch(e) {
-                alert("Erreur lors de l'envoi. Vérifiez votre connexion.");
+                alert("Erreur d'envoi.");
                 btn.disabled = false;
-                btn.innerText = "RÉESSAYER ENVOI";
                 return;
             }
         }
-        
-        log("✅ BASE DE DONNÉES MISE À JOUR !");
-        alert("Succès ! Toutes les chaînes valides sont maintenant dans votre Excel.");
+        alert("Succès !");
         btn.innerText = "TERMINE";
-        btn.className = "btn btn-grey";
-    }
-
-    // --- FONCTIONS D'AFFICHAGE ---
-    function renderList() {
-        const container = document.getElementById('result-list');
-        let html = "";
-        // Limite visuelle pour ne pas faire laguer le navigateur pendant le scan
-        let max = Math.min(extractedChannels.length, 300);
-        
-        for(let i=0; i<max; i++) {
-            let c = extractedChannels[i];
-            html += `<div class="item ${c.status}" id="row-${i}">
-                <span>${c.name}</span>
-                <span class="status-icon">⏳</span>
-            </div>`;
-        }
-        if(extractedChannels.length > 300) html += `<div style="text-align:center; padding:10px; color:#444;">... et ${extractedChannels.length - 300} autres chaînes ...</div>`;
-        container.innerHTML = html;
-    }
-
-    function updateRowUI(idx, status) {
-        let el = document.getElementById(`row-${idx}`);
-        if(el) {
-            el.className = `item ${status}`;
-            let icon = '⏳';
-            if(status === 'ok') icon = '✅ <span class="badge badge-live">LIVE</span>';
-            if(status === 'dead') icon = '❌';
-            if(status === 'retry') icon = '🔄';
-            el.querySelector('.status-icon').innerHTML = icon;
-        }
     }
 
     function log(msg) {
