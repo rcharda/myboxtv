@@ -1,400 +1,55 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="referrer" content="no-referrer">
-    <title>My Box TV - V110</title>
-    <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
-    
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
-    
-    <style>
-        /* --- DESIGN ORIGINAL V62 --- */
-        :root { --primary: #e50914; --glass: rgba(15, 15, 15, 0.95); --text: #fff; }
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
-        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #000; color: var(--text); height: 100vh; overflow: hidden; cursor: none; } /* Cursor none par défaut */
-        body.active { cursor: default; }
-
-        #video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; object-fit: contain; }
-        #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        
-        /* SIGNAL & STATUS */
-        #top-right-container { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; gap: 10px; z-index: 60; pointer-events: none; }
-        #status-pill { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; display: flex; align-items: center; gap: 8px; }
-        #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
-        #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
-        #led.orange { background: orange; box-shadow: 0 0 5px orange; }
-        .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 18px; padding: 3px; background: rgba(0,0,0,0.6); border-radius: 4px; border: 1px solid #444; }
-        .bar { width: 3px; background: #333; border-radius: 1px; transition: 0.3s; }
-        .bar:nth-child(1) { height: 4px; } .bar:nth-child(2) { height: 8px; } .bar:nth-child(3) { height: 12px; } .bar:nth-child(4) { height: 16px; }
-        .signal-good .bar { background: #0f0; } .signal-mid .bar:nth-child(1), .signal-mid .bar:nth-child(2) { background: #ffcc00; } .signal-bad .bar:nth-child(1) { background: #ff0000; }
-
-        /* MENU */
-        #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
-        body.menu-open #channel-menu { transform: translateX(0); }
-        .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
-        #searchInput { width: 95%; margin: 5px auto; padding: 10px; border-radius: 5px; background: #333; border: none; color: white; display: block; font-size: 14px; }
-        .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
-        .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
-        .btn-mini.active { background: #333; color: white; border-color: #666; }
-        .btn-local { background: linear-gradient(45deg, #e50914, #900); color: white; border: none; }
-        
-        #channel-list { flex: 1; overflow-y: auto; padding: 0; width:100%; }
-        .channel-row { display: flex; align-items: center; padding: 10px 15px; margin: 0; border-bottom: 1px solid #222; cursor: pointer; contain: content; }
-        .channel-row:hover { background: #222; }
-        .channel-row.active { background: rgba(229,9,20,0.2); border-left: 3px solid var(--primary); }
-        .ch-logo { width: 35px; height: 35px; object-fit: contain; background: #fff; padding: 2px; border-radius: 3px; margin-right: 10px; }
-        .fav-icon { color: #444; padding: 5px; margin-right: 10px; font-size: 12px; }
-        .fav-icon.active { color: #ffd700; text-shadow: 0 0 5px gold; } 
-
-        /* BARRE DU BAS (AUTO-HIDE) */
-        #bottom-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; z-index: 90; pointer-events: auto; width: auto; max-width: 98%; justify-content: space-between; flex-wrap: nowrap; overflow-x: auto; opacity: 0; transition: opacity 0.5s; }
-        body.active #bottom-bar { opacity: 1; }
-        
-        .btn-ctrl { width: 45px; height: 45px; border-radius: 50%; background: #2a2a2a; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-        .btn-ctrl:active { background: var(--primary); transform: scale(0.95); }
-        .btn-ctrl.active-mode { background: var(--primary); color: white; box-shadow: 0 0 10px var(--primary); animation: pulse 2s infinite; }
-        .btn-large { width: 55px; height: 55px; font-size: 22px; background: var(--primary); border: 2px solid white; box-shadow: 0 0 10px rgba(229,9,20,0.5); }
-        .desktop-only { display: flex; }
-        @media (max-width: 600px) { .desktop-only { display: none; } #bottom-bar { gap: 5px; padding: 5px 10px; bottom: 10px; } .btn-ctrl { width: 40px; height: 40px; font-size: 16px; } .btn-large { width: 48px; height: 48px; font-size: 20px; } #channel-menu { width: 85%; } }
-
-        /* MODALS */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
-        .modal-box { background: #1a1a1a; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; border: 1px solid #444; }
-        .settings-panel { background: #1a1a1a; width: 90%; max-width: 800px; height: 80vh; border-radius: 15px; border: 1px solid #444; display: flex; overflow: hidden; }
-        .settings-sidebar { width: 200px; background: #111; padding: 20px; border-right: 1px solid #333; }
-        .settings-tab { padding: 15px; cursor: pointer; color: #888; font-weight: 600; border-radius: 8px; margin-bottom: 5px; }
-        .settings-tab.active { background: #222; color: white; }
-        .settings-content { flex: 1; padding: 20px; overflow-y: auto; }
-        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 15px; border-radius: 5px; margin-bottom: 10px; }
-        .app-logo { max-width: 150px; margin-bottom: 20px; }
-        
-        #scan-info { display: none; flex-direction: column; gap: 5px; width:100%; margin-top:10px; }
-        #scan-text { font-size: 10px; color: #0f0; }
-        #scan-progress { width: 100%; height: 2px; background: #333; position: relative; overflow: hidden; }
-        #scan-bar { position: absolute; left: 0; top: 0; height: 100%; width: 50%; background: #0f0; animation: scanAnim 1s infinite linear; }
-        .tp-list-item { padding: 10px; border-bottom: 1px solid #333; font-size: 12px; color: #ccc; display: flex; justify-content: space-between; }
-        
-        @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Box TV – V110 FINAL</title>
+<link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#e50914;--glass:rgba(15,15,15,.95);--text:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Montserrat,sans-serif;background:#000;color:var(--text);height:100vh;overflow:hidden}
+#video-layer{position:fixed;inset:0;background:#000}
+video{width:100%;height:100%;object-fit:contain}
+#channel-menu{position:fixed;left:0;top:0;width:320px;height:100%;background:var(--glass);transform:translateX(-100%);transition:.3s;z-index:20}
+body.menu-open #channel-menu{transform:none}
+.channel-row{padding:10px 15px;border-bottom:1px solid #222;cursor:pointer}
+.channel-row.active{background:rgba(229,9,20,.25)}
+#bottom-bar{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);display:flex;gap:10px;background:#111;padding:10px 15px;border-radius:40px;z-index:30}
+.btn-ctrl{width:44px;height:44px;border-radius:50%;border:none;background:#2a2a2a;color:#fff;font-size:18px}
+.btn-large{background:var(--primary)}
+</style>
 </head>
 <body>
-
-<div id="settings-modal" class="modal">
-    <div class="settings-panel">
-        <div class="settings-sidebar">
-            <div style="font-weight:bold; margin-bottom:20px; color:var(--primary)">PARAMÈTRES</div>
-            <div class="settings-tab active" onclick="showTab('tab-general')">Sources</div>
-            <div class="settings-tab" onclick="showTab('tab-display')">Affichage</div>
-            <div class="settings-tab" onclick="showTab('tab-transponders')">Transpondeurs</div>
-            <div class="settings-tab" onclick="showTab('tab-account')">Compte</div>
-            <div class="settings-tab" onclick="closeSettings()" style="color:#888; margin-top:10px;">Fermer ✕</div>
-        </div>
-        <div class="settings-content">
-            <div id="tab-general" class="tab-content">
-                <h3 style="color:#e50914;">MODE DE RÉCEPTION</h3>
-                <div class="toggle-row">
-                    <div>
-                        <div style="font-weight:bold;">Mode Complet (Transpondeurs)</div>
-                        <div style="font-size:10px; color:#aaa;">Charge tous les liens (Col B). Permet de supprimer.</div>
-                    </div>
-                    <input type="radio" name="sourceMode" value="full" onchange="changeSourceMode('full')">
-                </div>
-                <div class="toggle-row">
-                    <div>
-                        <div style="font-weight:bold; color:#2ecc71;">Mode Premium (Recommandé)</div>
-                        <div style="font-size:10px; color:#aaa;">Chaînes certifiées uniquement (Col D/E).</div>
-                    </div>
-                    <input type="radio" name="sourceMode" value="premium" onchange="changeSourceMode('premium')">
-                </div>
-            </div>
-
-            <div id="tab-display" class="tab-content" style="display:none;">
-                <h3>Affichage</h3>
-                <div class="toggle-row">
-                    <span>Résolution Max</span>
-                    <select class="input-dark" style="width:auto;"><option>Auto</option><option>1080p</option><option>720p</option></select>
-                </div>
-            </div>
-
-            <div id="tab-transponders" class="tab-content" style="display:none;">
-                <h3>Liste des Transpondeurs (Col A)</h3>
-                <div id="tp-list-container" style="max-height: 200px; overflow-y: auto; background: #111; margin-bottom: 20px;">
-                    </div>
-                <h3>Scan Manuel</h3>
-                <label style="display:block; padding:15px; background:#333; margin-bottom:10px; border-radius:5px; cursor:pointer;">
-                    <i class="fas fa-folder-open"></i> SCANNER FICHIER LOCAL
-                    <input type="file" webkitdirectory directory multiple style="display:none;" onchange="handleTitanScan(this)">
-                </label>
-                <div id="scan-info">
-                    <div id="scan-text">Prêt</div>
-                    <div id="scan-progress"><div id="scan-bar"></div></div>
-                </div>
-            </div>
-
-            <div id="tab-account" class="tab-content" style="display:none;">
-                <h3>Mon Abonnement</h3>
-                <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
-                    ID: <span id="sub-id">...</span><br>
-                    Infos: <span id="sub-details">...</span>
-                </div>
-                <a href="https://wa.me/22963828767?text=Bonjour,%20je%20veux%20prolonger%20mon%20abonnement%20MyBoxTV" target="_blank" style="display:block; width:100%; background:#25D366; color:white; text-align:center; padding:15px; border-radius:8px; text-decoration:none; font-weight:bold; margin-bottom:10px;">
-                    <i class="fab fa-whatsapp"></i> CONTACTER SUPPORT (+229 63828767)
-                </a>
-                <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">DÉCONNECTER</button>
-            </div>
-        </div>
-    </div>
+<div id="video-layer"><video id="video" playsinline></video></div>
+<div id="channel-menu"><div id="channel-list"></div></div>
+<div id="bottom-bar">
+<button class="btn-ctrl" onclick="prevChannel()"><i class="fas fa-step-backward"></i></button>
+<button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+<button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
 </div>
-
-<div id="login-screen" class="modal" style="display:flex;">
-    <div class="modal-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="app-logo">
-        <input type="text" id="licenseKey" placeholder="ID ABONNEMENT" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:5px; text-align:center; font-size:18px; margin-bottom:15px;">
-        <button onclick="login()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold;">ENTRER</button>
-        <div id="login-msg" style="color:#ff4444; margin-top:10px;"></div>
-    </div>
-</div>
-
-<div id="video-layer"><video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous"></video></div>
-
-<div id="ui-layer">
-    <div id="top-right-container">
-        <div class="signal-bars" id="signal-bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
-        <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
-    </div>
-    
-    <div id="channel-menu">
-        <div class="menu-header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:100px;">
-            <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-                <div style="text-align:left; width:100%;">
-                    <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                    <i class="fas fa-sync-alt" onclick="initApp()" style="cursor:pointer; font-size:12px; color:#aaa;" title="Recharger"></i>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <i class="fas fa-plus-circle" title="Chaînes Locales" onclick="document.getElementById('localFileInput').click()" style="cursor:pointer; color:#aaa; font-size:18px;"></i>
-                    <i class="fas fa-cog" onclick="openSettings()" style="cursor:pointer; color:#fff; font-size:20px;"></i>
-                </div>
-                <input type="file" id="localFileInput" accept=".m3u" style="display:none;" onchange="handleTitanScan(this)">
-            </div>
-            <div style="font-size:10px; color:#888;" id="count-display">Chargement...</div>
-        </div>
-        
-        <input type="text" id="searchInput" placeholder="🔍 Rechercher...">
-        
-        <div class="filter-bar">
-            <button onclick="window.location.href='en_direct.html'" class="btn-mini btn-local">
-                <i class="fas fa-map-marker-alt"></i> Locales
-            </button>
-            <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
-                <i class="fas fa-star" style="color:gold;"></i> Favoris
-            </button>
-        </div>
-        <div id="channel-list"></div>
-    </div>
-
-    <div id="bottom-bar">
-        <button class="btn-ctrl" onclick="prevChannel()"><i class="fas fa-step-backward"></i></button>
-        <button class="btn-ctrl desktop-only" onclick="adjustVol(-0.1)"><i class="fas fa-minus"></i></button>
-        <button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
-        <button class="btn-ctrl desktop-only" onclick="adjustVol(0.1)"><i class="fas fa-plus"></i></button>
-        <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
-        <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
-        <button class="btn-ctrl" id="btn-delete" onclick="hideCurrentChannel()" style="color:#ff4444; display:none;"><i class="fas fa-trash"></i></button>
-        <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
-    </div>
-</div>
-
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
-    const PROXY = "https://corsproxy.io/?";
-    const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "", category: "Start" };
-    
-    let allChannels = [], displayedChannels = [];
-    let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
-    let currentChannelIndex = 0;
-    let deviceId = localStorage.getItem('mybox_device_id') || 'DEV-'+Math.random().toString(36).substr(2,9).toUpperCase();
-    localStorage.setItem('mybox_device_id', deviceId);
-    let isFavFilter = false, hls = null, isAutoZap = false;
-    let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
-    
-    // GESTION DU MODE
-    let appMode = localStorage.getItem('mybox_mode') || 'full'; 
-    
-    // UI Elements
-    const video = document.getElementById('video');
-    const statusText = document.getElementById('status-text');
-    const led = document.getElementById('led');
-    const listDiv = document.getElementById('channel-list');
-    let renderLimit = 50; const RENDER_BATCH = 50;
-    
-    // AUDIO BOOSTER
-    let audioCtx, gainNode;
-
-    // --- GESTION BARRE BASSE (AUTO-HIDE) ---
-    let activityTimeout;
-    function handleActivity() {
-        document.body.classList.add('active');
-        clearTimeout(activityTimeout);
-        activityTimeout = setTimeout(() => { document.body.classList.remove('active'); }, 3000);
-        
-        // Init Audio Context au premier clic (Important pour Chrome)
-        if(!audioCtx) setupAudioBooster(); 
-    }
-    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(e => document.addEventListener(e, handleActivity));
-
-    // --- AUDIO BOOSTER SETUP ---
-    function setupAudioBooster() {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-            const source = audioCtx.createMediaElementSource(video);
-            gainNode = audioCtx.createGain();
-            gainNode.gain.value = 2.0; // VOLUME X 2 (200%)
-            source.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            console.log("Audio Boost Activé (200%)");
-        } catch(e) { console.log("Audio déjà connecté"); }
-    }
-
-    // --- INIT ---
-    if(localStorage.getItem('mybox_auth') === 'OK') { 
-        document.getElementById('login-screen').style.display = 'none'; 
-        updateAccountDisplay(localStorage.getItem('mybox_key'), localStorage.getItem('mybox_raw_status')); 
-        initApp();
-        startRealTimeCheck();
-        startNetworkMonitor();
-    }
-
-    function changeSourceMode(mode) {
-        localStorage.setItem('mybox_mode', mode);
-        appMode = mode;
-        alert("Mode changé. Rechargement...");
-        initApp();
-    }
-    document.querySelectorAll(`input[name="sourceMode"][value="${appMode}"]`).forEach(r => r.checked = true);
-
-    async function initApp() {
-        allChannels = [DEFAULT_CHANNEL];
-        renderList();
-        playChannel(0);
-        
-        document.getElementById('btn-delete').style.display = (appMode === 'full') ? 'flex' : 'none';
-
-        try {
-            if(appMode === 'premium') {
-                const res = await fetch(`${API_URL}?action=get_playlists`);
-                const sources = await res.json();
-                sources.forEach(s => allChannels.push({ name: s.name, url: s.url, category: "TV" }));
-            } else {
-                const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
-                const links = await res.json();
-                
-                const tpContainer = document.getElementById('tp-list-container');
-                tpContainer.innerHTML = "";
-                links.forEach(l => {
-                    let name = l.name || "Source";
-                    let url = l.url || l;
-                    tpContainer.innerHTML += `<div class="tp-list-item"><span>${name}</span><i class="fas fa-check" style="color:#2ecc71"></i></div>`;
-                    fetchPlaylistWithWatchdog(url);
-                });
-            }
-            renderList();
-        } catch(e) { console.log(e); }
-    }
-
-    // --- MOTEUR DE LECTURE ---
-    function playChannel(index) {
-        if(!allChannels[index]) return;
-        const ch = allChannels[index];
-        currentChannelIndex = index;
-        if(window.innerWidth < 900) document.body.classList.remove('menu-open');
-        renderList(); statusText.innerText = ch.name; led.className = "orange";
-        
-        let playUrl = ch.url;
-        if(location.protocol === 'https:' && ch.url.startsWith('http:')) {
-            playUrl = PROXY + encodeURIComponent(ch.url);
-        }
-
-        if(Hls.isSupported()) {
-            if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 3});
-            hls.loadSource(playUrl); hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; });
-            hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(playUrl===ch.url){ hls.loadSource(PROXY+encodeURIComponent(ch.url)); hls.startLoad(); } else handleError(); } });
-        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = playUrl; video.play(); }
-        
-        if(isAutoZap && index !== 0) setTimeout(() => { if(video.paused) handleError(); }, 15000);
-    }
-    function handleError() { led.className = ""; if(isAutoZap) { statusText.innerText="Zap..."; nextChannel(); } else statusText.innerText="Erreur"; }
-
-    // --- SYSTEME DE LISTE ---
-    function renderList() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        displayedChannels = allChannels.filter(ch => {
-            if(appMode === 'full' && hiddenChannels.includes(ch.url)) return false; 
-            return ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
-        });
-        document.getElementById('count-display').innerText = displayedChannels.length + " Chaînes";
-        listDiv.innerHTML = ""; renderLimit = 50; appendItems();
-    }
-    listDiv.addEventListener('scroll', () => { if(listDiv.scrollTop + listDiv.clientHeight >= listDiv.scrollHeight - 100) { renderLimit += RENDER_BATCH; appendItems(); } });
-    function appendItems() { const frag = document.createDocumentFragment(); const items = displayedChannels.slice(listDiv.childElementCount, renderLimit); items.forEach(ch => { const globalIndex = allChannels.indexOf(ch); const isFav = favorites.includes(ch.url); const isPlaying = (globalIndex === currentChannelIndex); const div = document.createElement('div'); div.className = 'channel-row ' + (isPlaying ? 'active' : ''); div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i><img src="https://via.placeholder.com/40?text=TV" class="ch-logo"><div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category || 'TV'}</div></div>`; div.onclick = () => playChannel(globalIndex); frag.appendChild(div); }); listDiv.appendChild(frag); }
-
-    // --- PARSER ---
-    async function fetchPlaylistWithWatchdog(url) { try { const res = await fetch(PROXY + encodeURIComponent(url)); if(!res.ok) return; const text = await res.text(); let batch=[]; let name="Inconnu"; text.split('\n').forEach(l=>{ l=l.trim(); if(l.startsWith('#EXTINF')) name=l.split(',')[1]; else if(l.startsWith('http') && !l.endsWith('.m3u')) { batch.push({name:name, url:l, category:"Scan"}); name="Inconnu"; } }); if(batch.length>0) { allChannels=allChannels.concat(batch); renderList(); } } catch(e){} }
-    async function handleTitanScan(input) { const file = input.files[0]; if(!file) return; document.getElementById('scan-info').style.display='flex'; const reader = new FileReader(); reader.onload = (e) => { const text = e.target.result; let batch=[]; let name="Local"; text.split('\n').forEach(l=>{ l=l.trim(); if(l.startsWith('#EXTINF')) name=l.split(',')[1]; else if(l.startsWith('http')) { batch.push({name:name, url:l, category:"Local"}); } }); if(batch.length>0) { allChannels=allChannels.concat(batch); renderList(); alert(batch.length+" ajoutées!"); } document.getElementById('scan-info').style.display='none'; }; reader.readAsText(file); }
-
-    // --- SECURITE (5 SECONDES + AUTO LOGOUT) ---
-    function startRealTimeCheck() { 
-        setInterval(async () => { 
-            const key = localStorage.getItem('mybox_key'); 
-            if(!key) return; 
-            try { 
-                const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); 
-                const text = await res.text(); 
-                if(!text.includes("SUCCESS")) { 
-                    localStorage.removeItem('mybox_auth'); 
-                    alert("Abonnement terminé ou connecté ailleurs.");
-                    location.reload(); 
-                } 
-            } catch(e) {} 
-        }, 5000); // 5s check
-    }
-
-    // --- UTILS ---
-    function startNetworkMonitor() { setInterval(async () => { const s=Date.now(); try { await fetch("https://www.google.com/favicon.ico", {mode:'no-cors'}); const ms=Date.now()-s; updateSignal(ms); } catch(e) { updateSignal(9999); } }, 5000); }
-    function updateSignal(ms) { const b = document.getElementById('signal-bars'); b.className='signal-bars'; if(ms<300) b.classList.add('signal-good'); else if(ms<1000) b.classList.add('signal-mid'); else b.classList.add('signal-bad'); }
-    async function login() { const key = document.getElementById('licenseKey').value.trim(); try { const res = await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`); const text = await res.text(); if(text.includes("SUCCESS")) { localStorage.setItem('mybox_auth', 'OK'); localStorage.setItem('mybox_key', key); localStorage.setItem('mybox_raw_status', text); updateAccountDisplay(key, text); document.getElementById('login-screen').style.display = 'none'; initApp(); startRealTimeCheck(); startNetworkMonitor(); } else alert("Erreur ID"); } catch(e) { alert("Erreur Net"); } }
-    function updateAccountDisplay(key, raw) { document.getElementById('sub-id').innerText = key; if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Fin: " + raw.split(':')[1] + "j"; }
-    async function logout() { if(confirm("Sortir ?")) { localStorage.removeItem('mybox_auth'); location.reload(); } }
-    
-    document.getElementById('searchInput').addEventListener('input', renderList);
-    function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
-    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
-    function tryPlayChannel(idx) { const ch = allChannels[idx]; if(ch.name.toLowerCase().includes('adult')) { pendingChannelIndex=idx; document.getElementById('pin-modal').style.display='flex'; } else playChannel(idx); }
-    function checkPin() { if(document.getElementById('pin-code').value === PIN_CODE) { closePin(); playChannel(pendingChannelIndex); } else alert("Faux"); }
-    function closePin() { document.getElementById('pin-modal').style.display = 'none'; }
-    function toggleMenu() { document.body.classList.toggle('menu-open'); }
-    function nextChannel() { if(currentChannelIndex < allChannels.length-1) playChannel(currentChannelIndex+1); else playChannel(0); }
-    function prevChannel() { if(currentChannelIndex > 0) playChannel(currentChannelIndex-1); else playChannel(allChannels.length-1); }
-    function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
-    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
-    function toggleAutoZap() { isAutoZap = !isAutoZap; document.getElementById('btn-autozap').classList.toggle('active-mode'); }
-    function hideCurrentChannel() { if(confirm("Masquer (Localement) ?")) { hiddenChannels.push(allChannels[currentChannelIndex].url); localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); allChannels.splice(currentChannelIndex, 1); renderList(); nextChannel(); } }
-    function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; updateCategoryChips(); }
-    function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
-    function showTab(id) { document.querySelectorAll('.tab-content').forEach(el => el.style.display='none'); document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active')); document.getElementById(id).style.display = 'block'; }
-    function updateCategoryChips() { const container = document.getElementById('chips-area'); if(!container) return; container.innerHTML = ''; Array.from(allCategories).sort().forEach(cat => { const active = selectedCategories.includes(cat) ? 'selected' : ''; container.innerHTML += `<div class="chip ${active}" onclick="toggleCat('${cat}')">${cat}</div>`; }); }
-    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
-    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
-    function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
-    async function forceReload() { if(confirm("Reset ?")) { localStorage.clear(); location.reload(); } }
+const video=document.getElementById('video');
+const listDiv=document.getElementById('channel-list');
+const PROXY="https://corsproxy.io/?";
+const DEFAULT_CHANNEL={name:"Novelas TV",url:"https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8"};
+let allChannels=[DEFAULT_CHANNEL];
+let currentChannelIndex=0;
+let hls=null;
+let audioCtx=null,gainNode=null,mediaSource=null;
+function setupAudio(){if(audioCtx)return;const A=window.AudioContext||window.webkitAudioContext;audioCtx=new A();mediaSource=audioCtx.createMediaElementSource(video);gainNode=audioCtx.createGain();gainNode.gain.value=2;mediaSource.connect(gainNode).connect(audioCtx.destination)}
+function destroyHls(){if(hls){hls.stopLoad();hls.detachMedia();hls.destroy();hls=null}}
+function resolveUrl(url){if(location.protocol==='https:'&&url.startsWith('http:'))return PROXY+encodeURIComponent(url);return url}
+function playChannel(i){if(!allChannels[i])return;currentChannelIndex=i;destroyHls();setupAudio();const ch=allChannels[i];renderList();const u=resolveUrl(ch.url);if(Hls.isSupported()){hls=new Hls();hls.loadSource(u);hls.attachMedia(video);hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play())}else{video.src=u;video.play()}}
+function renderList(){listDiv.innerHTML='';allChannels.forEach((c,i)=>{const d=document.createElement('div');d.className='channel-row'+(i===currentChannelIndex?' active':'');d.textContent=c.name;d.onclick=()=>playChannel(i);listDiv.appendChild(d)})}
+function nextChannel(){playChannel((currentChannelIndex+1)%allChannels.length)}
+function prevChannel(){playChannel((currentChannelIndex-1+allChannels.length)%allChannels.length)}
+function toggleMenu(){document.body.classList.toggle('menu-open')}
+renderList();playChannel(0);
 </script>
 </body>
 </html>
