@@ -25,10 +25,25 @@
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
-        #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 8px; pointer-events: none; }
-        #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; }
+        /* STATUS BARRE MODIFIÉE POUR LE SIGNAL */
+        #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+        #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; box-shadow: 0 0 5px red; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
+
+        /* NOUVEAU : SIGNAL BARRES */
+        .signal-container { display: flex; align-items: flex-end; gap: 2px; height: 12px; margin-left: 5px; }
+        .sig-bar { width: 3px; background: #444; border-radius: 1px; transition: 0.3s; }
+        .sig-bar.b1 { height: 25%; }
+        .sig-bar.b2 { height: 50%; }
+        .sig-bar.b3 { height: 75%; }
+        .sig-bar.b4 { height: 100%; }
+        
+        /* COULEURS SIGNAL */
+        .sig-lvl-1 .b1 { background: #ff4444; } /* Rouge */
+        .sig-lvl-2 .b1, .sig-lvl-2 .b2 { background: #ffd700; } /* Jaune */
+        .sig-lvl-3 .b1, .sig-lvl-3 .b2, .sig-lvl-3 .b3 { background: #ff8c00; } /* Orange */
+        .sig-lvl-4 .sig-bar { background: #00ff00; } /* Vert */
 
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
         body.menu-open #channel-menu { transform: translateX(0); }
@@ -36,7 +51,6 @@
         .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
         #searchInput { width: 95%; margin: 5px auto; padding: 10px; border-radius: 5px; background: #333; border: none; color: white; display: block; font-size: 14px; }
         
-        /* BARRE DE FILTRES COMPACTE */
         .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
         .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         .btn-mini.active { background: #333; color: white; border-color: #666; }
@@ -75,10 +89,14 @@
         .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
         .chip.selected { background: var(--primary); color: white; }
-        .input-dark { width: 100%; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; }
         
         .toggle-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 15px; border-radius: 5px; margin-bottom: 10px; }
         
+        /* DATA STATS BOX */
+        .data-box { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center; }
+        .data-val { font-size: 18px; font-weight: bold; color: var(--primary); }
+        .data-label { font-size: 12px; color: #888; }
+
         @media (max-width: 700px) { .settings-panel { flex-direction: column; } .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; } }
 
         #admin-msg-box { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 30px; z-index: 300; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.5); font-weight: bold; text-align: center; width: 90%; animation: slideDown 0.5s; }
@@ -147,7 +165,7 @@
             <div class="settings-tab active" onclick="showTab('tab-general')">Sources</div>
             <div class="settings-tab" onclick="showTab('tab-inst')">Installation</div>
             <div class="settings-tab" onclick="showTab('tab-cat')">Groupes</div>
-            <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
+            <div class="settings-tab" onclick="showTab('tab-net')">Réseau</div> <div class="settings-tab" onclick="showTab('tab-sub')">Compte</div>
             <div class="settings-tab" onclick="forceReload()" style="color:#ff4444; margin-top:20px;">Réinitialiser TV</div>
             <div class="settings-tab" onclick="closeSettings()" style="color:#888; margin-top:10px;">Fermer ✕</div>
         </div>
@@ -191,6 +209,25 @@
                 <button onclick="applyFilters()" style="margin-top:20px; width:100%; background:var(--primary); border:none; color:white; padding:10px; border-radius:5px;">Valider</button>
             </div>
 
+            <div id="tab-net" class="tab-content" style="display:none;">
+                <h3>Infos Réseau</h3>
+                <div class="data-box">
+                    <div>
+                        <div class="data-val" id="net-speed">0 Mbps</div>
+                        <div class="data-label">Vitesse Actuelle</div>
+                    </div>
+                    <i class="fas fa-tachometer-alt" style="font-size:20px; color:#555;"></i>
+                </div>
+                <div class="data-box">
+                    <div>
+                        <div class="data-val" id="net-total">0 Mo</div>
+                        <div class="data-label">Données Consommées</div>
+                    </div>
+                    <i class="fas fa-database" style="font-size:20px; color:#555;"></i>
+                </div>
+                <p style="color:#888; font-size:10px; margin-top:10px;">Les données sont enregistrées dans la mémoire interne de l'appareil (Le Cerveau).</p>
+            </div>
+
             <div id="tab-sub" class="tab-content" style="display:none;">
                 <h3>Abonnement</h3>
                 <div style="background:#222; padding:20px; border-radius:10px; margin-bottom:20px;">
@@ -216,7 +253,16 @@
 <div id="video-layer"><video id="video" onclick="toggleMenu()" playsinline crossorigin="anonymous"></video></div>
 
 <div id="ui-layer">
-    <div id="status-pill"><div id="led"></div><span id="status-text">Prêt</span></div>
+    <div id="status-pill">
+        <div id="led"></div>
+        <div class="signal-container" id="signal-meter">
+            <div class="sig-bar b1"></div>
+            <div class="sig-bar b2"></div>
+            <div class="sig-bar b3"></div>
+            <div class="sig-bar b4"></div>
+        </div>
+        <span id="status-text" style="margin-left:5px;">Prêt</span>
+    </div>
     
     <div id="channel-menu">
         <div class="menu-header">
@@ -259,7 +305,9 @@
         <button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
         <button class="btn-ctrl desktop-only" onclick="adjustVol(0.1)"><i class="fas fa-plus"></i></button>
         <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
+        
         <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
+        
         <button class="btn-ctrl" id="btn-delete" onclick="hideCurrentChannel()" style="color:#ff4444;"><i class="fas fa-trash"></i></button>
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
@@ -285,6 +333,9 @@
     let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
     let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
     
+    // GESTION CONSOMMATION DONNEES
+    let totalBytesUsed = parseFloat(localStorage.getItem('mybox_data_bytes') || '0');
+
     let availableTransponders = []; 
     let lastActivityTime = Date.now();
     let isScanning = false;
@@ -296,11 +347,10 @@
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    // --- GESTION DES FENETRES PERSONNALISÉES (REMPLACE ALERT & CONFIRM) ---
+    // --- GESTION DES FENETRES PERSONNALISÉES ---
     let onAlertCloseAction = null;
     let onConfirmAction = null;
 
-    // 1. Fenêtre d'INFO (Bouton COMPRIS)
     function showMyAlert(message, actionAfter) {
         document.getElementById('custom-alert-text').innerText = message;
         document.getElementById('custom-alert').style.display = 'flex';
@@ -308,13 +358,8 @@
     }
     function closeCustomAlert() {
         document.getElementById('custom-alert').style.display = 'none';
-        if (onAlertCloseAction) {
-            onAlertCloseAction();
-            onAlertCloseAction = null;
-        }
+        if (onAlertCloseAction) { onAlertCloseAction(); onAlertCloseAction = null; }
     }
-
-    // 2. Fenêtre de CONFIRMATION (Boutons OUI / NON)
     function showMyConfirm(message, actionYes) {
         document.getElementById('custom-confirm-text').innerText = message;
         document.getElementById('custom-confirm').style.display = 'flex';
@@ -322,10 +367,8 @@
     }
     function closeCustomConfirm(choice) {
         document.getElementById('custom-confirm').style.display = 'none';
-        if (choice && onConfirmAction) {
-            onConfirmAction();
-        }
-        onConfirmAction = null; // Reset
+        if (choice && onConfirmAction) { onConfirmAction(); }
+        onConfirmAction = null;
     }
 
     function openDB() { return new Promise((resolve, reject) => { const r = indexedDB.open(DB_NAME, DB_VERSION); r.onerror=()=>reject("DB Error"); r.onsuccess=e=>resolve(e.target.result); r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains("channels")) e.target.result.createObjectStore("channels", { keyPath: "url" }); }; }); }
@@ -341,28 +384,61 @@
         }
     }
 
-    // --- GESTION DE L'INTERFACE MODE AVEC NOUVELLE ALERTE ---
+    // --- MISE A JOUR UI (MODE & SIGNAL) ---
     function updateModeUI() {
         const badge = document.getElementById('mode-badge');
         const btnDelete = document.getElementById('btn-delete');
+        const btnAutoZap = document.getElementById('btn-autozap'); // Bouton AutoZap
         
         if (appMode) {
             if(appMode === 'premium') {
                 badge.innerText = "PREMIUM";
                 badge.style.color = "#2ecc71";
                 btnDelete.style.display = 'none'; 
+                btnAutoZap.style.display = 'none'; // CACHER AUTOZAP EN PREMIUM
             } else {
                 badge.innerText = "TRANS";
                 badge.style.color = "#3498db";
                 btnDelete.style.display = 'flex'; 
+                btnAutoZap.style.display = 'flex'; // AFFICHER AUTOZAP EN COMPLET
             }
             
             const radios = document.getElementsByName('sourceMode');
-            radios.forEach(r => {
-                if(r.value === appMode) r.checked = true;
-            });
+            radios.forEach(r => { if(r.value === appMode) r.checked = true; });
         }
     }
+
+    // --- GESTION RESEAU ET STATS ---
+    function updateNetworkStats(bytesLoaded, durationMs) {
+        if(durationMs <= 0 || bytesLoaded <= 0) return;
+        
+        // 1. Calcul Données Totales
+        totalBytesUsed += bytesLoaded;
+        localStorage.setItem('mybox_data_bytes', totalBytesUsed);
+        
+        // Conversion Affichage (Mo ou Go)
+        let displayTotal = "";
+        if(totalBytesUsed > 1073741824) displayTotal = (totalBytesUsed / 1073741824).toFixed(2) + " Go";
+        else displayTotal = (totalBytesUsed / 1048576).toFixed(1) + " Mo";
+        document.getElementById('net-total').innerText = displayTotal;
+
+        // 2. Calcul Vitesse (Bits par seconde)
+        const bps = (bytesLoaded * 8) / (durationMs / 1000);
+        const mbps = bps / 1000000;
+        document.getElementById('net-speed').innerText = mbps.toFixed(2) + " Mbps";
+
+        // 3. Mise à jour des barres de signal
+        const meter = document.getElementById('signal-meter');
+        meter.className = "signal-container"; // Reset
+        
+        if(mbps > 5) meter.classList.add('sig-lvl-4'); // Vert
+        else if(mbps > 3) meter.classList.add('sig-lvl-3'); // Orange
+        else if(mbps > 1) meter.classList.add('sig-lvl-2'); // Jaune
+        else meter.classList.add('sig-lvl-1'); // Rouge
+    }
+
+    // Initialize display from memory
+    updateNetworkStats(0, 1000); 
 
     function toggleModeQuick() {
         if(!appMode) return; 
@@ -374,12 +450,8 @@
         localStorage.setItem('mybox_mode', mode);
         appMode = mode;
         updateModeUI();
-        
         closeSettings();
-        
-        showMyAlert("Mode configuré : " + mode.toUpperCase() + ".\nChargement des chaînes...", function() {
-            initApp(); 
-        });
+        showMyAlert("Mode configuré : " + mode.toUpperCase() + ".\nChargement des chaînes...", function() { initApp(); });
     }
 
     if(localStorage.getItem('mybox_auth') === 'OK') { 
@@ -405,12 +477,8 @@
                 document.getElementById('login-screen').style.display = 'none'; 
                 initApp(); 
                 startRealTimeCheck(); 
-            } else {
-                showMyAlert("ABONNEMENT EXPIRÉ OU ID INVALIDE");
-            } 
-        } catch(e) { 
-            showMyAlert("Erreur de connexion Internet"); 
-        } 
+            } else { showMyAlert("ABONNEMENT EXPIRÉ OU ID INVALIDE"); } 
+        } catch(e) { showMyAlert("Erreur de connexion Internet"); } 
     }
     
     function updateAccountDisplay(key, raw) { document.getElementById('sub-id').innerText = key; if(raw && raw.split(':').length >= 3) document.getElementById('sub-details').innerText = "Expire: " + raw.split(':')[1] + "j"; }
@@ -437,26 +505,16 @@
             try {
                 const res = await fetch(`${API_URL}?action=get_playlists`);
                 const sources = await res.json();
-                
                 allChannels = [DEFAULT_CHANNEL];
                 loadedUrls = new Set([DEFAULT_CHANNEL.url]);
-                
                 if(sources.length > 0) {
                     sources.forEach(s => {
-                        const ch = { 
-                            name: s.name, 
-                            url: s.url, 
-                            category: s.category || "TV",
-                            logo: "" 
-                        };
-                        allChannels.push(ch);
-                        loadedUrls.add(ch.url);
-                        allCategories.add(ch.category);
+                        const ch = { name: s.name, url: s.url, category: s.category || "TV", logo: "" };
+                        allChannels.push(ch); loadedUrls.add(ch.url); allCategories.add(ch.category);
                     });
                     renderList();
                 }
             } catch(e) { console.log("Err Premium", e); }
-            
         } else {
             const cached = await loadChannelsFromDB();
             if(cached.length > 5) {
@@ -478,17 +536,13 @@
 
     async function fetchTranspondersList() {
         if(appMode === 'premium') return; 
-
         try {
             const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
             const json = await res.json();
             availableTransponders = json;
             renderTranspondersUI();
-            
             if(allChannels.length < 5) {
-                availableTransponders.forEach((tp, i) => {
-                    setTimeout(() => fetchPlaylistWithWatchdog(tp), i * 1000);
-                });
+                availableTransponders.forEach((tp, i) => { setTimeout(() => fetchPlaylistWithWatchdog(tp), i * 1000); });
             }
         } catch(e) { console.log("TP Error", e); }
     }
@@ -641,7 +695,6 @@
         container.innerHTML = html;
     }
     
-    // UI Helpers standard
     function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
     function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
     function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
@@ -668,11 +721,29 @@
         statusText.innerText = ch.name; led.className = "orange";
         
         if(Hls.isSupported()) {
-            if(hls) hls.destroy(); hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
-            hls.loadSource(ch.url); hls.attachMedia(video);
+            if(hls) hls.destroy(); 
+            hls = new Hls({manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000});
+            hls.loadSource(ch.url); 
+            hls.attachMedia(video);
+            
+            // --- EVENT POUR CALCUL DU SIGNAL ---
+            hls.on(Hls.Events.FRAG_LOAD_COMPLETED, function(event, data) {
+                 if(data.stats) {
+                     // data.stats.total = Octets téléchargés
+                     // data.stats.loading.end - start = Durée en ms
+                     const duration = data.stats.loading.end - data.stats.loading.start;
+                     updateNetworkStats(data.stats.total, duration);
+                 }
+            });
+
             hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className = "green"; clearTimeout(autoZapTimeout); });
             hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(index===0){ setTimeout(()=>playChannel(0),2000); } else handleError(); } });
-        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { video.src = ch.url; video.play(); }
+        } else if(video.canPlayType('application/vnd.apple.mpegurl')) { 
+            video.src = ch.url; video.play(); 
+            // Fallback pour Safari (pas de calcul précis possible sans HLS.js, on met au max)
+            const meter = document.getElementById('signal-meter');
+            meter.className = "signal-container sig-lvl-4";
+        }
         
         if(isAutoZap && index !== 0) { clearTimeout(autoZapTimeout); autoZapTimeout = setTimeout(() => { if(video.paused || video.readyState < 2) handleError(); }, 15000); }
     }
@@ -683,7 +754,14 @@
     function prevChannel() { let prevIdx = currentChannelIndex - 1; if(prevIdx < 0) prevIdx = allChannels.length - 1; tryPlayChannel(prevIdx); }
     function adjustVol(d) { video.volume = Math.min(1, Math.max(0, video.volume + d)); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else if (document.exitFullscreen) document.exitFullscreen(); }
-    function toggleAutoZap() { isAutoZap = !isAutoZap; const btn = document.getElementById('btn-autozap'); if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } }
+    
+    function toggleAutoZap() { 
+        if(appMode === 'premium') return; // Sécurité double
+        isAutoZap = !isAutoZap; 
+        const btn = document.getElementById('btn-autozap'); 
+        if(isAutoZap) { btn.classList.add('active-mode'); statusText.innerText = "Auto-Zap ON"; } 
+        else { btn.classList.remove('active-mode'); statusText.innerText = "Auto-Zap OFF"; clearTimeout(autoZapTimeout); } 
+    }
     
     function hideCurrentChannel() { 
         showMyConfirm("Supprimer cette chaîne de la liste ?", function() {
