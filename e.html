@@ -94,15 +94,6 @@
 </head>
 <body>
 
-<div id="start-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:99999; display:flex; align-items:center; justify-content:center; flex-direction:column; cursor:pointer;" onclick="enterApp()">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:150px; margin-bottom:20px;">
-    <h2 style="color:white; margin:0;">MY BOX TV</h2>
-    <p style="color:#888; margin-bottom:30px;">V110 Premium</p>
-    <div style="color:#e50914; border:2px solid #e50914; padding:12px 30px; border-radius:30px; font-weight:bold; box-shadow:0 0 15px rgba(229,9,20,0.3);">
-        TOUCHER POUR DÉMARRER <i class="fas fa-play"></i>
-    </div>
-</div>
-
 <div id="custom-alert" class="modal" style="z-index: 99999;">
     <div class="modal-box" style="border: 1px solid #e50914; box-shadow: 0 0 20px rgba(229, 9, 20, 0.3); text-align: center;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:80px; margin-bottom:10px;">
@@ -147,7 +138,8 @@
         <div class="settings-content">
             <div id="tab-general" class="tab-content">
                 <h3 style="color:#e50914;">MODE DE RÉCEPTION</h3>
-                
+                <p style="color:#888; font-size:12px; margin-bottom:20px;">Veuillez choisir votre configuration pour commencer.</p>
+
                 <div class="toggle-row">
                     <div>
                         <div style="font-weight:bold;">Mode Complet (Transpondeurs)</div>
@@ -281,21 +273,13 @@
     let lastActivityTime = Date.now();
     let isScanning = false;
 
-    // GESTION DU MODE DE RECEPTION
-    let appMode = localStorage.getItem('mybox_mode') || 'full'; // 'full' (col B) ou 'premium' (col D/E)
+    // GESTION DU MODE DE RECEPTION (MODIFIÉ POUR LA PREMIÈRE CONFIG)
+    // On ne met plus de valeur par défaut 'full' pour détecter le premier lancement
+    let appMode = localStorage.getItem('mybox_mode'); 
 
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
-
-    // --- FONCTION POUR LE MODE APP PLEIN ECRAN ---
-    function enterApp() {
-        let elem = document.documentElement;
-        if (elem.requestFullscreen) { elem.requestFullscreen(); } 
-        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } 
-        document.getElementById('start-overlay').style.display = 'none';
-        // Si besoin, tu peux lancer la lecture ici, par exemple : playChannel(0);
-    }
 
     // --- GESTION DES ALERTES PERSONNALISÉES (REMPLACE ALERT) ---
     let onAlertCloseAction = null;
@@ -332,23 +316,26 @@
         const badge = document.getElementById('mode-badge');
         const btnDelete = document.getElementById('btn-delete');
         
-        if(appMode === 'premium') {
-            badge.innerText = "PREMIUM";
-            badge.style.color = "#2ecc71";
-            btnDelete.style.display = 'none'; 
-        } else {
-            badge.innerText = "TRANS";
-            badge.style.color = "#3498db";
-            btnDelete.style.display = 'flex'; 
+        if (appMode) {
+            if(appMode === 'premium') {
+                badge.innerText = "PREMIUM";
+                badge.style.color = "#2ecc71";
+                btnDelete.style.display = 'none'; 
+            } else {
+                badge.innerText = "TRANS";
+                badge.style.color = "#3498db";
+                btnDelete.style.display = 'flex'; 
+            }
+            
+            const radios = document.getElementsByName('sourceMode');
+            radios.forEach(r => {
+                if(r.value === appMode) r.checked = true;
+            });
         }
-        
-        const radios = document.getElementsByName('sourceMode');
-        radios.forEach(r => {
-            if(r.value === appMode) r.checked = true;
-        });
     }
 
     function toggleModeQuick() {
+        if(!appMode) return; // Pas encore configuré
         appMode = (appMode === 'full') ? 'premium' : 'full';
         changeSourceMode(appMode);
     }
@@ -357,8 +344,12 @@
         localStorage.setItem('mybox_mode', mode);
         appMode = mode;
         updateModeUI();
+        
+        // Ferme les réglages au cas où c'est le premier lancement
+        closeSettings();
+        
         // Utilisation de la nouvelle fenêtre stylée
-        showMyAlert("Changement de mode effectué.\nRechargement des chaînes...", function() {
+        showMyAlert("Mode configuré : " + mode.toUpperCase() + ".\nChargement des chaînes...", function() {
             initApp(); 
         });
     }
@@ -376,6 +367,14 @@
     async function logout() { if(confirm("Déconnecter ?")) { try{ await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); }catch(e){} localStorage.removeItem('mybox_auth'); location.reload(); } }
 
     async function initApp() {
+        // --- DETECTION DU PREMIER LANCEMENT ---
+        if (!appMode) {
+            // Pas de mode configuré = Premier lancement
+            openSettings(); // Ouvre la fenêtre de config
+            showMyAlert("Bienvenue sur My Box TV !\nVeuillez choisir un Mode de Réception dans la liste pour commencer.");
+            return; // On arrête tout, on ne charge pas les chaînes tant qu'il n'a pas choisi
+        }
+
         updateModeUI();
         enforceNovelasIntegrity(); renderList(); playChannel(0);
         
