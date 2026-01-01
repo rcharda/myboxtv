@@ -1,1 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAVOO WEB PLAYER (VPN DE)</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88; /* Vert Néon pour le style Hacker/Vavoo */
+            --bg: #0a0a0a;
+            --surface: #151515;
+            --text: #ffffff;
+        }
+        
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* HEADER */
+        header { height: 60px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #333; }
+        .logo { font-weight: 900; font-size: 24px; color: var(--text); letter-spacing: 1px; }
+        .logo span { color: var(--primary); }
+        
+        .vpn-status { font-size: 12px; background: #222; padding: 5px 15px; border-radius: 20px; display: flex; align-items: center; gap: 8px; border: 1px solid #444; }
+        .dot { width: 8px; height: 8px; background: #555; border-radius: 50%; }
+        .dot.active { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+        .dot.error { background: #ff4444; box-shadow: 0 0 10px #ff4444; }
 
+        /* MAIN LAYOUT */
+        .container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* VIDEO PLAYER */
+        .player-area { flex: 2; background: #000; position: relative; display: flex; align-items: center; justify-content: center; }
+        video { width: 100%; height: 100%; max-height: 100vh; outline: none; }
+        
+        .overlay-msg { position: absolute; text-align: center; color: #888; pointer-events: none; }
+        
+        /* SIDEBAR LIST */
+        .sidebar { flex: 1; max-width: 400px; background: var(--surface); display: flex; flex-direction: column; border-left: 1px solid #333; }
+        
+        .search-box { padding: 15px; background: #111; border-bottom: 1px solid #333; }
+        input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; font-size: 14px; outline: none; }
+        input:focus { border-color: var(--primary); }
+
+        .channel-list { flex: 1; overflow-y: auto; padding: 0; }
+        .channel-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s; }
+        .channel-item:hover { background: #222; }
+        .channel-item.active { background: rgba(0, 255, 136, 0.1); border-left: 3px solid var(--primary); }
+        
+        .ch-logo { width: 40px; height: 40px; background: #333; border-radius: 5px; object-fit: contain; margin-right: 15px; padding: 2px; }
+        .ch-info { flex: 1; }
+        .ch-name { font-weight: 600; font-size: 14px; display: block; }
+        .ch-group { font-size: 11px; color: #888; text-transform: uppercase; margin-top: 2px; }
+
+        /* LOADER */
+        #loader { display: none; color: var(--primary); font-family: monospace; }
+
+        /* MOBILE */
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .player-area { height: 40vh; flex: none; }
+            .sidebar { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">VAVOO <span>PLAYER</span></div>
+    <div class="vpn-status" id="vpn-indicator" onclick="toggleVpnCheck()">
+        <div class="dot" id="vpn-dot"></div>
+        <span id="vpn-text">VPN REQUIS (ALLEMAGNE)</span>
+    </div>
+</header>
+
+<div class="container">
+    <div class="player-area">
+        <video id="video" controls autoplay playsinline></video>
+        <div class="overlay-msg" id="overlay">
+            <i class="fas fa-play-circle" style="font-size: 50px; margin-bottom: 20px;"></i><br>
+            Sélectionnez une chaîne<br>
+            <span style="font-size: 12px; opacity: 0.7;">Assurez-vous d'être connecté en Allemagne</span>
+        </div>
+        <div id="loader">CHARGEMENT DES FLUX VAVOO...</div>
+    </div>
+
+    <div class="sidebar">
+        <div class="search-box">
+            <input type="text" id="search" placeholder="🔍 Rechercher (ex: Pro7, Sky, Bein)..." oninput="filterList()">
+        </div>
+        <div class="channel-list" id="list">
+            </div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    // Cette liste spéciale contient les clés calculées pour oha/vavoo
+    const PLAYLIST_URL = "https://raw.githubusercontent.com/jnk22/kodinerds-iptv/master/iptv/clean/vavoo.m3u";
+    
+    // On utilise un proxy pour contourner la sécurité du chargement de la liste
+    const PROXY_URL = "https://api.allorigins.win/raw?url=";
+
+    let allChannels = [];
+    let hls = null;
+    const video = document.getElementById('video');
+    const listEl = document.getElementById('list');
+    const loader = document.getElementById('loader');
+    const overlay = document.getElementById('overlay');
+
+    // 1. Démarrage
+    window.onload = () => {
+        loadPlaylist();
+        
+        // Petit effet visuel pour rappeler le VPN
+        setTimeout(() => {
+            document.getElementById('vpn-dot').classList.add('active');
+            document.getElementById('vpn-text').innerText = "VPN: SUPPOSÉ ACTIF (DE)";
+        }, 2000);
+    };
+
+    // 2. Chargement et Parsing de la liste M3U
+    async function loadPlaylist() {
+        loader.style.display = "block";
+        overlay.style.display = "none";
+        
+        try {
+            // On combine le Proxy + l'URL pour éviter l'erreur CORS au chargement
+            const response = await fetch(PROXY_URL + encodeURIComponent(PLAYLIST_URL));
+            const text = await response.text();
+            
+            parseM3U(text);
+            loader.style.display = "none";
+            
+        } catch (e) {
+            loader.innerText = "ERREUR DE CHARGEMENT. VÉRIFIEZ VOTRE CONNEXION.";
+            console.error(e);
+        }
+    }
+
+    function parseM3U(data) {
+        const lines = data.split('\n');
+        let currentItem = {};
+        
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+
+            if (line.startsWith('#EXTINF:')) {
+                // Récupération des infos
+                const info = line.split(',');
+                currentItem.name = info[1] || "Sans nom";
+                
+                // Récupération Logo
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                currentItem.logo = logoMatch ? logoMatch[1] : "";
+                
+                // Récupération Groupe (Pays/Catégorie)
+                const groupMatch = line.match(/group-title="([^"]*)"/);
+                currentItem.group = groupMatch ? groupMatch[1] : "Autres";
+
+            } else if (line.startsWith('http')) {
+                currentItem.url = line;
+                // On ajoute seulement si on a un nom
+                if (currentItem.name) {
+                    allChannels.push({...currentItem});
+                }
+                currentItem = {}; // Reset pour la prochaine
+            }
+        });
+
+        // Afficher tout au début
+        renderList(allChannels);
+    }
+
+    // 3. Affichage
+    function renderList(channels) {
+        listEl.innerHTML = "";
+        // Limite d'affichage pour éviter le lag (les 500 premiers résultats)
+        const displayLimit = channels.slice(0, 200);
+        
+        displayLimit.forEach((ch, index) => {
+            const div = document.createElement('div');
+            div.className = "channel-item";
+            div.innerHTML = `
+                <img src="${ch.logo}" class="ch-logo" onerror="this.style.display='none'">
+                <div class="ch-info">
+                    <span class="ch-name">${ch.name}</span>
+                    <span class="ch-group">${ch.group}</span>
+                </div>
+            `;
+            div.onclick = () => playStream(ch.url, div);
+            listEl.appendChild(div);
+        });
+    }
+
+    // 4. Filtrage / Recherche
+    function filterList() {
+        const term = document.getElementById('search').value.toLowerCase();
+        const filtered = allChannels.filter(ch => 
+            ch.name.toLowerCase().includes(term) || 
+            ch.group.toLowerCase().includes(term)
+        );
+        renderList(filtered);
+    }
+
+    // 5. Lecteur Vidéo HLS
+    function playStream(url, element) {
+        // UI Update
+        document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+        if(element) element.classList.add('active');
+        overlay.style.display = "none";
+
+        // IMPORTANT : Vérification des liens "vavoo"
+        // Si le lien contient "?n=1...", c'est souvent un signe qu'il faut une signature.
+        // La liste Kodinerds gère ça, mais le VPN est crucial ici.
+
+        if (Hls.isSupported()) {
+            if (hls) hls.destroy();
+            hls = new Hls({
+                // Optimisation pour les flux instables
+                manifestLoadingTimeOut: 15000,
+                manifestLoadingMaxRetry: 3
+            });
+            
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play().catch(e => console.log("Lecture auto bloquée par navigateur"));
+                document.getElementById('vpn-dot').className = "dot active"; // Vert
+            });
+
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (data.fatal) {
+                    console.log("Erreur fatale HLS");
+                    // Erreur souvent due au Geo-Block
+                    document.getElementById('vpn-dot').className = "dot error"; // Rouge
+                    document.getElementById('vpn-text').innerText = "ERREUR : VÉRIFIEZ VPN (ALLEMAGNE)";
+                }
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.play();
+        }
+    }
+</script>
+
+</body>
+</html>
