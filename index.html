@@ -350,6 +350,10 @@
     // NOUVEAU : GESTION DU MODE VUE (LISTE ou GRILLE)
     let isGridMode = localStorage.getItem('mybox_view_mode') === 'grid';
 
+    // --- VARIABLES SCROLL INFINI ---
+    let visibleCount = 0;
+    const BATCH_SIZE = 500;
+
     // --- GESTION DES DONNÉES (CERVEAU) ---
     // On s'assure que c'est bien un nombre
     let totalBytesUsed = parseInt(localStorage.getItem('mybox_data_bytes'));
@@ -358,6 +362,17 @@
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
+
+    // --- GESTION DU SCROLL INFINI (Ajout de l'écouteur) ---
+    document.getElementById('channel-list').addEventListener('scroll', function() {
+        const list = this;
+        // Si on arrive près du bas (à 200px de la fin)
+        if (list.scrollTop + list.clientHeight >= list.scrollHeight - 200) {
+            if (visibleCount < displayedChannels.length) {
+                renderBatch(); // On charge la suite
+            }
+        }
+    });
 
     // --- ALERTES & CONFIRMATIONS ---
     let onAlertCloseAction = null;
@@ -415,10 +430,10 @@
         const meter = document.getElementById('signal-meter');
         if(meter) {
             meter.className = "signal-container"; // Reset
-            if(speedMbps > 3.5) meter.classList.add('sig-lvl-4');      // Vert
+            if(speedMbps > 3.5) meter.classList.add('sig-lvl-4');       // Vert
             else if(speedMbps > 1.5) meter.classList.add('sig-lvl-3'); // Orange
             else if(speedMbps > 0.5) meter.classList.add('sig-lvl-2'); // Jaune
-            else meter.classList.add('sig-lvl-1');                     // Rouge
+            else meter.classList.add('sig-lvl-1');                      // Rouge
         }
     }
 
@@ -492,7 +507,7 @@
         isGridMode = !isGridMode;
         localStorage.setItem('mybox_view_mode', isGridMode ? 'grid' : 'list');
         updateModeUI();
-        renderList();
+        renderList(true); // Force reset
     }
 
     function toggleModeQuick() {
@@ -554,7 +569,9 @@
         }
 
         updateModeUI();
-        enforceNovelasIntegrity(); renderList(); playChannel(0);
+        enforceNovelasIntegrity(); 
+        renderList(true); 
+        playChannel(0);
         
         // Initialisation affichage réseau
         refreshNetworkUI(0);
@@ -570,7 +587,7 @@
                         const ch = { name: s.name, url: s.url, category: s.category || "TV", logo: "" };
                         allChannels.push(ch); loadedUrls.add(ch.url); allCategories.add(ch.category);
                     });
-                    renderList();
+                    renderList(true);
                 }
             } catch(e) { console.log("Err Premium", e); }
         } else {
@@ -579,7 +596,7 @@
                 const ext = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
                 allChannels = [DEFAULT_CHANNEL, ...ext];
                 allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
-                updateCategoryChips(); renderList();
+                updateCategoryChips(); renderList(true);
             }
             fetchTranspondersList();
         }
@@ -709,37 +726,53 @@
         allChannels = allChannels.concat(batch); batch.length = 0;
         document.getElementById('count-display').innerText = allChannels.length + " trouvées";
         enforceNovelasIntegrity();
-        if(document.getElementById('searchInput').value === "") renderList(); 
+        if(document.getElementById('searchInput').value === "") renderList(true); 
         updateCategoryChips();
     }
 
-    // --- FONCTION D'AFFICHAGE (LISTE OU GRILLE) ---
-    function renderList() {
+    // --- FONCTION D'AFFICHAGE OPTIMISÉE (SCROLL INFINI) ---
+    function renderList(reset = false) {
         enforceNovelasIntegrity();
-        const term = document.getElementById('searchInput').value.toLowerCase();
         
-        displayedChannels = allChannels.filter(ch => {
-            let catOK = true;
-            if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
-            return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
-        });
+        // Si c'est une nouvelle recherche ou un reset, on recalcule la liste filtrée
+        if (reset) {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Filtrage complet de la liste
+            displayedChannels = allChannels.filter(ch => {
+                let catOK = true;
+                if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
+                return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
+            });
 
-        const list = document.getElementById('channel-list');
-        list.innerHTML = "";
-        
-        // GESTION DU MODE
-        if(isGridMode) {
-            list.className = "grid-view"; // Active le CSS grid
-        } else {
-            list.className = ""; // Mode liste classique
+            // GESTION DU MODE CSS (GRID ou LIST)
+            const list = document.getElementById('channel-list');
+            list.innerHTML = ""; // Vide la liste visuelle
+            list.className = isGridMode ? "grid-view" : ""; // Applique la classe grid si besoin
+            
+            list.scrollTop = 0; // Remet l'ascenseur en haut
+            visibleCount = 0; // Reset du compteur
+            
+            renderBatch(); // Affiche le premier paquet
         }
+    }
 
+    // Fonction interne pour ajouter les chaînes par paquet
+    function renderBatch() {
+        const list = document.getElementById('channel-list');
         const frag = document.createDocumentFragment();
-        let limit = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
         
-        displayedChannels.slice(0, limit).forEach((ch) => {
+        // Calcul de la plage à afficher
+        const start = visibleCount;
+        const end = Math.min(visibleCount + BATCH_SIZE, displayedChannels.length);
+        
+        if (start >= end) return;
+
+        for (let i = start; i < end; i++) {
+            const ch = displayedChannels[i];
             const isFav = favorites.includes(ch.url);
-            const isPlaying = (ch.url === allChannels[currentChannelIndex]?.url);
+            // Vérification précise si c'est la chaine en cours
+            const isPlaying = (allChannels[currentChannelIndex] && ch.url === allChannels[currentChannelIndex].url);
             const logoSrc = ch.logo || 'https://via.placeholder.com/40?text=TV';
             
             const div = document.createElement('div');
@@ -752,7 +785,7 @@
                     <div class="grid-title">${ch.name}</div>
                 `;
             } else {
-                // --- RENDU LISTE (Classique) ---
+                // --- RENDU LISTE ---
                 div.className = 'channel-row ' + (isPlaying ? 'active' : '');
                 div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                                  <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
@@ -761,9 +794,11 @@
             
             div.onclick = () => tryPlayChannel(ch);
             frag.appendChild(div);
-        });
+        }
+
         list.appendChild(frag);
-        document.getElementById('count-display').innerText = allChannels.length + " Chaînes";
+        visibleCount = end;
+        document.getElementById('count-display').innerText = visibleCount + " / " + displayedChannels.length + " Chaînes";
     }
 
     function updateCategoryChips() {
@@ -778,11 +813,11 @@
         container.innerHTML = html;
     }
     
-    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(); }
-    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(); }
-    function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(); closeSettings(); }
-    function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(); }
-    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(); }
+    function toggleCat(cat) { if(selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat); else selectedCategories.push(cat); updateCategoryChips(); renderList(true); }
+    function resetFilters() { selectedCategories = []; updateCategoryChips(); renderList(true); }
+    function applyFilters() { localStorage.setItem('mybox_categories', JSON.stringify(selectedCategories)); renderList(true); closeSettings(); }
+    function toggleFavorite(url, e) { e.stopPropagation(); if(favorites.includes(url)) favorites = favorites.filter(u => u !== url); else favorites.push(url); localStorage.setItem('mybox_favs', JSON.stringify(favorites)); renderList(true); }
+    function toggleOnlyFavorites() { isFavFilter = !isFavFilter; document.getElementById('btn-fav-filter').style.background = isFavFilter ? '#e50914' : '#2a2a2a'; renderList(true); }
 
     function tryPlayChannel(ch) {
         let index = -1;
@@ -800,7 +835,7 @@
         if(!allChannels[index]) return;
         const ch = allChannels[index];
         if(window.innerWidth < 900) document.body.classList.remove('menu-open');
-        renderList(); 
+        renderList(true); 
         statusText.innerText = ch.name; led.className = "orange";
         
         if(Hls.isSupported()) {
@@ -848,7 +883,7 @@
             localStorage.setItem('mybox_hidden', JSON.stringify(hiddenChannels)); 
             allChannels.splice(currentChannelIndex, 1); 
             loadedUrls.delete(ch.url); 
-            renderList(); 
+            renderList(true); 
             nextChannel(); 
         });
     }
