@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
 
-    <title>My Box TV - Smart Ultimate</title>
+    <title>My Box TV - Ultimate</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -23,13 +25,19 @@
         video { width: 100%; height: 100%; object-fit: contain; }
         #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
+        /* STATUS BARRE AVEC SIGNAL */
         #status-pill { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 8px 15px; border-radius: 20px; border: 1px solid #444; font-size: 12px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 10px; pointer-events: none; }
         #led { width: 8px; height: 8px; background: red; border-radius: 50%; transition: 0.3s; box-shadow: 0 0 5px red; }
         #led.green { background: #0f0; box-shadow: 0 0 5px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 5px orange; }
+
+        /* SIGNAL BARRES */
         .signal-container { display: flex; align-items: flex-end; gap: 3px; height: 14px; }
         .sig-bar { width: 4px; background: #444; border-radius: 1px; transition: background 0.3s; }
         .sig-bar.b1 { height: 25%; } .sig-bar.b2 { height: 50%; } .sig-bar.b3 { height: 75%; } .sig-bar.b4 { height: 100%; }
+        .sig-lvl-1 .b1 { background: #ff4444; } 
+        .sig-lvl-2 .b1, .sig-lvl-2 .b2 { background: #ffd700; } 
+        .sig-lvl-3 .b1, .sig-lvl-3 .b2, .sig-lvl-3 .b3 { background: #ff8c00; } 
         .sig-lvl-4 .sig-bar { background: #00ff00; } 
 
         #channel-menu { position: fixed; top: 0; left: 0; width: 350px; height: 100%; background: var(--glass); backdrop-filter: blur(15px); transform: translateX(-100%); transition: transform 0.3s; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid #333; }
@@ -38,14 +46,10 @@
         .menu-header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); display: flex; flex-direction:column; align-items: center; gap:5px;}
         #searchInput { width: 95%; margin: 5px auto; padding: 10px; border-radius: 5px; background: #333; border: none; color: white; display: block; font-size: 14px; }
         
-        /* FILTRE PREMIUM CHECKBOX */
-        .filter-bar { display: flex; gap: 10px; padding: 10px; border-bottom: 1px solid #333; background: #1a1a1a; align-items: center; }
-        
-        /* CHECKBOX PERSONNALISÉE */
-        .premium-check { display: flex; align-items: center; gap: 8px; background: #222; padding: 8px 12px; border-radius: 20px; border: 1px solid #444; cursor: pointer; }
-        .premium-check input { accent-color: var(--primary); width: 16px; height: 16px; }
-        .premium-check span { font-size: 11px; font-weight: bold; color: #fff; }
-        .premium-check.active { border-color: var(--primary); background: rgba(229,9,20,0.1); }
+        .filter-bar { display: flex; gap: 5px; padding: 5px 10px; border-bottom: 1px solid #333; background: #1a1a1a; }
+        .btn-mini { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #ccc; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
+        .btn-mini.active { background: #333; color: white; border-color: #666; }
+        .btn-local { background: linear-gradient(45deg, #e50914, #900); color: white; border: none; }
 
         #scan-info { width: 90%; display: none; flex-direction: column; gap: 5px; margin-bottom: 5px; }
         #scan-text { font-size: 10px; color: #0f0; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -55,17 +59,16 @@
 
         #channel-list { flex: 1; overflow-y: auto; padding: 0; width:100%; }
 
-        /* VUE GRILLE/LISTE */
+        /* --- MODE LISTE (Classique) --- */
         .channel-row { display: flex; align-items: center; padding: 10px 15px; margin: 0; border-bottom: 1px solid #222; cursor: pointer; contain: content; }
         .channel-row:hover { background: #222; }
         .channel-row.active { background: rgba(229,9,20,0.2); border-left: 3px solid var(--primary); }
         .ch-logo { width: 35px; height: 35px; object-fit: contain; background: #fff; padding: 2px; border-radius: 3px; margin-right: 10px; }
         
+        /* --- MODE GRILLE (Nouveau) --- */
         .grid-view { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
-        .grid-card { background: #222; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #333; aspect-ratio: 1/1; cursor: pointer; position: relative; }
+        .grid-card { background: #222; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #333; aspect-ratio: 1/1; cursor: pointer; }
         .grid-card.active { border-color: var(--primary); background: #330000; }
-        .grid-card.vip { border: 1px solid gold; box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); } /* Style pour les chaines VIP */
-        .vip-badge { position: absolute; top: 5px; right: 5px; color: gold; font-size: 10px; }
         .grid-img { width: 40px; height: 40px; object-fit: contain; background: #fff; padding: 2px; border-radius: 5px; margin-bottom: 5px; }
         .grid-title { font-size: 9px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; font-weight: bold; }
 
@@ -90,9 +93,9 @@
         .chips-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .chip { padding: 8px 15px; background: #333; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; }
         .chip.selected { background: var(--primary); color: white; }
-        
         .toggle-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 15px; border-radius: 5px; margin-bottom: 10px; }
         
+        /* DATA STATS BOX */
         .data-box { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center; }
         .data-val { font-size: 18px; font-weight: bold; color: var(--primary); }
         .data-label { font-size: 12px; color: #888; }
@@ -178,15 +181,15 @@
                 <div class="toggle-row">
                     <div>
                         <div style="font-weight:bold;">Mode Complet (Transpondeurs)</div>
-                        <div style="font-size:10px; color:#aaa;">Scan M3U + Chaînes VIP</div>
+                        <div style="font-size:10px; color:#aaa;">Charge tous les liens IPTV permet d'avoir le grande liste de chaine mais peut avoir des chaines mort.</div>
                     </div>
                     <input type="radio" name="sourceMode" value="full" onchange="changeSourceMode('full')">
                 </div>
 
                 <div class="toggle-row">
                     <div>
-                        <div style="font-weight:bold; color:#2ecc71;">Mode Premium (VIP)</div>
-                        <div style="font-size:10px; color:#aaa;">Uniquement les chaînes certifiées haute qualité.</div>
+                        <div style="font-weight:bold; color:#2ecc71;">Mode Premium (Recommandé)</div>
+                        <div style="font-size:10px; color:#aaa;">Chaînes certifiées uniquement un liste 100% vérifier pas de chaine morte recommandée.</div>
                     </div>
                     <input type="radio" name="sourceMode" value="premium" onchange="changeSourceMode('premium')">
                 </div>
@@ -272,7 +275,9 @@
                 <div style="text-align:left; width:100%;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:14px; font-weight:bold;">CHAÎNES</span>
-                        <i class="fas fa-th" id="btn-view-mode" onclick="toggleViewMode()" style="cursor:pointer; font-size:14px; color:#aaa; margin-right:5px;" title="Basculer Vue"></i>
+                        
+                        <i class="fas fa-th" id="btn-view-mode" onclick="toggleViewMode()" style="cursor:pointer; font-size:14px; color:#aaa; margin-right:5px;" title="Basculer Vue Liste/Grille"></i>
+
                         <i class="fas fa-exchange-alt" onclick="toggleModeQuick()" style="cursor:pointer; font-size:12px; color:#aaa; margin-right:5px;" title="Basculer Premium/Transpondeur"></i>
                         <span id="mode-badge" style="font-size:9px; background:#333; padding:2px 5px; border-radius:3px;">AUTO</span>
                         <i class="fas fa-sync-alt" onclick="quickScan()" style="cursor:pointer; font-size:12px; color:#aaa; margin-left:10px;" title="Recherche Rapide"></i>
@@ -290,13 +295,11 @@
         <input type="text" id="searchInput" placeholder="🔍 Rechercher..." oninput="renderList()">
         
         <div class="filter-bar">
-            <label class="premium-check active" id="chk-premium-label" onclick="togglePremiumFilter()">
-                <input type="checkbox" id="chk-premium" checked>
-                <span>💎 VIP</span>
-            </label>
-            
             <button onclick="toggleOnlyFavorites()" class="btn-mini" id="btn-fav-filter">
                 <i class="fas fa-star" style="color:gold;"></i> Favoris
+            </button>
+            <button onclick="toggleCat('Locales')" class="btn-mini btn-local">
+                <i class="fas fa-map-marker-alt"></i> Locales
             </button>
         </div>
 
@@ -322,20 +325,10 @@
     // CONFIGURATION
     // =======================================================
     const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
+    const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
     const PIN_CODE = "0000"; 
     const DB_NAME = "MyBoxTV_V62_Final"; 
     const DB_VERSION = 1;
-
-    // --- LISTE DES CHAINES PREMIUM (INJECTÉES AUTOMATIQUEMENT) ---
-    const premiumSources = [
-        { name: "Novelas TV", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", category: "Séries", isVip: true },
-        { name: "Nollywood TV", logo: "https://upload.wikimedia.org/wikipedia/fr/5/53/Nollywood_TV_Logo.png", url: "https://live20.bozztv.com/trn03/gin-nollywoodtv/index.m3u8", category: "Films", isVip: true },
-        { name: "France 24", logo: "https://upload.wikimedia.org/wikipedia/commons/f/f1/France_24_logo.png", url: "https://live.france24.com/hls/live/2037179/F24_FR_HI_HLS/master_5000.m3u8", category: "Infos", isVip: true },
-        { name: "TV5 Monde Afrique", logo: "https://upload.wikimedia.org/wikipedia/commons/c/c3/TV5MONDE_Afrique_Logo_2022.png", url: "https://ott.tv5monde.com/Content/HLS/Live/channel(afrique)/variant.m3u8", category: "Généraliste", isVip: true },
-        { name: "BFM TV", logo: "https://upload.wikimedia.org/wikipedia/commons/2/2b/BFM_TV_2017.svg", url: "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_TV/index.m3u8?start=LIVE&end=END", category: "Infos", isVip: true },
-        { name: "ORTB (Bénin)", logo: "https://upload.wikimedia.org/wikipedia/commons/5/59/ORTB_Logo.png", url: "https://edge5.vedge.infomaniak.com/livecast/ortb/playlist.m3u8", category: "Locales", isVip: true },
-        { name: "ADO TV", logo: "https://i.imgur.com/3Q8Q9lZ.png", url: "https://stream01.adotv-fm.bj/ado-tv-live/index.m3u8", category: "Locales", isVip: true }
-    ];
 
     // VARIABLES GLOBALES
     let allChannels = [], displayedChannels = [], loadedUrls = new Set();
@@ -354,54 +347,17 @@
     let isScanning = false;
     let appMode = localStorage.getItem('mybox_mode'); 
     
-    // VIEW MODE (Grid vs List)
+    // NOUVEAU : GESTION DU MODE VUE (LISTE ou GRILLE)
     let isGridMode = localStorage.getItem('mybox_view_mode') === 'grid';
-    // VIP FILTER
-    let showVip = true; 
 
-    // DATA STATS
+    // --- GESTION DES DONNÉES (CERVEAU) ---
+    // On s'assure que c'est bien un nombre
     let totalBytesUsed = parseInt(localStorage.getItem('mybox_data_bytes'));
     if(isNaN(totalBytesUsed)) totalBytesUsed = 0;
 
     const video = document.getElementById('video');
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
-
-    // --- SMART VALIDATOR : VERIFICATION SILENCIEUSE ---
-    async function checkStreamValidity(url) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), 8000); // 8s timeout
-        try {
-            const response = await fetch(url, { method: 'HEAD', signal: controller.signal });
-            clearTimeout(id);
-            return response.ok;
-        } catch(e) {
-            return false; 
-        }
-    }
-
-    async function injectPremiumChannels() {
-        // Ajout immédiat pour l'UI, nettoyage plus tard si mort
-        premiumSources.forEach(ch => {
-            if(!loadedUrls.has(ch.url)) {
-                // On les met AU DÉBUT de la liste
-                allChannels.unshift(ch);
-                loadedUrls.add(ch.url);
-            }
-        });
-        renderList();
-        
-        // Validation en arrière plan (Optionnel : si on veut retirer les morts)
-        /*
-        for(let ch of premiumSources) {
-            const isValid = await checkStreamValidity(ch.url);
-            if(!isValid) {
-                // Logic to remove if needed, but for now we keep them visible
-                //console.log("Stream HS:", ch.name);
-            }
-        }
-        */
-    }
 
     // --- ALERTES & CONFIRMATIONS ---
     let onAlertCloseAction = null;
@@ -434,11 +390,16 @@
     async function clearDB() { const db=await openDB(); try{db.transaction("channels","readwrite").objectStore("channels").clear();}catch(e){} }
 
     function enforceNovelasIntegrity() {
-        // Premium channels are now handled by injectPremiumChannels
+        if (allChannels.length === 0) { allChannels = [DEFAULT_CHANNEL]; loadedUrls.add(DEFAULT_CHANNEL.url); return; }
+        if (allChannels[0].url !== DEFAULT_CHANNEL.url) {
+            allChannels = allChannels.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
+            allChannels.unshift(DEFAULT_CHANNEL); loadedUrls.add(DEFAULT_CHANNEL.url);
+        }
     }
 
-    // --- SYSTÈME RÉSEAU ---
+    // --- SYSTÈME RÉSEAU AVANCÉ (VITESSE + SIGNAL) ---
     function refreshNetworkUI(speedMbps) {
+        // 1. Mise à jour Conso Totale (Texte)
         let displayTotal = "";
         if(totalBytesUsed > 1073741824) displayTotal = (totalBytesUsed / 1073741824).toFixed(2) + " Go";
         else displayTotal = (totalBytesUsed / 1048576).toFixed(1) + " Mo";
@@ -446,22 +407,28 @@
         const elTotal = document.getElementById('net-total');
         if(elTotal) elTotal.innerText = displayTotal;
 
+        // 2. Mise à jour Vitesse (Texte)
         const elSpeed = document.getElementById('net-speed');
         if(elSpeed) elSpeed.innerText = speedMbps.toFixed(2) + " Mbps";
 
+        // 3. Mise à jour Barres Signal (Visuel)
         const meter = document.getElementById('signal-meter');
         if(meter) {
-            meter.className = "signal-container"; 
-            if(speedMbps > 3.5) meter.classList.add('sig-lvl-4');      
-            else if(speedMbps > 1.5) meter.classList.add('sig-lvl-3'); 
-            else if(speedMbps > 0.5) meter.classList.add('sig-lvl-2'); 
-            else meter.classList.add('sig-lvl-1');                     
+            meter.className = "signal-container"; // Reset
+            if(speedMbps > 3.5) meter.classList.add('sig-lvl-4');      // Vert
+            else if(speedMbps > 1.5) meter.classList.add('sig-lvl-3'); // Orange
+            else if(speedMbps > 0.5) meter.classList.add('sig-lvl-2'); // Jaune
+            else meter.classList.add('sig-lvl-1');                     // Rouge
         }
     }
 
+    // Fonction appelée par HLS quand un morceau de vidéo arrive
     function onVideoChunkLoaded(bytes, durationMs) {
+        // Ajout au cerveau
         totalBytesUsed += bytes;
         localStorage.setItem('mybox_data_bytes', totalBytesUsed);
+
+        // Calcul vitesse instantanée
         if(durationMs > 0) {
             const bits = bytes * 8;
             const bps = bits / (durationMs / 1000);
@@ -470,14 +437,21 @@
         }
     }
 
+    // Fonction de surveillance continue (Heartbeat)
     setInterval(() => {
         let estimatedSpeed = 0;
         if(navigator.onLine) {
             if (navigator.connection && navigator.connection.downlink) {
                 estimatedSpeed = navigator.connection.downlink; 
-            } else { estimatedSpeed = 2; }
+            } else {
+                estimatedSpeed = 2; // Fallback
+            }
+        } else {
+            estimatedSpeed = 0; 
         }
-        if(video.paused || !hls) { refreshNetworkUI(estimatedSpeed); }
+        if(video.paused || !hls) {
+            refreshNetworkUI(estimatedSpeed);
+        }
     }, 2000);
 
     // --- UI MODE ---
@@ -502,6 +476,7 @@
             radios.forEach(r => { if(r.value === appMode) r.checked = true; });
         }
         
+        // Mise à jour icône Grille/Liste
         const btnView = document.getElementById('btn-view-mode');
         if(isGridMode) {
             btnView.classList.remove('fa-th');
@@ -512,18 +487,11 @@
         }
     }
 
+    // --- BASCULE VUE LISTE / GRILLE ---
     function toggleViewMode() {
         isGridMode = !isGridMode;
         localStorage.setItem('mybox_view_mode', isGridMode ? 'grid' : 'list');
         updateModeUI();
-        renderList();
-    }
-    
-    function togglePremiumFilter() {
-        const chk = document.getElementById('chk-premium');
-        showVip = chk.checked;
-        const lbl = document.getElementById('chk-premium-label');
-        if(showVip) lbl.classList.add('active'); else lbl.classList.remove('active');
         renderList();
     }
 
@@ -586,35 +554,42 @@
         }
 
         updateModeUI();
+        enforceNovelasIntegrity(); renderList(); playChannel(0);
         
-        // On réinitialise
-        allChannels = [];
-        loadedUrls = new Set();
-
-        // 1. INJECTION DES CHAINES VIP (TOUJOURS)
-        await injectPremiumChannels();
-
-        playChannel(0);
+        // Initialisation affichage réseau
         refreshNetworkUI(0);
 
         if (appMode === 'premium') {
-            // Dans ce mode, on peut juste garder les VIP ou charger une liste externe
-            // Ici, pour l'instant, on garde les VIP injectées.
+            try {
+                const res = await fetch(`${API_URL}?action=get_playlists`);
+                const sources = await res.json();
+                allChannels = [DEFAULT_CHANNEL];
+                loadedUrls = new Set([DEFAULT_CHANNEL.url]);
+                if(sources.length > 0) {
+                    sources.forEach(s => {
+                        const ch = { name: s.name, url: s.url, category: s.category || "TV", logo: "" };
+                        allChannels.push(ch); loadedUrls.add(ch.url); allCategories.add(ch.category);
+                    });
+                    renderList();
+                }
+            } catch(e) { console.log("Err Premium", e); }
         } else {
             const cached = await loadChannelsFromDB();
             if(cached.length > 5) {
-                // Fusion
-                cached.forEach(ch => {
-                    if(!loadedUrls.has(ch.url)) {
-                        allChannels.push(ch);
-                        loadedUrls.add(ch.url);
-                        if(ch.category) allCategories.add(ch.category);
-                    }
-                });
+                const ext = cached.filter(ch => ch.url !== DEFAULT_CHANNEL.url);
+                allChannels = [DEFAULT_CHANNEL, ...ext];
+                allChannels.forEach(ch => { loadedUrls.add(ch.url); if(ch.category) allCategories.add(ch.category); });
                 updateCategoryChips(); renderList();
             }
             fetchTranspondersList();
         }
+
+        try {
+            const res = await fetch(`${API_URL}?action=get_message`); const text = await res.text();
+            if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
+            if(text.startsWith("MSG:") && text.length>5) { const b=document.getElementById('admin-msg-box'); b.innerText="📢 "+text.replace("MSG:",""); b.style.display="block"; setTimeout(()=>b.style.display="none",8000); }
+        } catch(e){}
+        setInterval(() => { if(isScanning && (Date.now() - lastActivityTime > 5000)) lastActivityTime = Date.now(); }, 1000);
     }
 
     async function fetchTranspondersList() {
@@ -719,7 +694,7 @@
                 if (currentInfo) {
                     if (line.includes('.m3u8') || line.includes('.ts') || line.includes('.mp4') || line.includes('.mkv')) {
                         const ch = { ...currentInfo, url: line };
-                        if (!loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
+                        if (ch.url !== DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) { 
                             batch.push(ch); loadedUrls.add(ch.url); 
                         }
                     }
@@ -738,25 +713,26 @@
         updateCategoryChips();
     }
 
+    // --- FONCTION D'AFFICHAGE (LISTE OU GRILLE) ---
     function renderList() {
+        enforceNovelasIntegrity();
         const term = document.getElementById('searchInput').value.toLowerCase();
         
         displayedChannels = allChannels.filter(ch => {
             let catOK = true;
             if(selectedCategories.length > 0 && !selectedCategories.includes(ch.category || "Autres")) catOK = false;
-            
-            // Filtre VIP
-            if(!showVip && ch.isVip) return false;
-
             return catOK && ch.name.toLowerCase().includes(term) && (isFavFilter ? favorites.includes(ch.url) : true);
         });
 
         const list = document.getElementById('channel-list');
         list.innerHTML = "";
         
-        // MODE GRILLE ou LISTE
-        if(isGridMode) list.className = "grid-view";
-        else list.className = "";
+        // GESTION DU MODE
+        if(isGridMode) {
+            list.className = "grid-view"; // Active le CSS grid
+        } else {
+            list.className = ""; // Mode liste classique
+        }
 
         const frag = document.createDocumentFragment();
         let limit = (term === "" && selectedCategories.length === 0) ? 500 : displayedChannels.length;
@@ -770,23 +746,17 @@
             
             if(isGridMode) {
                 // --- RENDU GRILLE ---
-                div.className = 'grid-card ' + (isPlaying ? 'active' : '') + (ch.isVip ? ' vip' : '');
+                div.className = 'grid-card ' + (isPlaying ? 'active' : '');
                 div.innerHTML = `
-                    ${ch.isVip ? '<span class="vip-badge">★</span>' : ''}
                     <img src="${logoSrc}" class="grid-img" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
                     <div class="grid-title">${ch.name}</div>
                 `;
             } else {
-                // --- RENDU LISTE ---
+                // --- RENDU LISTE (Classique) ---
                 div.className = 'channel-row ' + (isPlaying ? 'active' : '');
                 div.innerHTML = `<i class="fas fa-star fav-icon ${isFav ? 'active' : ''}" onclick="toggleFavorite('${ch.url}', event)"></i>
                                  <img src="${logoSrc}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/40?text=TV'">
-                                 <div>
-                                    <div style="font-weight:600; font-size:14px;">
-                                        ${ch.name} ${ch.isVip ? '<span style="color:gold;font-size:10px;">★</span>' : ''}
-                                    </div>
-                                    <div style="font-size:10px; color:#888;">${ch.category}</div>
-                                 </div>`;
+                                 <div><div style="font-weight:600; font-size:14px;">${ch.name}</div><div style="font-size:10px; color:#888;">${ch.category}</div></div>`;
             }
             
             div.onclick = () => tryPlayChannel(ch);
