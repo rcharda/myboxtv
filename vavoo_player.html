@@ -94,4 +94,138 @@
     // === CONFIGURATION ===
     // Utilisation de la liste IPTV-ORG France (Github Pages supporte le CORS, donc pas besoin de proxy)
     // C'est stable et rapide.
-    const PLAYLIST_URL = "https://ipt
+    const PLAYLIST_URL = "https://iptv-org.github.io/iptv/countries/fr.m3u";
+
+    let allChannels = [];
+    let hls = null;
+    const video = document.getElementById('video');
+    const listEl = document.getElementById('list');
+    const loader = document.getElementById('loader');
+    const overlay = document.getElementById('overlay');
+    const statusInd = document.getElementById('status-indicator');
+
+    window.onload = loadPlaylist;
+
+    async function loadPlaylist() {
+        loader.style.display = "block";
+        statusInd.innerText = "CHARGEMENT...";
+        
+        try {
+            // Fetch direct (plus fiable que le proxy allorigins pour ce type d'URL)
+            const response = await fetch(PLAYLIST_URL);
+            if (!response.ok) throw new Error("Erreur réseau");
+            const text = await response.text();
+            parseM3U(text);
+            loader.style.display = "none";
+            statusInd.innerText = "LISTE À JOUR";
+            statusInd.classList.add('online');
+        } catch (e) {
+            console.error(e);
+            loader.innerText = "ERREUR DE CHARGEMENT";
+            statusInd.innerText = "ERREUR";
+            // Tentative de secours avec proxy si le direct échoue
+            retryWithProxy();
+        }
+    }
+
+    async function retryWithProxy() {
+        try {
+            console.log("Tentative via Proxy...");
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(PLAYLIST_URL);
+            const response = await fetch(proxyUrl);
+            const text = await response.text();
+            parseM3U(text);
+            loader.style.display = "none";
+            statusInd.innerText = "CONNECTÉ (PROXY)";
+            statusInd.classList.add('online');
+        } catch(e) {
+            loader.innerText = "ÉCHEC TOTAL. VÉRIFIEZ INTERNET.";
+        }
+    }
+
+    function parseM3U(data) {
+        const lines = data.split('\n');
+        let currentItem = {};
+        allChannels = []; // Reset
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+
+            if (line.startsWith('#EXTINF:')) {
+                const infoPart = line.substring(8); // Enlève #EXTINF:
+                const props = infoPart.split(',');
+                
+                // Nom (après la dernière virgule)
+                currentItem.name = props[props.length - 1].trim();
+                
+                // Logo
+                const logoMatch = line.match(/tvg-logo="([^"]*)"/);
+                currentItem.logo = logoMatch ? logoMatch[1] : "https://via.placeholder.com/50?text=TV";
+                
+                // Groupe
+                const groupMatch = line.match(/group-title="([^"]*)"/);
+                currentItem.group = groupMatch ? groupMatch[1] : "Général";
+
+            } else if (line.startsWith('http')) {
+                currentItem.url = line;
+                if (currentItem.name && !currentItem.url.includes('.mpd')) { // On exclut les formats DASH non supportés simplement
+                    allChannels.push({...currentItem});
+                }
+                currentItem = {}; 
+            }
+        });
+        
+        renderList(allChannels);
+    }
+
+    function renderList(channels) {
+        listEl.innerHTML = "";
+        // On affiche tout (la liste FR est légère ~200 chaînes)
+        channels.forEach(ch => {
+            const div = document.createElement('div');
+            div.className = "channel-item";
+            div.innerHTML = `
+                <img src="${ch.logo}" class="ch-logo" loading="lazy" onerror="this.src='https://via.placeholder.com/45?text=FR'">
+                <div class="ch-info">
+                    <span class="ch-name">${ch.name}</span>
+                    <span class="ch-cat">${ch.group}</span>
+                </div>
+            `;
+            div.onclick = () => playStream(ch.url, div);
+            listEl.appendChild(div);
+        });
+    }
+
+    function filterList() {
+        const term = document.getElementById('search').value.toLowerCase();
+        const filtered = allChannels.filter(ch => ch.name.toLowerCase().includes(term));
+        renderList(filtered);
+    }
+
+    function playStream(url, element) {
+        document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+        if(element) element.classList.add('active');
+        overlay.style.display = "none";
+
+        if (Hls.isSupported()) {
+            if (hls) hls.destroy();
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+            hls.on(Hls.Events.ERROR, (e, data) => {
+                if(data.fatal) {
+                    console.log("Erreur flux"); 
+                    // Optionnel: passer à la chaine suivante ou afficher un msg
+                }
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.play();
+        }
+    }
+</script>
+
+</body>
+</html>
