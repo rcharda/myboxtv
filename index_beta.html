@@ -121,6 +121,17 @@
     </div>
 </div>
 
+<div id="standby-screen" class="modal" style="display:none; z-index: 9999999; background: #000;">
+    <div class="modal-box" style="border: 1px solid #333;">
+        <i class="fas fa-power-off" style="font-size: 50px; color: #444; margin-bottom: 20px;"></i>
+        <h2 style="color: white; margin-bottom: 10px;">EN VEILLE</h2>
+        <p style="color: #888; margin-bottom: 30px;">Appuyez pour reprendre.</p>
+        <button onclick="wakeUp()" style="background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
+            <i class="fas fa-play" style="margin-right: 10px;"></i> Reprendre
+        </button>
+    </div>
+</div>
+
 <div id="custom-alert" class="modal" style="z-index: 99999;">
     <div class="modal-box" style="border: 1px solid #e50914; box-shadow: 0 0 20px rgba(229, 9, 20, 0.3); text-align: center;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:80px; margin-bottom:10px;">
@@ -285,7 +296,10 @@
         <button class="btn-ctrl btn-large" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
         <button class="btn-ctrl desktop-only" onclick="adjustVol(0.1)"><i class="fas fa-plus"></i></button>
         <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
+        
         <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
+        <button class="btn-ctrl" onclick="toggleStandby()" style="color:#ff4444;"><i class="fas fa-power-off"></i></button>
+        
         <button class="btn-ctrl" id="btn-delete" onclick="hideCurrentChannel()" style="color:#ff4444;"><i class="fas fa-trash"></i></button>
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
@@ -323,12 +337,24 @@
     const statusText = document.getElementById('status-text');
     const led = document.getElementById('led');
 
-    // --- NOUVEAU : FONCTION LANCEMENT TV ---
     function startExperience() {
         document.getElementById('welcome-screen').style.display = 'none';
         playChannel(0);
-        // On ouvre le menu pour accueillir l'utilisateur
         setTimeout(() => document.body.classList.add('menu-open'), 800);
+    }
+
+    // --- FONCTIONS VEILLE (POWER) ---
+    function toggleStandby() {
+        video.pause();
+        document.getElementById('standby-screen').style.display = 'flex';
+        if (document.fullscreenElement) document.exitFullscreen();
+    }
+
+    function wakeUp() {
+        document.getElementById('standby-screen').style.display = 'none';
+        video.play().catch(() => {
+            if(allChannels[currentChannelIndex]) playChannel(currentChannelIndex);
+        });
     }
 
     document.getElementById('channel-list').addEventListener('scroll', function() {
@@ -423,7 +449,6 @@
     async function initApp() {
         if (!appMode) { openSettings(); showMyAlert("Bienvenue ! Choisissez un Mode."); return; }
 
-        // --- NOUVEAU : AFFICHER BIENVENUE AU LIEU DE JOUER ---
         document.getElementById('welcome-screen').style.display = 'flex';
 
         updateModeUI();
