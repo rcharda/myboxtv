@@ -121,17 +121,6 @@
     </div>
 </div>
 
-<div id="standby-screen" class="modal" style="display:none; z-index: 9999999; background: #000;">
-    <div class="modal-box" style="border: 1px solid #333;">
-        <i class="fas fa-power-off" style="font-size: 50px; color: #444; margin-bottom: 20px;"></i>
-        <h2 style="color: white; margin-bottom: 10px;">BIENVNUE SUR MY BOX TV</h2>
-        <p style="color: #888; margin-bottom: 30px;">Appuyez pour reprendre.</p>
-        <button onclick="wakeUp()" style="background: var(--primary); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; text-transform: uppercase;">
-            <i class="fas fa-play" style="margin-right: 10px;"></i> Reprendre
-        </button>
-    </div>
-</div>
-
 <div id="custom-alert" class="modal" style="z-index: 99999;">
     <div class="modal-box" style="border: 1px solid #e50914; box-shadow: 0 0 20px rgba(229, 9, 20, 0.3); text-align: center;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" style="width:80px; margin-bottom:10px;">
@@ -298,7 +287,7 @@
         <button class="btn-ctrl" onclick="nextChannel()"><i class="fas fa-step-forward"></i></button>
         
         <button class="btn-ctrl" id="btn-autozap" onclick="toggleAutoZap()"><i class="fas fa-bolt"></i></button>
-        <button class="btn-ctrl" onclick="toggleStandby()" style="color:#ff4444;"><i class="fas fa-power-off"></i></button>
+        <button class="btn-ctrl" onclick="softReboot()" style="color:#ff4444;"><i class="fas fa-power-off"></i></button>
         
         <button class="btn-ctrl" id="btn-delete" onclick="hideCurrentChannel()" style="color:#ff4444;"><i class="fas fa-trash"></i></button>
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
@@ -339,25 +328,35 @@
 
     function startExperience() {
         document.getElementById('welcome-screen').style.display = 'none';
+        // On joue la chaîne 0 (par défaut) ou on peut garder la dernière chaîne si souhaité
         playChannel(0);
         setTimeout(() => document.body.classList.add('menu-open'), 800);
     }
 
-    // --- FONCTIONS VEILLE (POWER) ---
-    function toggleStandby() {
-        // On met en pause pour arrêter la conso de données
+    // --- FONCTION SOFT REBOOT (POWER) ---
+    // Cette fonction simule un redémarrage : 
+    // 1. Affiche l'écran de bienvenue (comme si on allumait la TV)
+    // 2. Coupe le flux
+    // 3. Recharge silencieusement les données (initApp) sans recharger la page
+    function softReboot() {
+        // 1. Afficher l'écran de bienvenue immédiatement (masque tout le reste)
+        document.getElementById('welcome-screen').style.display = 'flex';
+        
+        // 2. Arrêter proprement la vidéo et l'interface
         video.pause();
-        if(hls) hls.stopLoad(); // Stop le téléchargement des segments
-        document.getElementById('standby-screen').style.display = 'flex';
-        if (document.fullscreenElement) document.exitFullscreen();
-    }
-
-    function wakeUp() {
-        document.getElementById('standby-screen').style.display = 'none';
-        if(hls) hls.startLoad();
-        // ASTUCE: On relance playChannel pour forcer le chargement du flux LIVE actuel
-        // Cela simule une "actualisation en arrière plan" car on récupère le direct
-        playChannel(currentChannelIndex);
+        video.removeAttribute('src'); // Vide le buffer
+        if(hls) { hls.destroy(); hls = null; }
+        document.body.classList.remove('menu-open');
+        closeSettings();
+        
+        // 3. Réinitialiser en arrière-plan (Invisible pour l'utilisateur)
+        // Cela permet de rafraîchir les listes de chaînes si besoin
+        currentChannelIndex = 0; // Remet à zéro
+        statusText.innerText = "Prêt";
+        led.className = "";
+        
+        // On relance l'init pour être sûr que tout est frais quand il rallumera
+        initApp();
     }
 
     document.getElementById('channel-list').addEventListener('scroll', function() {
@@ -452,7 +451,8 @@
     async function initApp() {
         if (!appMode) { openSettings(); showMyAlert("Bienvenue ! Choisissez un Mode."); return; }
 
-        document.getElementById('welcome-screen').style.display = 'flex';
+        // Note: L'écran de bienvenue est déjà géré par softReboot ou au chargement initial si besoin
+        // Si initApp est appelé depuis softReboot, l'écran est déjà là.
 
         updateModeUI();
         enforceNovelasIntegrity(); 
