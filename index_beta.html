@@ -345,16 +345,19 @@
 
     // --- FONCTIONS VEILLE (POWER) ---
     function toggleStandby() {
+        // On met en pause pour arrêter la conso de données
         video.pause();
+        if(hls) hls.stopLoad(); // Stop le téléchargement des segments
         document.getElementById('standby-screen').style.display = 'flex';
         if (document.fullscreenElement) document.exitFullscreen();
     }
 
     function wakeUp() {
         document.getElementById('standby-screen').style.display = 'none';
-        video.play().catch(() => {
-            if(allChannels[currentChannelIndex]) playChannel(currentChannelIndex);
-        });
+        if(hls) hls.startLoad();
+        // ASTUCE: On relance playChannel pour forcer le chargement du flux LIVE actuel
+        // Cela simule une "actualisation en arrière plan" car on récupère le direct
+        playChannel(currentChannelIndex);
     }
 
     document.getElementById('channel-list').addEventListener('scroll', function() {
