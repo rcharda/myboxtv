@@ -3,61 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Box TV - Laboratoire de Test IPTV</title>
+    <title>My Box TV - Testeur Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --primary: #e50914; --bg: #121212; --panel: #1e1e1e; --text: #fff; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Panneau de gauche : Liste des chaînes */
         .sidebar { width: 350px; background: var(--panel); border-right: 1px solid #333; display: flex; flex-direction: column; }
-        .header { padding: 20px; background: #111; border-bottom: 2px solid var(--primary); text-align: center; }
+        .header { padding: 15px; background: #111; border-bottom: 2px solid var(--primary); text-align: center; }
         .header h2 { margin: 0; font-size: 1.2rem; color: var(--primary); }
         
         .controls { padding: 15px; border-bottom: 1px solid #333; display: flex; flex-direction: column; gap: 10px; }
         button { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #b20710; }
-        input { padding: 10px; background: #000; border: 1px solid #444; color: white; border-radius: 5px; }
-
+        select { padding: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; outline: none;}
+        
+        /* Stats Box */
+        .stats-box { background: #000; padding: 10px; border-radius: 5px; text-align: center; border: 1px solid #333;}
+        .count-number { font-size: 1.5rem; color: #2ecc71; font-weight: bold; }
+        
         .channel-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; margin: 0; }
-        .channel-item { padding: 10px; background: #2a2a2a; margin-bottom: 8px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid transparent; }
+        .channel-item { padding: 10px; background: #2a2a2a; margin-bottom: 8px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .channel-item:hover { background: #333; }
-        .channel-item.active { border-left-color: var(--primary); background: rgba(229, 9, 20, 0.2); }
+        .channel-item.active { border-left: 3px solid var(--primary); background: rgba(229, 9, 20, 0.2); }
         .badge { font-size: 0.7rem; padding: 3px 6px; border-radius: 3px; background: #444; }
-        .badge.m3u8 { background: #2ecc71; color: black; }
-        .badge.ts { background: #e67e22; color: black; }
-        .badge.mp4 { background: #3498db; color: white; }
 
-        /* Panneau de droite : Lecteur et Logs */
-        .main { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 20px; overflow-y: auto; }
-        .video-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); position: relative; }
+        .main { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 20px; }
+        .video-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; }
         video { width: 100%; height: 100%; outline: none; }
-        
-        .info-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: var(--panel); padding: 15px; border-radius: 8px; border: 1px solid #333; }
-        .card h3 { margin-top: 0; color: #aaa; font-size: 1rem; border-bottom: 1px solid #444; padding-bottom: 5px; }
-        
-        /* Console de Logs */
-        .console { background: #000; color: #0f0; font-family: monospace; font-size: 0.85rem; height: 200px; overflow-y: auto; padding: 10px; border-radius: 5px; border: 1px solid #333; }
-        .log-error { color: #ff4444; }
-        .log-warn { color: #f1c40f; }
-        .log-info { color: #3498db; }
-        .log-success { color: #2ecc71; }
+        .console { background: #000; color: #0f0; font-family: monospace; font-size: 0.85rem; height: 150px; overflow-y: auto; padding: 10px; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header">
-            <h2>🛠️ My Box TV - Tester</h2>
-        </div>
+        <div class="header"><h2>🛠️ Testeur IPTV Pro</h2></div>
+        
         <div class="controls">
             <button onclick="fetchFromSheet()">📥 Charger depuis Google Sheets</button>
-            <input type="text" id="manualUrl" placeholder="Ou tester une URL manuellement...">
-            <button onclick="testManualUrl()" style="background: #444;">Tester l'URL</button>
+            
+            <select id="transponderFilter" onchange="applyFilters()">
+                <option value="ALL">🌍 Tous les Transpondeurs</option>
+            </select>
+            
+            <div class="stats-box">
+                <div class="count-number" id="channelCount">0</div>
+                <div style="font-size: 0.8rem; color: #888;">Chaînes trouvées</div>
+            </div>
         </div>
+        
         <ul class="channel-list" id="channelList">
-            <div style="text-align:center; padding: 20px; color: #888;">Cliquez sur "Charger" pour récupérer vos données.</div>
+            <div style="text-align:center; padding: 20px; color: #888;">En attente de chargement...</div>
         </ul>
     </div>
 
@@ -65,170 +60,146 @@
         <div class="video-container">
             <video id="videoPlayer" controls autoplay></video>
         </div>
-        
-        <div class="info-panel">
-            <div class="card">
-                <h3>Détails du Flux Actuel</h3>
-                <p><strong>Nom :</strong> <span id="infoName">-</span></p>
-                <p><strong>URL :</strong> <span id="infoUrl" style="word-break: break-all; font-size: 0.85rem; color: #aaa;">-</span></p>
-                <p><strong>Technologie :</strong> <span id="infoTech">-</span></p>
-            </div>
-            <div class="card">
-                <h3>Console de Diagnostic</h3>
-                <div class="console" id="consoleLogs">
-                    <div>> Laboratoire initialisé. Prêt pour le test.</div>
-                </div>
-            </div>
+        <div class="console" id="consoleLogs">
+            <div>> Prêt. En attente de flux...</div>
         </div>
     </div>
 
     <script>
-        // Votre URL API Google Sheets
+        // Remplace par ton vrai lien Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec?action=get_playlists";
         
+        let allChannels = [];
+        let filteredChannels = [];
+        
+        // --- VARIABLES SCROLL INFINI ---
+        let visibleCount = 0;
+        const BATCH_SIZE = 100; // Charge par paquet de 100
+
+        const listEl = document.getElementById('channelList');
         const video = document.getElementById('videoPlayer');
         const consoleEl = document.getElementById('consoleLogs');
         let hlsInstance = null;
-        let channelData = [];
 
-        // Fonction pour écrire dans la console
-        function logMsg(msg, type = '') {
+        function logMsg(msg) {
             const div = document.createElement('div');
-            const time = new Date().toLocaleTimeString();
-            div.className = `log-${type}`;
-            div.innerText = `[${time}] ${msg}`;
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
             consoleEl.appendChild(div);
             consoleEl.scrollTop = consoleEl.scrollHeight;
         }
 
-        // 1. Récupération depuis Google Sheets
+        // 1. Récupération des données
         async function fetchFromSheet() {
-            logMsg("Connexion à Google Sheets...", "info");
-            document.getElementById('channelList').innerHTML = "<div style='padding:20px;text-align:center;'>Chargement...</div>";
+            logMsg("Connexion à Google Sheets en cours...");
+            listEl.innerHTML = "<div style='text-align:center; padding:20px;'>Extraction des données...</div>";
             
             try {
                 const response = await fetch(API_URL);
-                const data = await response.json();
+                allChannels = await response.json();
                 
-                if (data && data.length > 0) {
-                    channelData = data;
-                    logMsg(`${data.length} chaînes récupérées avec succès.`, "success");
-                    renderList();
-                } else {
-                    logMsg("Le Sheet est vide ou n'a pas retourné de JSON valide.", "warn");
-                }
+                logMsg(`${allChannels.length} chaînes récupérées.`);
+                
+                // Extraire les Transpondeurs uniques (ou catégories)
+                extractTransponders();
+                
+                // Lancer l'affichage
+                applyFilters();
             } catch (error) {
-                logMsg(`Erreur API: ${error.message}`, "error");
-                logMsg("Vérifiez que le lien Google Apps Script est correct et déployé.", "warn");
+                logMsg(`Erreur API: ${error.message}`);
             }
         }
 
-        // 2. Affichage de la liste avec détection du type
-        function renderList() {
-            const list = document.getElementById('channelList');
-            list.innerHTML = "";
+        // 2. Extraire la liste des Transpondeurs/Groupes
+        function extractTransponders() {
+            const select = document.getElementById('transponderFilter');
+            select.innerHTML = '<option value="ALL">🌍 Tous les Transpondeurs</option>';
             
-            channelData.forEach((ch, index) => {
-                const li = document.createElement('li');
-                li.className = 'channel-item';
-                
-                // Détection de l'extension
-                let type = "Inconnu";
-                let badgeClass = "";
-                if (ch.url.includes('.m3u8')) { type = "HLS"; badgeClass = "m3u8"; }
-                else if (ch.url.includes('.ts')) { type = "TS"; badgeClass = "ts"; }
-                else if (ch.url.includes('.mp4')) { type = "MP4"; badgeClass = "mp4"; }
+            const uniqueGroups = new Set();
+            allChannels.forEach(ch => {
+                // Si tu as une colonne "category" ou "group" dans ton sheet :
+                let groupName = ch.category || "Inconnu"; 
+                uniqueGroups.add(groupName);
+            });
 
-                li.innerHTML = `
-                    <span style="font-weight: 600; font-size: 0.9rem;">${ch.name || 'Sans nom'}</span>
-                    <span class="badge ${badgeClass}">${type}</span>
-                `;
-                
-                li.onclick = () => {
-                    document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-                    li.classList.add('active');
-                    playStream(ch.url, ch.name);
-                };
-                list.appendChild(li);
+            uniqueGroups.forEach(group => {
+                const opt = document.createElement('option');
+                opt.value = group;
+                opt.innerText = `📁 ${group}`;
+                select.appendChild(opt);
             });
         }
 
-        function testManualUrl() {
-            const url = document.getElementById('manualUrl').value.trim();
-            if(url) playStream(url, "Test Manuel");
+        // 3. Appliquer le Filtre
+        function applyFilters() {
+            const selectedGroup = document.getElementById('transponderFilter').value;
+            
+            if (selectedGroup === "ALL") {
+                filteredChannels = allChannels;
+            } else {
+                filteredChannels = allChannels.filter(ch => (ch.category || "Inconnu") === selectedGroup);
+            }
+
+            // Mise à jour du compteur
+            document.getElementById('channelCount').innerText = filteredChannels.length;
+            
+            // Réinitialiser le scroll
+            visibleCount = 0;
+            listEl.innerHTML = "";
+            renderBatch();
         }
 
-        // 3. Le Moteur de Lecture Intelligent
-        function playStream(url, name) {
-            logMsg(`--- Démarrage du test : ${name} ---`, "info");
-            logMsg(`URL: ${url}`);
+        // 4. Rendu avec Scroll Infini
+        function renderBatch() {
+            const end = Math.min(visibleCount + BATCH_SIZE, filteredChannels.length);
             
-            document.getElementById('infoName').innerText = name;
-            document.getElementById('infoUrl').innerText = url;
-
-            // Nettoyage de l'ancienne instance HLS
-            if (hlsInstance) {
-                hlsInstance.destroy();
-                hlsInstance = null;
-            }
-            video.src = ""; // Reset du lecteur natif
-
-            // LOGIQUE DE LECTURE SELON LE TYPE
-            if (url.includes('.m3u8') || url.includes('m3u8')) {
-                document.getElementById('infoTech').innerText = "HLS.js (Recommandé pour Web)";
+            for (let i = visibleCount; i < end; i++) {
+                const ch = filteredChannels[i];
+                const li = document.createElement('li');
+                li.className = 'channel-item';
                 
-                if (Hls.isSupported()) {
-                    logMsg("Initialisation de HLS.js...", "info");
-                    hlsInstance = new Hls({ debug: false, enableWorker: true });
-                    hlsInstance.loadSource(url);
-                    hlsInstance.attachMedia(video);
-                    
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                        logMsg("Manifeste HLS lu avec succès ! La vidéo devrait démarrer.", "success");
-                        video.play().catch(e => logMsg("Autoplay bloqué par le navigateur.", "warn"));
-                    });
+                // Petit badge pour le format
+                let type = ch.url.includes('.m3u8') ? 'HLS' : 'TS';
+                
+                li.innerHTML = `
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-weight: bold; font-size: 0.9rem;">${ch.name || 'Sans nom'}</span>
+                        <span style="font-size: 0.7rem; color: #888;">${ch.category || 'Inconnu'}</span>
+                    </div>
+                    <span class="badge">${type}</span>
+                `;
+                
+                li.onclick = () => playStream(ch.url, ch.name, li);
+                listEl.appendChild(li);
+            }
+            visibleCount = end;
+        }
 
-                    hlsInstance.on(Hls.Events.ERROR, (event, data) => {
-                        if (data.fatal) {
-                            switch (data.type) {
-                                case Hls.ErrorTypes.NETWORK_ERROR:
-                                    logMsg("ERREUR RÉSEAU FATALE. C'est probablement un blocage CORS ou le serveur est mort.", "error");
-                                    break;
-                                case Hls.ErrorTypes.MEDIA_ERROR:
-                                    logMsg("Erreur Média (Format de transcodage invalide).", "error");
-                                    hlsInstance.recoverMediaError();
-                                    break;
-                                default:
-                                    logMsg(`Erreur HLS: ${data.details}`, "error");
-                                    break;
-                            }
-                        }
-                    });
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    // Support natif Apple (Safari / iOS)
-                    logMsg("HLS Natif détecté (Safari/iOS).", "info");
-                    video.src = url;
-                    video.play();
+        // 5. Écouteur de Scroll pour charger la suite
+        listEl.addEventListener('scroll', function() {
+            if (this.scrollTop + this.clientHeight >= this.scrollHeight - 100) {
+                if (visibleCount < filteredChannels.length) {
+                    renderBatch();
                 }
+            }
+        });
 
-            } else if (url.includes('.mp4') || url.includes('.webm')) {
-                document.getElementById('infoTech').innerText = "Lecteur HTML5 Natif";
-                logMsg("Fichier MP4/WebM détecté. Utilisation du lecteur natif.", "info");
-                video.src = url;
-                video.play().catch(e => logMsg(`Erreur de lecture native: ${e.message}`, "error"));
+        // 6. Lecture de la vidéo
+        function playStream(url, name, element) {
+            logMsg(`Test de : ${name}`);
+            document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
 
-            } else if (url.includes('.ts')) {
-                document.getElementById('infoTech').innerText = "Flux MPEG-TS (Risque d'échec sur Web)";
-                logMsg("ATTENTION : Les navigateurs web ne lisent pas nativement les flux .ts", "warn");
-                logMsg("Tentative de lecture forcée...", "info");
-                video.src = url;
-                video.play().catch(e => logMsg("Échec logique. Les flux .ts nécessitent une application TV (VLC/ExoPlayer) ou un transcodage backend.", "error"));
+            if (hlsInstance) hlsInstance.destroy();
+            video.src = "";
 
+            if (url.includes('.m3u8') && Hls.isSupported()) {
+                hlsInstance = new Hls();
+                hlsInstance.loadSource(url);
+                hlsInstance.attachMedia(video);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play());
             } else {
-                document.getElementById('infoTech').innerText = "Format Indéterminé";
-                logMsg("Format non reconnu. Tentative de lecture aveugle...", "warn");
                 video.src = url;
-                video.play().catch(e => logMsg("Le navigateur ne comprend pas ce format.", "error"));
+                video.play().catch(() => logMsg("Erreur : Format non supporté nativement."));
             }
         }
     </script>
