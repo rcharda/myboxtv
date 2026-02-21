@@ -2,217 +2,223 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>My Box TV - Testeur de Transpondeurs</title>
+    <title>My Box TV - Diagnostic Complet (15k+)</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #e50914; --bg: #000; --panel: #111; --text: #fff; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        :root { --primary: #e50914; --bg: #0b0b0b; --panel: #161616; --text: #eee; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar avec Filtres */
+        /* Sidebar */
         .sidebar { width: 380px; background: var(--panel); border-right: 1px solid #333; display: flex; flex-direction: column; }
-        .header { padding: 20px; text-align: center; border-bottom: 2px solid var(--primary); }
-        .stats { background: #222; margin: 10px; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #444; }
-        .count { font-size: 24px; font-weight: bold; color: var(--primary); }
+        .header { padding: 15px; text-align: center; border-bottom: 2px solid var(--primary); background: #000; }
+        
+        .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; background: #222; }
+        .stat-card { background: #000; padding: 10px; border-radius: 5px; text-align: center; border: 1px solid #444; }
+        .stat-card span { display: block; font-size: 18px; font-weight: bold; color: var(--primary); }
+        .stat-card label { font-size: 10px; color: #888; text-transform: uppercase; }
 
-        .filter-section { padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        select, input { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
+        .controls { padding: 15px; border-bottom: 1px solid #333; display: flex; flex-direction: column; gap: 8px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        select { padding: 10px; background: #333; color: white; border: 1px solid #555; }
 
-        /* Liste avec Scroll Infini */
-        #channel-list { flex: 1; overflow-y: auto; padding: 5px; }
-        .ch-item { display: flex; align-items: center; padding: 10px; margin-bottom: 5px; background: #1a1a1a; border-radius: 5px; cursor: pointer; border-left: 3px solid transparent; }
-        .ch-item:hover { background: #252525; }
-        .ch-item.active { border-left-color: var(--primary); background: #300; }
-        .ch-info { margin-left: 10px; font-size: 13px; }
-        .badge { font-size: 10px; background: var(--primary); padding: 2px 5px; border-radius: 3px; margin-left: auto; }
+        /* Liste */
+        #channel-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .ch-item { padding: 10px; background: #222; margin-bottom: 5px; border-radius: 4px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; }
+        .ch-item:hover { background: #333; }
+        .ch-item.active { border-left: 4px solid var(--primary); background: #400; }
 
-        /* Lecteur */
-        .player-area { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 15px; }
-        video { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .console { flex: 1; background: #050505; border: 1px solid #222; border-radius: 5px; padding: 15px; font-family: monospace; font-size: 12px; color: #0f0; overflow-y: auto; }
-        .btn-load { background: var(--primary); color: white; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 15px; }
+        video { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .console { flex: 1; background: #000; border: 1px solid #333; padding: 15px; font-family: monospace; font-size: 12px; color: #0f0; overflow-y: auto; border-radius: 5px; }
+        .progress-bar { height: 4px; background: #333; width: 100%; position: relative; }
+        #progress { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="120">
-            <h3>TESTEUR DE SOURCES</h3>
-        </div>
-
-        <div class="filter-section">
-            <button class="btn-load" onclick="loadFromSheet()">📥 CHARGER LE SHEET</button>
-            <select id="tp-filter" onchange="applyFilters()">
-                <option value="ALL">-- Tous les Transpondeurs --</option>
-            </select>
-            <input type="text" id="search" placeholder="🔍 Rechercher une chaîne..." oninput="applyFilters()">
-        </div>
-
-        <div class="stats">
-            <div class="count" id="total-count">0</div>
-            <div style="font-size: 11px; color: #888;">CHAÎNES DÉTECTÉES</div>
-        </div>
-
-        <div id="channel-list"></div>
+<div class="sidebar">
+    <div class="header">
+        <h2 style="margin:0; font-size: 1.1rem; color: var(--primary);">LABORATOIRE MY BOX TV</h2>
     </div>
 
-    <div class="player-area">
-        <video id="video" controls autoplay></video>
-        <div class="console" id="logs">> Prêt pour l'analyse...</div>
+    <div class="controls">
+        <button onclick="startFullScan()">🚀 LANCER LE SCAN TOTAL</button>
+        <div class="progress-bar"><div id="progress"></div></div>
+        <select id="tp-filter" onchange="filterChannels()">
+            <option value="ALL">Tous les transpondeurs</option>
+        </select>
+        <input type="text" id="search" placeholder="Chercher une chaîne..." oninput="filterChannels()" 
+               style="padding:10px; background:#222; border:1px solid #444; color:white;">
     </div>
 
-    <script>
-        // Utilisation de ton URL API existante
-        const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
+    <div class="stats-container">
+        <div class="stat-card"><span id="count-tp">0</span><label>Sources</label></div>
+        <div class="stat-card"><span id="count-ch">0</span><label>Chaînes</label></div>
+    </div>
+
+    <div id="channel-list">
+        <div style="text-align:center; padding:40px; color:#666;">Cliquez sur "Lancer le scan" pour synchroniser vos 15 000+ chaînes.</div>
+    </div>
+</div>
+
+<div class="main">
+    <video id="video" controls autoplay></video>
+    <div class="console" id="logs">> En attente du scan...</div>
+</div>
+
+<script>
+    // URL de ton API
+    const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
+    
+    let allChannels = [];
+    let filteredChannels = [];
+    let visibleCount = 0;
+    const BATCH_SIZE = 300; 
+
+    function log(msg, type="info") {
+        const logs = document.getElementById('logs');
+        const color = type === "error" ? "#ff4444" : (type === "success" ? "#00ff00" : "#00ccff");
+        logs.innerHTML += `<div style="color:${color}">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        logs.scrollTop = logs.scrollHeight;
+    }
+
+    async function startFullScan() {
+        allChannels = [];
+        document.getElementById('channel-list').innerHTML = "";
+        log("Récupération de la liste des transpondeurs...", "info");
         
-        let allChannels = [];
-        let filteredChannels = [];
-        let visibleCount = 0;
-        const BATCH_SIZE = 500; // Identique à ton application
-        let hls = null;
-
-        function log(msg, color = "#0f0") {
-            const div = document.createElement('div');
-            div.style.color = color;
-            div.innerHTML = `[${new Date().toLocaleTimeString()}] > ${msg}`;
-            const logs = document.getElementById('logs');
-            logs.appendChild(div);
-            logs.scrollTop = logs.scrollHeight;
+        try {
+            const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
+            const sources = await res.json();
+            document.getElementById('count-tp').innerText = sources.length;
+            
+            let i = 0;
+            for (let url of sources) {
+                i++;
+                const percent = (i / sources.length) * 100;
+                document.getElementById('progress').style.width = percent + "%";
+                
+                log(`Analyse source ${i}/${sources.length} : ${url.split('/').pop()}`);
+                await scanOneM3U(url);
+                
+                // Mise à jour du compteur en temps réel
+                document.getElementById('count-ch').innerText = allChannels.length;
+                
+                // On met à jour le filtre
+                addSourceToFilter(url);
+            }
+            
+            log(`Scan terminé ! Total : ${allChannels.length} chaînes.`, "success");
+            filterChannels();
+            
+        } catch (e) {
+            log("Erreur critique : " + e.message, "error");
         }
+    }
 
-        async function loadFromSheet() {
-            log("Connexion au Google Sheet (Onglet Sources)...", "#3498db");
-            try {
-                // On appelle l'action qui récupère les sources m3u
-                const res = await fetch(`${API_URL}?action=admin_get_m3u_sources`);
-                const sources = await res.json(); // Reçoit la liste des liens
-                
-                log(`${sources.length} sources (Transpondeurs) trouvées. Analyse en cours...`, "#ffd700");
-                
-                // On remplit le filtre Transpondeur
-                const filter = document.getElementById('tp-filter');
-                filter.innerHTML = '<option value="ALL">-- Tous les Transpondeurs --</option>';
-                
-                // Pour chaque lien dans ton sheet, on va scanner les chaînes
-                for(let url of sources) {
-                    log(`Analyse : ${url.substring(0, 50)}...`);
-                    await scanM3U(url);
+    async function scanOneM3U(url) {
+        try {
+            // Utilisation d'un proxy pour éviter les blocages CORS du navigateur
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+            const response = await fetch(proxyUrl);
+            const data = await response.text();
+            
+            const lines = data.split('\n');
+            let currentName = "";
+            let currentGroup = "Général";
+
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const info = line.split(',');
+                    currentName = info[1] ? info[1].trim() : "Chaîne inconnue";
+                    const groupMatch = line.match(/group-title="([^"]+)"/);
+                    currentGroup = groupMatch ? groupMatch[1] : "TV";
+                } else if (line.startsWith('http')) {
+                    allChannels.push({
+                        name: currentName,
+                        url: line,
+                        group: currentGroup,
+                        source: url
+                    });
                 }
-                
-                log("Analyse terminée avec succès !", "#2ecc71");
-                applyFilters();
-                
-            } catch(e) {
-                log("Erreur de chargement : " + e.message, "red");
             }
+        } catch (err) {
+            log(`Impossible de lire ${url} (Serveur inaccessible ou CORS)`, "error");
         }
+    }
 
-        async function scanM3U(url) {
-            try {
-                // Utilisation d'un proxy pour éviter les erreurs CORS sur navigateur
-                const res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
-                const text = await res.text();
-                const lines = text.split('\n');
-                
-                let currentName = "";
-                let currentCat = "Inconnu";
-
-                lines.forEach(line => {
-                    line = line.trim();
-                    if(line.startsWith('#EXTINF:')) {
-                        const nameMatch = line.split(',')[1];
-                        currentName = nameMatch ? nameMatch.trim() : "Sans nom";
-                        const groupMatch = line.match(/group-title="([^"]+)"/);
-                        currentCat = groupMatch ? groupMatch[1] : "TV";
-                    } else if(line.startsWith('http')) {
-                        allChannels.push({
-                            name: currentName,
-                            url: line,
-                            category: currentCat,
-                            source: url // On garde l'origine pour le filtre
-                        });
-                        // Ajout dynamique au filtre TP si nouveau
-                        addSourceToFilter(url);
-                    }
-                });
-            } catch(e) { log("Échec sur une source : " + url, "orange"); }
+    function addSourceToFilter(url) {
+        const filter = document.getElementById('tp-filter');
+        const fileName = url.split('/').pop() || url;
+        if (!Array.from(filter.options).some(o => o.value === url)) {
+            const opt = document.createElement('option');
+            opt.value = url;
+            opt.innerText = fileName;
+            filter.appendChild(opt);
         }
+    }
 
-        function addSourceToFilter(url) {
-            const filter = document.getElementById('tp-filter');
-            const exists = Array.from(filter.options).some(opt => opt.value === url);
-            if(!exists) {
-                const opt = document.createElement('option');
-                opt.value = url;
-                opt.innerText = "Transpondeur : " + url.split('/').pop();
-                filter.appendChild(opt);
-            }
+    function filterChannels() {
+        const tp = document.getElementById('tp-filter').value;
+        const search = document.getElementById('search').value.toLowerCase();
+        
+        filteredChannels = allChannels.filter(ch => {
+            const matchTP = (tp === "ALL" || ch.source === tp);
+            const matchSearch = ch.name.toLowerCase().includes(search);
+            return matchTP && matchSearch;
+        });
+
+        visibleCount = 0;
+        document.getElementById('channel-list').innerHTML = "";
+        renderBatch();
+    }
+
+    function renderBatch() {
+        const container = document.getElementById('channel-list');
+        const end = Math.min(visibleCount + BATCH_SIZE, filteredChannels.length);
+        
+        const fragment = document.createDocumentFragment();
+        for (let i = visibleCount; i < end; i++) {
+            const ch = filteredChannels[i];
+            const div = document.createElement('div');
+            div.className = 'ch-item';
+            div.innerHTML = `<span>${ch.name}</span> <small style="color:#666">${ch.group}</small>`;
+            div.onclick = () => play(ch.url, ch.name, div);
+            fragment.appendChild(div);
         }
+        container.appendChild(fragment);
+        visibleCount = end;
+    }
 
-        function applyFilters() {
-            const tp = document.getElementById('tp-filter').value;
-            const search = document.getElementById('search').value.toLowerCase();
-            
-            filteredChannels = allChannels.filter(ch => {
-                const matchTP = (tp === "ALL" || ch.source === tp);
-                const matchSearch = ch.name.toLowerCase().includes(search);
-                return matchTP && matchSearch;
-            });
-
-            document.getElementById('total-count').innerText = filteredChannels.length;
-            visibleCount = 0;
-            document.getElementById('channel-list').innerHTML = "";
-            renderBatch();
+    // Scroll Infini
+    document.getElementById('channel-list').onscroll = function() {
+        if (this.scrollTop + this.clientHeight >= this.scrollHeight - 50) {
+            if (visibleCount < filteredChannels.length) renderBatch();
         }
+    };
 
-        function renderBatch() {
-            const list = document.getElementById('channel-list');
-            const end = Math.min(visibleCount + BATCH_SIZE, filteredChannels.length);
-            
-            for (let i = visibleCount; i < end; i++) {
-                const ch = filteredChannels[i];
-                const div = document.createElement('div');
-                div.className = 'ch-item';
-                div.innerHTML = `
-                    <div class="ch-info">
-                        <div style="font-weight:bold">${ch.name}</div>
-                        <div style="font-size:10px; color:#888">${ch.category}</div>
-                    </div>
-                    <div class="badge">${ch.url.includes('.m3u8') ? 'HLS' : 'TS'}</div>
-                `;
-                div.onclick = () => play(ch.url, ch.name, div);
-                list.appendChild(div);
-            }
-            visibleCount = end;
+    let hls = null;
+    function play(url, name, el) {
+        document.querySelectorAll('.ch-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        log(`Lecture de : ${name}`, "success");
+        
+        const video = document.getElementById('video');
+        if (hls) hls.destroy();
+
+        if (url.includes('m3u8') && Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+        } else {
+            video.src = url;
+            video.play().catch(e => log("Format non supporté par le navigateur (TS/MKV)", "error"));
         }
+    }
+</script>
 
-        // Détection du scroll pour charger la suite (Scroll Infini)
-        document.getElementById('channel-list').onscroll = function() {
-            if(this.scrollTop + this.clientHeight >= this.scrollHeight - 100) {
-                renderBatch();
-            }
-        };
-
-        function play(url, name, el) {
-            log(`Lecture de : ${name}`, "#2ecc71");
-            document.querySelectorAll('.ch-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-
-            const video = document.getElementById('video');
-            if(hls) hls.destroy();
-
-            if(url.includes('m3u8') && Hls.isSupported()) {
-                hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-                hls.on(Hls.Events.ERROR, () => log("Erreur HLS sur ce lien", "red"));
-            } else {
-                video.src = url;
-                video.play().catch(e => log("Le navigateur ne peut pas lire ce format directement (TS/MKV)", "orange"));
-            }
-        }
-    </script>
 </body>
 </html>
