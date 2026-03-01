@@ -237,6 +237,11 @@
                     ID: <span id="sub-id">...</span><br>
                     Infos: <span id="sub-details">...</span>
                 </div>
+                
+                <button onclick="openKkiapayWidget({amount: 1, api_key: '435f2570159711f19f8faf27d6715836', sandbox: true, theme: '#e50914'})" style="width:100%; background:#28a745; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:10px;">
+                    <i class="fas fa-sync-alt"></i> SE RÉABONNER
+                </button>
+                
                 <button onclick="logout()" style="width:100%; background:#ff4444; color:white; border:none; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">DÉCONNECTER</button>
                 <a href="https://wa.me/22963828767?text=Support" target="_blank" style="display:block; margin-top:10px; color:#888; text-align:center; text-decoration:none;">Support WhatsApp</a>
             </div>
@@ -250,6 +255,13 @@
         <input type="text" id="licenseKey" placeholder="ID ABONNEMENT" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:5px; text-align:center; font-size:18px; margin-bottom:15px;">
         <button onclick="login()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:5px; font-weight:bold;">ENTRER</button>
         <div id="login-msg" style="color:#ff4444; margin-top:10px;"></div>
+        
+        <div style="margin-top: 25px; border-top: 1px solid #444; padding-top: 20px;">
+            <p style="color:#aaa; font-size:12px; margin-top:0; margin-bottom:15px;">Pas encore de compte ou abonnement expiré ?</p>
+            <button onclick="openKkiapayWidget({amount: 1, api_key: '435f2570159711f19f8faf27d6715836', sandbox: true, theme: '#e50914'})" style="width:100%; padding:15px; background:transparent; color:white; border:2px solid var(--primary); border-radius:5px; font-weight:bold; cursor:pointer;">
+                <i class="fas fa-shopping-cart"></i> ACHETER UNE CLÉ
+            </button>
+        </div>
     </div>
 </div>
 
@@ -318,6 +330,8 @@
         <button class="btn-ctrl" onclick="toggleFullScreen()"><i class="fas fa-expand"></i></button>
     </div>
 </div>
+
+<script src="https://cdn.kkiapay.me/k.js"></script>
 
 <script>
     // =======================================================
