@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #000; color: white; font-family: sans-serif; text-align: center; }
+        .card { background: #111; padding: 20px; margin: 10px; border-radius: 10px; border-bottom: 4px solid #e50914; display: inline-block; width: 250px; }
+        .btn { background: #e50914; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; width: 80%; }
+    </style>
+</head>
+<body>
+    <h2>ADMINISTRATION ELECPRO</h2>
+    <div id="stats">
+        <div class="card"><i class="fas fa-users"></i><p>Total</p><h2 id="t">0</h2></div>
+        <div class="card" style="border-color:green"><i class="fas fa-signal"></i><p>Actifs</p><h2 id="a">0</h2></div>
+    </div>
+    <br><button class="btn" onclick="load()">ACTUALISER</button>
+
+    <script>
+        async function load() {
+            const r = await fetch('URL_DE_TON_SCRIPT?action=get_stats');
+            const d = await r.json();
+            document.getElementById('t').innerText = d.total;
+            document.getElementById('a').innerText = d.active;
+        }
+        window.onload = load;
+    </script>
+</body>
+</html>
