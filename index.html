@@ -1082,7 +1082,7 @@ function tryPlayChannel(ch) {
     } else { currentChannelIndex=index; playChannel(currentChannelIndex); }
 }
 
-function playChannel(index) {
+function playChannel(index, viaProxy) {
     if(!allChannels[index]) return;
     const ch = allChannels[index];
     if(window.innerWidth < 900) document.body.classList.remove('menu-open');
@@ -1091,16 +1091,35 @@ function playChannel(index) {
     showNowPlayingToast(ch);
     updateAmbientColor(ch);
 
+    // Premier essai direct, si CORS bloque on repasse par /proxy
+    const streamUrl = viaProxy ? ('/proxy?url=' + encodeURIComponent(ch.url)) : ch.url;
+
     if(Hls.isSupported()) {
         if(hls) hls.destroy();
-        hls = new Hls({ manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000, maxBufferLength: 30 });
-        hls.loadSource(ch.url);
+        hls = new Hls({
+            manifestLoadingMaxRetry: 2,
+            manifestLoadingTimeOut: 12000,
+            levelLoadingTimeOut: 12000,
+            maxBufferLength: 30,
+        });
+        hls.loadSource(streamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.FRAG_LOADED, (e,d) => { if(d.stats) onVideoChunkLoaded(d.stats.total, d.stats.loading.end-d.stats.loading.start); });
         hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className='green'; clearTimeout(autoZapTimeout); });
-        hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(index===0) setTimeout(()=>playChannel(0),2000); else handleError(); } });
+        hls.on(Hls.Events.ERROR, (e,d) => {
+            if(d.fatal) {
+                if(!viaProxy) {
+                    // Essai direct échoué → on repasse par le proxy CF Worker
+                    console.log('[Stream] Direct KO, proxy CF Worker...');
+                    setTimeout(() => playChannel(index, true), 300);
+                } else {
+                    if(index===0) setTimeout(()=>playChannel(0, false), 3000);
+                    else handleError();
+                }
+            }
+        });
     } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src=ch.url; video.play();
+        video.src = streamUrl; video.play();
     }
     if(isAutoZap && index!==0) { clearTimeout(autoZapTimeout); autoZapTimeout=setTimeout(()=>{ if(video.paused||video.readyState<2) handleError(); },15000); }
 }
@@ -1358,26 +1377,111 @@ async function quickScan() {
     });
 }
 
+// =======================================================
+// CACHE PLAYLISTS IndexedDB (TTL 12h)
+// =======================================================
+const PL_DB = 'MyBoxTV_PLCache_v2'; const PL_DB_V = 1; const PL_TTL = 12*3600*1000;
+function openPLDB() {
+    return new Promise((res,rej) => {
+        const r = indexedDB.open(PL_DB, PL_DB_V);
+        r.onerror = () => rej();
+        r.onsuccess = e => res(e.target.result);
+        r.onupgradeneeded = e => {
+            if(!e.target.result.objectStoreNames.contains('pl'))
+                e.target.result.createObjectStore('pl', {keyPath:'url'});
+        };
+    });
+}
+async function savePL(url, text) {
+    try { const db=await openPLDB(); db.transaction('pl','readwrite').objectStore('pl').put({url,text,ts:Date.now()}); } catch(e) {}
+}
+async function loadPL(url, ignoreExpiry=false) {
+    try {
+        const db = await openPLDB();
+        return new Promise(res => {
+            const req = db.transaction('pl','readonly').objectStore('pl').get(url);
+            req.onsuccess = () => {
+                const r = req.result;
+                if(!r) return res(null);
+                if(!ignoreExpiry && Date.now()-r.ts > PL_TTL) return res(null);
+                res(r.text);
+            };
+            req.onerror = () => res(null);
+        });
+    } catch(e) { return null; }
+}
+
+// Proxy Cloudflare Worker intégré — aucun tiers, même domaine = zéro CORS
+function proxyUrl(u) { return '/proxy?url=' + encodeURIComponent(u); }
+
 async function fetchPlaylistWithWatchdog(url) {
     lastActivityTime = Date.now();
+
+    // 1. Cache IndexedDB (instantané, offline)
+    const cached = await loadPL(url);
+    if(cached) {
+        console.log('[Cache] Playlist depuis IndexedDB');
+        showOfflineBadge(true);
+        parsePLText(cached);
+        // Rafraîchit silencieusement en arrière-plan
+        fetchPLNetwork(url).then(text => {
+            if(text) { savePL(url, text); showOfflineBadge(false); }
+        });
+        return;
+    }
+
+    // 2. Réseau via notre proxy CF Worker
+    const text = await fetchPLNetwork(url);
+    if(text) {
+        await savePL(url, text);
+        showOfflineBadge(false);
+        parsePLText(text);
+        return;
+    }
+
+    // 3. Dernier recours : cache expiré
+    const stale = await loadPL(url, true);
+    if(stale) { showOfflineBadge(true); parsePLText(stale); }
+}
+
+async function fetchPLNetwork(url) {
     const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-        const res = await fetch("https://api.allorigins.win/raw?url="+encodeURIComponent(url), {signal:controller.signal});
-        clearTimeout(timeout); if(!res.ok) return;
-        const len = res.headers.get("Content-Length");
-        if(len) onVideoChunkLoaded(parseInt(len),100);
-        const reader=res.body.getReader(); const dec=new TextDecoder("utf-8");
-        let buffer='', batch=[];
-        while(true) {
-            const {done,value}=await reader.read(); if(done) break;
-            lastActivityTime=Date.now(); buffer+=dec.decode(value,{stream:true});
-            const lines=buffer.split('\n'); buffer=lines.pop();
-            processLines(lines,batch);
-            if(batch.length>=50) { flushBatch(batch); await new Promise(r=>setTimeout(r,10)); }
-        }
-        processLines([buffer],batch); flushBatch(batch);
-    } catch(e) {}
+        const res = await fetch(proxyUrl(url), {signal: controller.signal});
+        clearTimeout(timeout);
+        if(!res.ok) return null;
+        const text = await res.text();
+        return (text && text.includes('#EXTM3U')) ? text : null;
+    } catch(e) {
+        clearTimeout(timeout);
+        return null;
+    }
+}
+
+function parsePLText(text) {
+    if(text) onVideoChunkLoaded(text.length, 100);
+    const lines = text.split('\n');
+    let batch = [];
+    (function chunk(i) {
+        if(i >= lines.length) { flushBatch(batch); return; }
+        processLines(lines.slice(i, i+300), batch);
+        if(batch.length >= 50) flushBatch(batch);
+        lastActivityTime = Date.now();
+        setTimeout(() => chunk(i+300), 0);
+    })(0);
+}
+
+function showOfflineBadge(show) {
+    let b = document.getElementById('offline-badge');
+    if(!b) {
+        b = document.createElement('span');
+        b.id = 'offline-badge';
+        b.textContent = '📦 CACHE';
+        b.style.cssText = 'font-size:9px;background:rgba(255,165,0,0.2);color:orange;border:1px solid rgba(255,165,0,0.4);padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;';
+        document.getElementById('status-pill').appendChild(b);
+    }
+    b.style.display = show ? 'inline-block' : 'none';
 }
 
 function processLines(lines, batch) {
