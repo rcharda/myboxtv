@@ -1082,8 +1082,7 @@ function tryPlayChannel(ch) {
     } else { currentChannelIndex=index; playChannel(currentChannelIndex); }
 }
 
-// useProxy=false => essai direct d'abord, true => force proxy local
-function playChannel(index, useProxy) {
+function playChannel(index, viaProxy) {
     if(!allChannels[index]) return;
     const ch = allChannels[index];
     if(window.innerWidth < 900) document.body.classList.remove('menu-open');
@@ -1092,37 +1091,35 @@ function playChannel(index, useProxy) {
     showNowPlayingToast(ch);
     updateAmbientColor(ch);
 
-    // On essaie direct d'abord, sinon proxy.php, sinon allorigins
-    const streamUrls = [
-        ch.url,
-        'proxy.php?url=' + encodeURIComponent(ch.url),
-        'https://api.allorigins.win/raw?url=' + encodeURIComponent(ch.url),
-    ];
-    const tryIndex = useProxy ? 1 : 0;
-    const streamUrl = streamUrls[tryIndex] || ch.url;
+    // Premier essai direct, si CORS bloque on repasse par /proxy
+    const streamUrl = viaProxy ? ('/proxy?url=' + encodeURIComponent(ch.url)) : ch.url;
 
     if(Hls.isSupported()) {
         if(hls) hls.destroy();
-        hls = new Hls({ manifestLoadingMaxRetry: 2, manifestLoadingTimeOut: 12000, maxBufferLength: 30 });
+        hls = new Hls({
+            manifestLoadingMaxRetry: 2,
+            manifestLoadingTimeOut: 12000,
+            levelLoadingTimeOut: 12000,
+            maxBufferLength: 30,
+        });
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.FRAG_LOADED, (e,d) => { if(d.stats) onVideoChunkLoaded(d.stats.total, d.stats.loading.end-d.stats.loading.start); });
         hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className='green'; clearTimeout(autoZapTimeout); });
         hls.on(Hls.Events.ERROR, (e,d) => {
             if(d.fatal) {
-                const nextProxy = (useProxy||0) + 1;
-                if(nextProxy < streamUrls.length) {
-                    // Essaie le proxy suivant automatiquement
-                    console.log('[Stream] Echec direct, essai proxy ' + nextProxy);
-                    setTimeout(() => playChannel(index, nextProxy), 400);
+                if(!viaProxy) {
+                    // Essai direct échoué → on repasse par le proxy CF Worker
+                    console.log('[Stream] Direct KO, proxy CF Worker...');
+                    setTimeout(() => playChannel(index, true), 300);
                 } else {
-                    if(index===0) setTimeout(()=>playChannel(0,0),3000);
+                    if(index===0) setTimeout(()=>playChannel(0, false), 3000);
                     else handleError();
                 }
             }
         });
     } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src=streamUrl; video.play();
+        video.src = streamUrl; video.play();
     }
     if(isAutoZap && index!==0) { clearTimeout(autoZapTimeout); autoZapTimeout=setTimeout(()=>{ if(video.paused||video.readyState<2) handleError(); },15000); }
 }
@@ -1380,107 +1377,111 @@ async function quickScan() {
     });
 }
 
-// -------------------------------------------------------
-// CACHE PLAYLISTS (IndexedDB, TTL 12h)
-// -------------------------------------------------------
-const PL_DB = 'MyBoxTV_PLCache'; const PL_DB_V = 1; const PL_TTL = 12*3600*1000;
+// =======================================================
+// CACHE PLAYLISTS IndexedDB (TTL 12h)
+// =======================================================
+const PL_DB = 'MyBoxTV_PLCache_v2'; const PL_DB_V = 1; const PL_TTL = 12*3600*1000;
 function openPLDB() {
-    return new Promise((res,rej)=>{
-        const r=indexedDB.open(PL_DB,PL_DB_V);
-        r.onerror=()=>rej();
-        r.onsuccess=e=>res(e.target.result);
-        r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains('pl')) e.target.result.createObjectStore('pl',{keyPath:'url'}); };
+    return new Promise((res,rej) => {
+        const r = indexedDB.open(PL_DB, PL_DB_V);
+        r.onerror = () => rej();
+        r.onsuccess = e => res(e.target.result);
+        r.onupgradeneeded = e => {
+            if(!e.target.result.objectStoreNames.contains('pl'))
+                e.target.result.createObjectStore('pl', {keyPath:'url'});
+        };
     });
 }
-async function savePL(url,text){ try{ const db=await openPLDB(); db.transaction('pl','readwrite').objectStore('pl').put({url,text,ts:Date.now()}); }catch(e){} }
-async function loadPL(url,ignoreExpiry=false){ try{ const db=await openPLDB(); return new Promise(res=>{ const req=db.transaction('pl','readonly').objectStore('pl').get(url); req.onsuccess=()=>{ const r=req.result; if(!r) return res(null); if(!ignoreExpiry&&Date.now()-r.ts>PL_TTL) return res(null); res(r.text); }; req.onerror=()=>res(null); }); }catch(e){return null;} }
+async function savePL(url, text) {
+    try { const db=await openPLDB(); db.transaction('pl','readwrite').objectStore('pl').put({url,text,ts:Date.now()}); } catch(e) {}
+}
+async function loadPL(url, ignoreExpiry=false) {
+    try {
+        const db = await openPLDB();
+        return new Promise(res => {
+            const req = db.transaction('pl','readonly').objectStore('pl').get(url);
+            req.onsuccess = () => {
+                const r = req.result;
+                if(!r) return res(null);
+                if(!ignoreExpiry && Date.now()-r.ts > PL_TTL) return res(null);
+                res(r.text);
+            };
+            req.onerror = () => res(null);
+        });
+    } catch(e) { return null; }
+}
 
-// -------------------------------------------------------
-// FETCH PLAYLIST avec proxy local + cache
-// -------------------------------------------------------
-const FALLBACK_PROXIES = [
-    u => `proxy.php?url=${encodeURIComponent(u)}`,
-    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-];
+// Proxy Cloudflare Worker intégré — aucun tiers, même domaine = zéro CORS
+function proxyUrl(u) { return '/proxy?url=' + encodeURIComponent(u); }
 
 async function fetchPlaylistWithWatchdog(url) {
     lastActivityTime = Date.now();
 
-    // 1. Cache IndexedDB d'abord (instantane, fonctionne offline)
+    // 1. Cache IndexedDB (instantané, offline)
     const cached = await loadPL(url);
     if(cached) {
-        console.log('[Cache] Playlist depuis IndexedDB:', url);
-        updateOfflineBadge(true);
+        console.log('[Cache] Playlist depuis IndexedDB');
+        showOfflineBadge(true);
         parsePLText(cached);
-        refreshPlaylistInBackground(url);
+        // Rafraîchit silencieusement en arrière-plan
+        fetchPLNetwork(url).then(text => {
+            if(text) { savePL(url, text); showOfflineBadge(false); }
+        });
         return;
     }
 
-    // 2. Essai reseau avec chaque proxy
-    for(let i=0; i<FALLBACK_PROXIES.length; i++) {
-        const proxyUrl = FALLBACK_PROXIES[i](url);
-        const controller = new AbortController();
-        const timeout = setTimeout(()=>controller.abort(), 18000);
-        try {
-            const res = await fetch(proxyUrl, {signal:controller.signal});
-            clearTimeout(timeout);
-            if(!res.ok) continue;
-            const text = await res.text();
-            if(!text || !text.includes('#EXTM3U')) continue;
-            await savePL(url, text);
-            updateOfflineBadge(false);
-            parsePLText(text);
-            return;
-        } catch(e) {
-            clearTimeout(timeout);
-        }
+    // 2. Réseau via notre proxy CF Worker
+    const text = await fetchPLNetwork(url);
+    if(text) {
+        await savePL(url, text);
+        showOfflineBadge(false);
+        parsePLText(text);
+        return;
     }
 
-    // 3. Cache expire en dernier recours
+    // 3. Dernier recours : cache expiré
     const stale = await loadPL(url, true);
-    if(stale) { updateOfflineBadge(true); parsePLText(stale); }
+    if(stale) { showOfflineBadge(true); parsePLText(stale); }
+}
+
+async function fetchPLNetwork(url) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    try {
+        const res = await fetch(proxyUrl(url), {signal: controller.signal});
+        clearTimeout(timeout);
+        if(!res.ok) return null;
+        const text = await res.text();
+        return (text && text.includes('#EXTM3U')) ? text : null;
+    } catch(e) {
+        clearTimeout(timeout);
+        return null;
+    }
 }
 
 function parsePLText(text) {
     if(text) onVideoChunkLoaded(text.length, 100);
     const lines = text.split('\n');
     let batch = [];
-    (function processChunk(i) {
+    (function chunk(i) {
         if(i >= lines.length) { flushBatch(batch); return; }
         processLines(lines.slice(i, i+300), batch);
         if(batch.length >= 50) flushBatch(batch);
         lastActivityTime = Date.now();
-        setTimeout(()=>processChunk(i+300), 0);
+        setTimeout(() => chunk(i+300), 0);
     })(0);
 }
 
-async function refreshPlaylistInBackground(url) {
-    for(let i=0; i<FALLBACK_PROXIES.length; i++) {
-        try {
-            const res = await fetch(FALLBACK_PROXIES[i](url));
-            if(!res.ok) continue;
-            const text = await res.text();
-            if(text && text.includes('#EXTM3U')) {
-                await savePL(url, text);
-                updateOfflineBadge(false);
-                console.log('[Cache] Raffraichi en arriere-plan');
-                return;
-            }
-        } catch(e) {}
+function showOfflineBadge(show) {
+    let b = document.getElementById('offline-badge');
+    if(!b) {
+        b = document.createElement('span');
+        b.id = 'offline-badge';
+        b.textContent = '📦 CACHE';
+        b.style.cssText = 'font-size:9px;background:rgba(255,165,0,0.2);color:orange;border:1px solid rgba(255,165,0,0.4);padding:2px 7px;border-radius:10px;font-weight:700;margin-left:4px;';
+        document.getElementById('status-pill').appendChild(b);
     }
-}
-
-function updateOfflineBadge(fromCache) {
-    let badge = document.getElementById('offline-badge');
-    if(!badge) {
-        badge = document.createElement('span');
-        badge.id = 'offline-badge';
-        badge.style.cssText = 'font-size:9px;background:rgba(255,165,0,0.2);color:orange;border:1px solid rgba(255,165,0,0.4);padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:0.5px;margin-left:4px;';
-        document.getElementById('status-pill').appendChild(badge);
-    }
-    badge.style.display = fromCache ? 'inline-block' : 'none';
-    badge.textContent = 'CACHE';
+    b.style.display = show ? 'inline-block' : 'none';
 }
 
 function processLines(lines, batch) {
