@@ -10,7 +10,11 @@
     <title>My Box TV</title>
     <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png">
+    
+    <script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -280,8 +284,21 @@
         #banner-cat { font-size: 13px; color: #888; margin-top: 4px; }
         #banner-prog { font-size: 12px; color: var(--accent-blue); margin-top: 8px; }
 
+        /* ===== TOUCH OVERLAY — ferme le menu en touchant la zone vide ===== */
+        #menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            left: var(--sidebar-w);
+            z-index: 99;
+            background: transparent;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body.menu-open #menu-overlay { display: block; }
+
         /* ===== MODALS ===== */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200; align-items: center; justify-content: center; pointer-events: auto; }
+        /* z-index 9999 : toujours au-dessus du menu (z=100) et des settings (z=200) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 9999; align-items: center; justify-content: center; pointer-events: auto; }
         .modal-box {
             background: var(--surface); padding: 28px; border-radius: 16px;
             width: 90%; max-width: 400px; text-align: center;
@@ -376,7 +393,7 @@
         #admin-msg-box {
             position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
             background: linear-gradient(135deg, var(--primary), #900);
-            color: white; padding: 14px 28px; border-radius: 30px; z-index: 300;
+            color: white; padding: 14px 28px; border-radius: 30px; z-index: 10001;
             display: none; box-shadow: 0 8px 32px rgba(229,9,20,0.4);
             font-weight: 700; text-align: center; max-width: 90%; font-size: 14px;
             transition: top 0.5s cubic-bezier(0.4,0,0.2,1);
@@ -458,10 +475,8 @@
 </head>
 <body>
 
-<!-- AMBIENT CANVAS -->
 <canvas id="ambient-canvas"></canvas>
 
-<!-- MODALS -->
 <div id="custom-alert" class="modal">
     <div class="modal-box">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="modal-logo">
@@ -519,7 +534,6 @@
     </div>
 </div>
 
-<!-- SETTINGS MODAL -->
 <div id="settings-modal" class="modal">
     <div class="settings-panel">
         <div class="settings-sidebar">
@@ -535,7 +549,6 @@
             <div class="settings-tab" onclick="closeSettings()" style="color:#555;"><i class="fas fa-times"></i> Fermer</div>
         </div>
         <div class="settings-content">
-            <!-- SOURCES TAB -->
             <div id="tab-general" class="tab-content">
                 <div class="settings-section-title">MODE DE RÉCEPTION</div>
                 <div class="settings-desc">Choisissez votre configuration de source de chaînes.</div>
@@ -555,7 +568,6 @@
                 </div>
             </div>
 
-            <!-- TRANSPONDERS TAB -->
             <div id="tab-inst" class="tab-content" style="display:none;">
                 <div class="settings-section-title"><i class="fas fa-satellite-dish"></i> SATELLITE / IPTV</div>
                 <div class="settings-desc">Cochez les transpondeurs à scanner et lancez la recherche.</div>
@@ -565,7 +577,6 @@
                 </button>
             </div>
 
-            <!-- CATEGORIES TAB -->
             <div id="tab-cat" class="tab-content" style="display:none;">
                 <div class="settings-section-title">DOSSIERS</div>
                 <button onclick="resetFilters()" style="width:100%;background:#2a2a2a;padding:10px;margin-bottom:14px;border:1px solid #333;color:#aaa;border-radius:8px;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:600;">🔄 TOUT AFFICHER</button>
@@ -573,7 +584,6 @@
                 <button onclick="applyFilters()" class="btn-primary" style="margin-top:18px;width:100%;padding:12px;border-radius:10px;">Valider la sélection</button>
             </div>
 
-            <!-- NETWORK TAB -->
             <div id="tab-net" class="tab-content" style="display:none;">
                 <div class="settings-section-title">INFOS RÉSEAU</div>
                 <div class="data-box">
@@ -595,7 +605,6 @@
                 <button onclick="resetDataCounter()" style="width:100%;margin-top:10px;background:#2a2a2a;border:1px solid #333;color:#888;padding:10px;border-radius:8px;cursor:pointer;font-family:'Exo 2',sans-serif;">Réinitialiser le compteur</button>
             </div>
 
-            <!-- SLEEP TIMER TAB -->
             <div id="tab-sleep" class="tab-content" style="display:none;">
                 <div class="settings-section-title">MINUTERIE DE VEILLE</div>
                 <div class="settings-desc">L'application s'arrêtera automatiquement après le délai choisi.</div>
@@ -610,7 +619,6 @@
                 <div id="sleep-status" style="margin-top:16px;color:#666;font-size:12px;text-align:center;"></div>
             </div>
 
-            <!-- SHORTCUTS TAB -->
             <div id="tab-keys" class="tab-content" style="display:none;">
                 <div class="settings-section-title">RACCOURCIS CLAVIER</div>
                 <div class="shortcut-grid">
@@ -627,7 +635,6 @@
                 </div>
             </div>
 
-            <!-- ACCOUNT TAB -->
             <div id="tab-sub" class="tab-content" style="display:none;">
                 <div class="settings-section-title">MON ABONNEMENT</div>
                 <div class="account-card">
@@ -647,7 +654,6 @@
     </div>
 </div>
 
-<!-- LOGIN SCREEN -->
 <div id="login-screen" class="modal" style="display:flex;background:radial-gradient(ellipse at center, #150000 0%, #000 100%);">
     <div class="modal-box" style="max-width:340px;">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="modal-logo" style="width:90px;">
@@ -660,11 +666,76 @@
             <i class="fas fa-tv" style="margin-right:8px;"></i>ACCÉDER
         </button>
         <div id="login-msg" style="color:#ff5555;margin-top:12px;font-size:12px;min-height:16px;"></div>
+        
+        <div style="margin-top:15px; border-top: 1px solid var(--border); padding-top:15px;">
+            <p style="color:#aaa; font-size:12px; margin-bottom:10px;">Pas encore de compte ?</p>
+            <button onclick="openSubscribe()" class="btn-secondary" style="width:100%; padding:12px; border-radius:10px; font-size:14px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);">
+                <i class="fas fa-shopping-cart" style="margin-right:8px; color:var(--primary);"></i>S'ABONNER
+            </button>
+        </div>
+
         <div style="margin-top:20px;color:#333;font-size:10px;">Powered by My Box TV</div>
     </div>
 </div>
 
-<!-- CONTEXT MENU -->
+<div id="subscribe-modal" class="modal">
+    <div class="modal-box">
+        <div class="modal-title" style="color:white; font-size:16px; margin-bottom:20px;">
+            <i class="fas fa-crown" style="color:gold;"></i> S'ABONNER À MY BOX TV
+        </div>
+        
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="color:#aaa; font-size:12px;">Durée d'abonnement :</label>
+            <select id="sub-days" style="width:100%; padding:12px; background:var(--surface2); color:white; border:1px solid var(--border); border-radius:8px; margin-top:5px; font-family:'Exo 2',sans-serif;" onchange="updatePrice()">
+                <option value="30">1 Mois</option>
+                <option value="90">3 Mois</option>
+                <option value="365">1 An (2 mois offerts !)</option>
+            </select>
+        </div>
+        
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="color:#aaa; font-size:12px;">Nombre d'écrans simultanés :</label>
+            <select id="sub-screens" style="width:100%; padding:12px; background:var(--surface2); color:white; border:1px solid var(--border); border-radius:8px; margin-top:5px; font-family:'Exo 2',sans-serif;" onchange="updatePrice()">
+                <option value="1">1 Écran</option>
+                <option value="2">2 Écrans</option>
+                <option value="4">4 Écrans</option>
+            </select>
+        </div>
+        
+        <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border); padding:15px; border-radius:10px; margin:20px 0;">
+            <div style="font-size:11px; color:#aaa; margin-bottom:5px;">MONTANT À PAYER</div>
+            <div style="font-size:28px; color:var(--accent-green); font-weight:bold; font-family:'Orbitron',sans-serif;">
+                <span id="sub-price">300</span> FCFA
+            </div>
+        </div>
+        
+        <button id="btn-pay" onclick="payWithFedaPay()" class="btn-primary" style="width:100%; padding:14px; border-radius:10px; font-size:14px; background:#007bff; box-shadow:0 0 15px rgba(0,123,255,0.4);">
+            <i class="fas fa-credit-card" style="margin-right:8px;"></i>PAYER AVEC FEDAPAY
+        </button>
+        <button onclick="closeSubscribe()" class="btn-secondary" style="width:100%; margin-top:10px; padding:12px; border-radius:10px; background:transparent; border:1px solid var(--border);">Retour</button>
+    </div>
+</div>
+
+<div id="success-modal" class="modal">
+    <div class="modal-box">
+        <i class="fas fa-check-circle" style="font-size:55px; color:var(--accent-green); margin-bottom:15px; animation: pulse 2s infinite;"></i>
+        <div class="modal-title" style="color:var(--accent-green);">PAIEMENT RÉUSSI</div>
+        <p class="modal-text" style="font-size:12px;">Votre compte a été activé avec succès.<br>Votre reçu PDF a été téléchargé.</p>
+        
+        <div style="background:var(--surface2); padding:20px; border-radius:10px; border:1px dashed var(--accent-green); margin-bottom:20px;">
+            <div style="font-size:11px; color:#aaa; margin-bottom:8px;">VOTRE ID DE CONNEXION :</div>
+            <div id="new-sub-id" style="font-size:26px; font-weight:bold; color:white; font-family:'Orbitron',sans-serif; letter-spacing:3px;">...</div>
+        </div>
+        
+        <button onclick="copyNewId()" class="btn-primary" style="width:100%; margin-bottom:10px; padding:12px; border-radius:10px; background:#2a2a2a; color:white; border:1px solid var(--border);">
+            <i class="fas fa-copy" style="margin-right:8px;"></i>COPIER L'ID
+        </button>
+        <button onclick="closeSuccessAndLogin()" class="btn-primary" style="width:100%; padding:14px; border-radius:10px;">
+            <i class="fas fa-tv" style="margin-right:8px;"></i>ACCÉDER À LA TV
+        </button>
+    </div>
+</div>
+
 <div id="ctx-menu">
     <div class="ctx-item" onclick="ctxFav()"><i class="fas fa-star"></i> <span id="ctx-fav-label">Ajouter aux favoris</span></div>
     <div class="ctx-item" onclick="ctxInfo()"><i class="fas fa-info-circle"></i> Infos chaîne</div>
@@ -672,20 +743,19 @@
     <div class="ctx-item danger" onclick="ctxHide()"><i class="fas fa-eye-slash"></i> Masquer cette chaîne</div>
 </div>
 
-<!-- NOW PLAYING TOAST -->
 <div id="now-playing-toast">
     <img id="toast-logo" src="" alt="">
     <div><div id="toast-name"></div><div id="toast-cat"></div></div>
 </div>
 
-<!-- VIDEO -->
+<!-- OVERLAY tactile : toucher la zone vide à droite du menu ferme le menu -->
+<div id="menu-overlay" onclick="document.body.classList.remove('menu-open')"></div>
+
 <div id="video-layer">
     <video id="video" playsinline crossorigin="anonymous"></video>
 </div>
 
-<!-- UI LAYER -->
 <div id="ui-layer">
-    <!-- STATUS PILL -->
     <div id="status-pill">
         <div id="led"></div>
         <div class="signal-container" id="signal-meter">
@@ -697,7 +767,6 @@
         <span id="status-text">Prêt</span>
     </div>
 
-    <!-- CHANNEL BANNER -->
     <div id="ch-info-overlay">
         <div id="ch-banner">
             <img id="banner-logo" src="" alt="">
@@ -707,7 +776,6 @@
         </div>
     </div>
 
-    <!-- CHANNEL MENU -->
     <div id="channel-menu">
         <div class="menu-header">
             <div class="menu-header-top">
@@ -759,7 +827,6 @@
         <div id="scroll-top-btn" onclick="scrollTop()"><i class="fas fa-arrow-up"></i></div>
     </div>
 
-    <!-- BOTTOM BAR -->
     <div id="bottom-bar">
         <button class="btn-ctrl" onclick="prevChannel()" title="Chaîne précédente"><i class="fas fa-step-backward"></i></button>
         <div class="btn-separator desktop-only"></div>
@@ -777,7 +844,6 @@
     </div>
 </div>
 
-<!-- VOL POPUP -->
 <div id="vol-popup">
     <i class="fas fa-volume-down" id="vol-icon"></i>
     <input type="range" id="vol-slider" min="0" max="100" value="100" oninput="setVolFromSlider(this.value)">
@@ -787,9 +853,13 @@
 
 <script>
 // =======================================================
+// CONFIGURATION URL DE TON GOOGLE SCRIPT (Version 18)
+// =======================================================
+const API_URL = "https://script.google.com/macros/s/AKfycbwwmndJ-PnznJsU5Oqc9qa1IKJAut114uCsJVMhLMIvsArUjpcgA7fhzjMUgXcivRksyA/exec";
+
+// =======================================================
 // CONFIGURATION
 // =======================================================
-const API_URL = "https://script.google.com/macros/s/AKfycbyTVVHd3DGbEtlRfVN5aboerVM1UEbDYTGv4vJxabValUYDAHRxgLoFppjUO8xwv9SsTw/exec";
 const DEFAULT_CHANNEL = { name: "Novelas TV", url: "https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/Novelas_TV_Logo.png", category: "Start" };
 const PIN_CODE = "0000";
 const DB_NAME = "MyBoxTV_V70_Pro";
@@ -797,14 +867,15 @@ const DB_VERSION = 1;
 
 // VARIABLES GLOBALES
 let allChannels = [], displayedChannels = [], loadedUrls = new Set();
-let favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]');
+let favorites = []; try { favorites = JSON.parse(localStorage.getItem('mybox_favs') || '[]'); } catch(e){}
 let currentChannelIndex = 0;
 let deviceId = localStorage.getItem('mybox_device_id') || 'DEV-'+Math.random().toString(36).substr(2,9).toUpperCase();
 localStorage.setItem('mybox_device_id', deviceId);
 
 let isFavFilter = false, isHDFilter = false, hls = null, pendingChannelIndex = -1, isAutoZap = false;
-let allCategories = new Set(['Favoris']), selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]');
-let hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]');
+let allCategories = new Set(['Favoris']);
+let selectedCategories = []; try { selectedCategories = JSON.parse(localStorage.getItem('mybox_categories') || '[]'); } catch(e){}
+let hiddenChannels = []; try { hiddenChannels = JSON.parse(localStorage.getItem('mybox_hidden') || '[]'); } catch(e){}
 let autoZapTimeout = null;
 let availableTransponders = [];
 let lastActivityTime = Date.now();
@@ -824,6 +895,184 @@ let ctxTarget = null;
 const video = document.getElementById('video');
 const statusText = document.getElementById('status-text');
 const led = document.getElementById('led');
+
+// =======================================================
+// ABONNEMENT ET PAIEMENT FEDAPAY STANDARD
+// =======================================================
+
+function openSubscribe() {
+    document.getElementById('login-screen').style.display = 'none';
+    updatePrice();
+    document.getElementById('subscribe-modal').style.display = 'flex';
+}
+
+function closeSubscribe() {
+    document.getElementById('subscribe-modal').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+}
+
+function updatePrice() {
+    const days = parseInt(document.getElementById('sub-days').value);
+    const screens = parseInt(document.getElementById('sub-screens').value);
+
+    // Grille de prix : 1 Ecran = 100, 2 Ecrans = 500, 4 Ecrans = 900
+    let priceMois = 100;
+    if (screens === 2) priceMois = 500;
+    else if (screens === 4) priceMois = 900; 
+
+    // Multiplicateur : 1 mois = x1, 3 mois = x3, 1 an = x10
+    let multiplier = 1;
+    if (days === 90) multiplier = 3;
+    else if (days === 365) multiplier = 10; 
+
+    const total = priceMois * multiplier;
+    document.getElementById('sub-price').innerText = total;
+    return total;
+}
+
+function payWithFedaPay() {
+    const amount = updatePrice();
+    const days = document.getElementById('sub-days').value;
+    const screens = document.getElementById('sub-screens').value;
+
+    // Génération ID unique client (ex: TV-8472)
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let rand = "";
+    for(let i=0;i<6;i++) rand += chars.charAt(Math.floor(Math.random()*chars.length));
+    const newKey = "TV-" + rand;
+
+    FedaPay.init({
+        public_key: 'pk_live_1i7UkFPVn-pUhhO1OnoKQncy',
+        environment: 'live',
+        transaction: {
+            amount: amount,
+            description: `Abonnement MyBoxTV - ${newKey}`,
+            custom_metadata: {
+                user_id: newKey,
+                days: days,
+                screens: screens
+            }
+        },
+        onComplete: function(resp) {
+            if(resp.reason === FedaPay.DIALOG_DISMISSED) {
+                showToastNotif("⚠️ Paiement annulé.");
+                return;
+            }
+            // Paiement approuvé ou tenté → on enregistre dans Sheets et affiche le reçu
+            if(resp.transaction && (resp.transaction.status === 'approved' || resp.transaction.status === 'approved_and_captured')) {
+                processSuccessfulPayment(newKey, days, screens);
+            } else {
+                showToastNotif("❌ Paiement non validé, réessayez.");
+            }
+        }
+    }).open();
+}
+
+async function processSuccessfulPayment(newKey, days, screens) {
+    const btn = document.getElementById('btn-pay');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ACTIVATION EN COURS...';
+    btn.disabled = true;
+
+    try {
+        // 1. Enregistrement réel dans Google Sheets via l'API admin
+        await fetch(
+            `${API_URL}?action=admin_user_action&type=add` +
+            `&key=${encodeURIComponent(newKey)}` +
+            `&days=${encodeURIComponent(days)}` +
+            `&screens=${encodeURIComponent(screens)}`
+        );
+    } catch(e) {
+        console.warn("Erreur enregistrement API :", e);
+    }
+
+    // 2. Génération et téléchargement automatique du reçu PDF
+    generateReceiptPDF(newKey, days, screens);
+
+    // 3. Affichage du succès avec l'ID visible
+    document.getElementById('subscribe-modal').style.display = 'none';
+    document.getElementById('new-sub-id').innerText = newKey;
+    document.getElementById('success-modal').style.display = 'flex';
+
+    btn.innerHTML = oldHtml;
+    btn.disabled = false;
+}
+
+function generateReceiptPDF(key, days, screens) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const amount = updatePrice ? updatePrice() : '---';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+
+    // En-tête
+    doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 45, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(26); doc.setFont("helvetica", "bold");
+    doc.text("MY BOX TV", 105, 20, null, null, "center");
+    doc.setFontSize(11); doc.setTextColor(229, 9, 20); doc.text("REÇU DE PAIEMENT & CERTIFICAT D'ABONNEMENT", 105, 32, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text("Date : " + dateStr, 105, 40, null, null, "center");
+
+    // Montant payé
+    doc.setFillColor(0, 100, 0); doc.rect(40, 50, 130, 18, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica", "bold");
+    doc.text("✓  PAIEMENT CONFIRMÉ  —  " + amount + " FCFA", 105, 62, null, null, "center");
+
+    // ID de connexion
+    doc.setTextColor(0, 0, 0); doc.setFontSize(13); doc.setFont("helvetica", "normal");
+    doc.text("VOTRE ID DE CONNEXION :", 105, 82, null, null, "center");
+    doc.setFillColor(240, 240, 240); doc.setDrawColor(229, 9, 20); doc.setLineWidth(1.5); doc.rect(35, 86, 140, 26, 'FD');
+    doc.setFont("courier", "bold"); doc.setFontSize(28); doc.setTextColor(229, 9, 20);
+    doc.text(key, 105, 103, null, null, "center");
+
+    // Détails abonnement
+    doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); doc.setFontSize(12); doc.setLineWidth(0.1);
+    doc.text(`VALIDITÉ : ${days} Jours`, 45, 124); doc.text(`ÉCRANS : ${screens}`, 125, 124);
+
+    doc.setDrawColor(200, 200, 200); doc.line(20, 130, 190, 130);
+
+    // Instructions
+    doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 142);
+    doc.setFontSize(11); doc.setFont("helvetica", "normal");
+    doc.text("1. Connectez votre appareil à Internet.", 22, 153);
+    doc.text("2. Ouvrez l'application MY BOX TV.", 22, 162);
+    doc.text("3. Entrez votre ID ci-dessus dans le champ de connexion.", 22, 171);
+    doc.text("4. Profitez de +14.000 chaînes en HD/4K !", 22, 180);
+
+    doc.line(20, 188, 190, 188);
+
+    // Avertissement
+    doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont("helvetica", "italic");
+    doc.text("Conservez précieusement cet ID. Ne le partagez pas. Valide sur " + screens + " appareil(s) simultané(s).", 105, 197, null, null, "center");
+
+    // Pied de page
+    doc.setFillColor(245, 245, 245); doc.rect(0, 255, 210, 45, 'F');
+    doc.setTextColor(229, 9, 20); doc.setFontSize(12); doc.setFont("helvetica", "bold");
+    doc.text("SUPPORT TECHNIQUE — WHATSAPP", 105, 268, null, null, "center");
+    doc.setTextColor(0,0,0); doc.setFont("helvetica", "normal"); doc.setFontSize(14);
+    doc.text("63 82 87 67", 105, 280, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("www.myboxtv.com  —  Merci de votre confiance !", 105, 291, null, null, "center");
+
+    doc.save(`Recu_MyBoxTV_${key}.pdf`);
+}
+
+function copyNewId() {
+    const id = document.getElementById('new-sub-id').innerText;
+    navigator.clipboard.writeText(id).then(() => {
+        showToastNotif("ID copié !");
+    });
+}
+
+function closeSuccessAndLogin() {
+    const newKey = document.getElementById('new-sub-id').innerText.trim();
+    document.getElementById('success-modal').style.display = 'none';
+    document.getElementById('subscribe-modal').style.display = 'none';
+    // Pré-remplir et connecter automatiquement
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('licenseKey').value = newKey;
+    setTimeout(() => login(), 300); // légère pause pour que l'UI se mette à jour
+}
+
 
 // =======================================================
 // AMBIENT CANVAS
@@ -902,7 +1151,6 @@ function refreshNetworkUI(speedMbps) {
         else if(speedMbps > 0.5) meter.classList.add('sig-lvl-2');
         else meter.classList.add('sig-lvl-1');
     }
-    // Quality detection
     const qEl = document.getElementById('net-quality');
     if(qEl) qEl.innerText = speedMbps > 6 ? '4K' : speedMbps > 3 ? 'FHD' : speedMbps > 1.5 ? 'HD' : speedMbps > 0.5 ? 'SD' : '---';
 }
@@ -919,7 +1167,6 @@ function onVideoChunkLoaded(bytes, durationMs) {
 setInterval(() => {
     let speed = navigator.onLine ? (navigator.connection?.downlink || 2) : 0;
     if(video.paused || !hls) refreshNetworkUI(speed);
-    // Latency ping simulation
     const latEl = document.getElementById('net-latency');
     if(latEl && navigator.onLine) {
         const lat = Math.round(30 + Math.random()*40);
@@ -1106,7 +1353,6 @@ function playChannel(index) {
 }
 
 function updateAmbientColor(ch) {
-    // Change ambient based on category
     const cat = (ch.category||'').toLowerCase();
     if(cat.includes('sport')) ambientColor = [0, 100, 255];
     else if(cat.includes('news')||cat.includes('info')) ambientColor = [0, 200, 100];
@@ -1361,7 +1607,8 @@ async function quickScan() {
 async function fetchPlaylistWithWatchdog(url) {
     lastActivityTime = Date.now();
     const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 15000);
+    // 60s timeout pour les grandes playlists
+    const timeout = setTimeout(()=>controller.abort(), 60000);
     try {
         const res = await fetch("https://api.allorigins.win/raw?url="+encodeURIComponent(url), {signal:controller.signal});
         clearTimeout(timeout); if(!res.ok) return;
@@ -1387,16 +1634,20 @@ function processLines(lines, batch) {
         if(line.startsWith('#EXTINF:')) {
             const parts=line.split(',');
             const name=parts[1]||'Sans Nom';
-            const logo=(line.match(/tvg-logo=["']?([^"']*)["']?/)||[])[1]||'';
+            // Regex élargie : logo, espaces tolérés
+            const logo=(line.match(/tvg-logo=["']?([^"'\s>]*)["']?/)||[])[1]||'';
             let cat='Autres';
-            const grp=line.match(/group-title=["']?([^"']*)["']?/);
-            if(grp) cat=grp[1].replace(/;/g,' ').trim();
+            const grp=line.match(/group-title=["']?([^"']*?)["']?(?:\s|$)/);
+            if(grp&&grp[1].trim()) cat=grp[1].replace(/;/g,' ').trim();
             else if(name.includes(':')) cat=name.split(':')[0].trim();
             if(name.includes('>')) cat=name.split('>')[0].trim();
             cur={name,logo,category:cat}; allCategories.add(cat);
-        } else if(line.startsWith('http')&&!line.endsWith('.m3u')) {
+        } else if(line.startsWith('http')&&!line.endsWith('.m3u')&&!line.endsWith('.m3u8\n')) {
             if(cur) {
-                if(line.includes('.m3u8')||line.includes('.ts')||line.includes('.mp4')||line.includes('.mkv')) {
+                // Accepte TOUT lien HTTP qui n'est pas une playlist .m3u
+                // (inclut .m3u8, .ts, .mp4, /live/, /stream/, etc.)
+                const isPlaylist = line.toLowerCase().endsWith('.m3u');
+                if(!isPlaylist) {
                     const ch={...cur,url:line};
                     if(ch.url!==DEFAULT_CHANNEL.url && !loadedUrls.has(ch.url) && !hiddenChannels.includes(ch.url)) {
                         batch.push(ch); loadedUrls.add(ch.url);
@@ -1411,9 +1662,10 @@ function processLines(lines, batch) {
 function flushBatch(batch) {
     if(!batch.length) return;
     allChannels=allChannels.concat(batch); batch.length=0;
-    document.getElementById('count-display').innerText=allChannels.length+' trouvées';
     enforceNovelasIntegrity();
-    if(!document.getElementById('searchInput').value) renderList(true);
+    // Toujours afficher en temps réel + mettre à jour le compteur
+    document.getElementById('count-display').innerText=allChannels.length+' trouvées';
+    renderList(true);
     updateCategoryChips();
 }
 
@@ -1433,19 +1685,38 @@ function updateAccountDisplay(key, raw) {
 }
 
 function startRealTimeCheck() {
+    // Vérification toutes les 5 secondes
     setInterval(async()=>{
         const key=localStorage.getItem('mybox_key'); if(!key) return;
         try {
             const res=await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             const text=await res.text();
-            if(!text.includes("SUCCESS")) { localStorage.removeItem('mybox_auth'); location.reload(); }
-            else updateAccountDisplay(key,text);
+            if(!text.includes("SUCCESS")) {
+                // Abonnement expiré ou révoqué → déconnexion propre
+                localStorage.removeItem('mybox_auth');
+                localStorage.removeItem('mybox_key');
+                localStorage.removeItem('mybox_raw_status');
+                // Arrêter la vidéo
+                if(hls) { hls.destroy(); hls=null; }
+                video.pause(); video.src='';
+                // Masquer l'appli et afficher l'écran login
+                document.getElementById('settings-modal').style.display='none';
+                document.getElementById('login-screen').style.display='flex';
+                document.getElementById('login-msg').style.color='#ff8c00';
+                document.getElementById('login-msg').innerText='⛔ Abonnement expiré. Renouvelez votre abonnement.';
+                document.getElementById('licenseKey').value='';
+                document.body.classList.remove('menu-open');
+            } else {
+                updateAccountDisplay(key,text);
+                localStorage.setItem('mybox_raw_status',text);
+            }
         } catch(e){}
-    }, 30000);
+    }, 5000);
 }
 
 async function login() {
     const key=document.getElementById('licenseKey').value.trim();
+    if(!key) return;
     const btn=document.querySelector('#login-screen .btn-primary');
     btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connexion...'; btn.disabled=true;
     try {
@@ -1501,9 +1772,17 @@ async function fetchTranspondersList() {
     if(appMode==='premium') return;
     try {
         const res=await fetch(`${API_URL}?action=admin_get_m3u_sources`);
-        const json=await res.json(); availableTransponders=json; renderTranspondersUI();
-        if(allChannels.length<5) availableTransponders.forEach((url,i)=>setTimeout(()=>fetchPlaylistWithWatchdog(url),i*1000));
-    } catch(e) {}
+        const json=await res.json();
+        availableTransponders=json;
+        renderTranspondersUI();
+        // Charger TOUTES les sources du sheet, une par une, en temps réel
+        for(let i=0; i<availableTransponders.length; i++) {
+            await fetchPlaylistWithWatchdog(availableTransponders[i]);
+        }
+        // Sauvegarder en cache après chargement complet
+        saveChannelsToDB(allChannels);
+        showToastNotif(`✅ ${allChannels.length} chaînes chargées`);
+    } catch(e) { console.warn('fetchTranspondersList error', e); }
 }
 
 function addSource() { document.getElementById('localFileInput').click(); }
