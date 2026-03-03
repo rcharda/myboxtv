@@ -1083,8 +1083,16 @@ function tryPlayChannel(ch) {
     } else { currentChannelIndex=index; playChannel(currentChannelIndex); }
 }
 
-function playChannel(index) {
+// Proxies CORS pour les flux vidéo m3u8 (fallback si direct bloqué)
+const STREAM_PROXIES = [
+    url => url, // direct d'abord
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+function playChannel(index, proxyIndex) {
     if(!allChannels[index]) return;
+    proxyIndex = proxyIndex || 0;
     const ch = allChannels[index];
     if(window.innerWidth < 900) document.body.classList.remove('menu-open');
     renderList(true);
@@ -1092,16 +1100,39 @@ function playChannel(index) {
     showNowPlayingToast(ch);
     updateAmbientColor(ch);
 
+    const streamUrl = STREAM_PROXIES[proxyIndex] ? STREAM_PROXIES[proxyIndex](ch.url) : ch.url;
+
     if(Hls.isSupported()) {
         if(hls) hls.destroy();
-        hls = new Hls({ manifestLoadingMaxRetry: 5, manifestLoadingTimeOut: 10000, maxBufferLength: 30 });
-        hls.loadSource(ch.url);
+        hls = new Hls({
+            manifestLoadingMaxRetry: 3,
+            manifestLoadingTimeOut: 12000,
+            levelLoadingTimeOut: 12000,
+            fragLoadingTimeOut: 20000,
+            maxBufferLength: 30,
+            xhrSetup: xhr => {
+                xhr.withCredentials = false;
+            }
+        });
+        hls.loadSource(streamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.FRAG_LOADED, (e,d) => { if(d.stats) onVideoChunkLoaded(d.stats.total, d.stats.loading.end-d.stats.loading.start); });
         hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className='green'; clearTimeout(autoZapTimeout); });
-        hls.on(Hls.Events.ERROR, (e,d) => { if(d.fatal) { if(index===0) setTimeout(()=>playChannel(0),2000); else handleError(); } });
+        hls.on(Hls.Events.ERROR, (e,d) => {
+            if(d.fatal) {
+                // Essaie le proxy suivant avant d'abandonner
+                const nextProxy = (proxyIndex||0) + 1;
+                if(nextProxy < STREAM_PROXIES.length) {
+                    console.log(`[Stream] Proxy ${proxyIndex} échoué, essai proxy ${nextProxy}...`);
+                    setTimeout(() => playChannel(index, nextProxy), 500);
+                } else {
+                    if(index===0) setTimeout(()=>playChannel(0, 0), 2000);
+                    else handleError();
+                }
+            }
+        });
     } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src=ch.url; video.play();
+        video.src = streamUrl; video.play();
     }
     if(isAutoZap && index!==0) { clearTimeout(autoZapTimeout); autoZapTimeout=setTimeout(()=>{ if(video.paused||video.readyState<2) handleError(); },15000); }
 }
@@ -1513,72 +1544,6 @@ function addSource() { document.getElementById('localFileInput').click(); }
 
 async function forceReload() {
     showMyConfirm("Réinitialiser l'application ?", async()=>{ await clearDB(); location.reload(); });
-}
-
-// =======================================================
-// SERVICE WORKER (OFFLINE / CACHE)
-// =======================================================
-if('serviceWorker' in navigator) {
-    // On injecte le SW dynamiquement depuis un blob pour éviter d'avoir un fichier séparé
-    const swCode = `
-const CACHE_NAME = 'myboxtv-v1';
-const ASSETS = [location.href];
-
-self.addEventListener('install', e => {
-    e.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-    );
-});
-
-self.addEventListener('activate', e => {
-    e.waitUntil(
-        caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
-        .then(() => self.clients.claim())
-    );
-});
-
-self.addEventListener('fetch', e => {
-    const url = e.request.url;
-    // Ne pas intercepter les flux vidéo (m3u8, ts) ni les API
-    if(url.includes('.m3u8') || url.includes('.ts') || url.includes('script.google.com')) {
-        return;
-    }
-    // Pour les playlists M3U passant par le proxy, on les cache
-    if(url.includes('allorigins') || url.includes('m3u') || url.includes('corsproxy')) {
-        e.respondWith(
-            caches.open(CACHE_NAME).then(async cache => {
-                const cached = await cache.match(e.request);
-                const fetchPromise = fetch(e.request).then(response => {
-                    if(response && response.status === 200) {
-                        cache.put(e.request, response.clone());
-                    }
-                    return response;
-                }).catch(() => cached);
-                // Retourne le cache immédiatement si dispo, sinon attend le réseau
-                return cached || fetchPromise;
-            })
-        );
-        return;
-    }
-    // Pour l'app elle-même : cache-first
-    e.respondWith(
-        caches.match(e.request).then(cached => {
-            if(cached) return cached;
-            return fetch(e.request).then(response => {
-                if(response && response.status === 200 && response.type !== 'opaque') {
-                    caches.open(CACHE_NAME).then(cache => cache.put(e.request, response.clone()));
-                }
-                return response;
-            }).catch(() => cached);
-        })
-    );
-});
-`;
-    const blob = new Blob([swCode], {type: 'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl, {scope: '/'})
-        .then(reg => { console.log('[SW] Enregistré', reg.scope); })
-        .catch(err => { console.warn('[SW] Blob SW non supporté, mode normal', err); });
 }
 
 // =======================================================
