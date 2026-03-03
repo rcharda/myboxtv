@@ -695,7 +695,6 @@
             <div class="sig-bar b4"></div>
         </div>
         <span id="status-text">Prêt</span>
-        <span id="offline-badge" style="display:none;font-size:9px;background:rgba(255,165,0,0.2);color:orange;border:1px solid rgba(255,165,0,0.4);padding:2px 6px;border-radius:10px;font-weight:700;letter-spacing:0.5px;">📦 CACHE</span>
     </div>
 
     <!-- CHANNEL BANNER -->
@@ -1083,16 +1082,9 @@ function tryPlayChannel(ch) {
     } else { currentChannelIndex=index; playChannel(currentChannelIndex); }
 }
 
-// Proxies CORS pour les flux vidéo m3u8 (fallback si direct bloqué)
-const STREAM_PROXIES = [
-    url => url, // direct d'abord
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-];
-
-function playChannel(index, proxyIndex) {
+// useProxy=false => essai direct d'abord, true => force proxy local
+function playChannel(index, useProxy) {
     if(!allChannels[index]) return;
-    proxyIndex = proxyIndex || 0;
     const ch = allChannels[index];
     if(window.innerWidth < 900) document.body.classList.remove('menu-open');
     renderList(true);
@@ -1100,39 +1092,37 @@ function playChannel(index, proxyIndex) {
     showNowPlayingToast(ch);
     updateAmbientColor(ch);
 
-    const streamUrl = STREAM_PROXIES[proxyIndex] ? STREAM_PROXIES[proxyIndex](ch.url) : ch.url;
+    // On essaie direct d'abord, sinon proxy.php, sinon allorigins
+    const streamUrls = [
+        ch.url,
+        'proxy.php?url=' + encodeURIComponent(ch.url),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(ch.url),
+    ];
+    const tryIndex = useProxy ? 1 : 0;
+    const streamUrl = streamUrls[tryIndex] || ch.url;
 
     if(Hls.isSupported()) {
         if(hls) hls.destroy();
-        hls = new Hls({
-            manifestLoadingMaxRetry: 3,
-            manifestLoadingTimeOut: 12000,
-            levelLoadingTimeOut: 12000,
-            fragLoadingTimeOut: 20000,
-            maxBufferLength: 30,
-            xhrSetup: xhr => {
-                xhr.withCredentials = false;
-            }
-        });
+        hls = new Hls({ manifestLoadingMaxRetry: 2, manifestLoadingTimeOut: 12000, maxBufferLength: 30 });
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
         hls.on(Hls.Events.FRAG_LOADED, (e,d) => { if(d.stats) onVideoChunkLoaded(d.stats.total, d.stats.loading.end-d.stats.loading.start); });
         hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(()=>{}); led.className='green'; clearTimeout(autoZapTimeout); });
         hls.on(Hls.Events.ERROR, (e,d) => {
             if(d.fatal) {
-                // Essaie le proxy suivant avant d'abandonner
-                const nextProxy = (proxyIndex||0) + 1;
-                if(nextProxy < STREAM_PROXIES.length) {
-                    console.log(`[Stream] Proxy ${proxyIndex} échoué, essai proxy ${nextProxy}...`);
-                    setTimeout(() => playChannel(index, nextProxy), 500);
+                const nextProxy = (useProxy||0) + 1;
+                if(nextProxy < streamUrls.length) {
+                    // Essaie le proxy suivant automatiquement
+                    console.log('[Stream] Echec direct, essai proxy ' + nextProxy);
+                    setTimeout(() => playChannel(index, nextProxy), 400);
                 } else {
-                    if(index===0) setTimeout(()=>playChannel(0, 0), 2000);
+                    if(index===0) setTimeout(()=>playChannel(0,0),3000);
                     else handleError();
                 }
             }
         });
     } else if(video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = streamUrl; video.play();
+        video.src=streamUrl; video.play();
     }
     if(isAutoZap && index!==0) { clearTimeout(autoZapTimeout); autoZapTimeout=setTimeout(()=>{ if(video.paused||video.readyState<2) handleError(); },15000); }
 }
@@ -1390,28 +1380,107 @@ async function quickScan() {
     });
 }
 
+// -------------------------------------------------------
+// CACHE PLAYLISTS (IndexedDB, TTL 12h)
+// -------------------------------------------------------
+const PL_DB = 'MyBoxTV_PLCache'; const PL_DB_V = 1; const PL_TTL = 12*3600*1000;
+function openPLDB() {
+    return new Promise((res,rej)=>{
+        const r=indexedDB.open(PL_DB,PL_DB_V);
+        r.onerror=()=>rej();
+        r.onsuccess=e=>res(e.target.result);
+        r.onupgradeneeded=e=>{ if(!e.target.result.objectStoreNames.contains('pl')) e.target.result.createObjectStore('pl',{keyPath:'url'}); };
+    });
+}
+async function savePL(url,text){ try{ const db=await openPLDB(); db.transaction('pl','readwrite').objectStore('pl').put({url,text,ts:Date.now()}); }catch(e){} }
+async function loadPL(url,ignoreExpiry=false){ try{ const db=await openPLDB(); return new Promise(res=>{ const req=db.transaction('pl','readonly').objectStore('pl').get(url); req.onsuccess=()=>{ const r=req.result; if(!r) return res(null); if(!ignoreExpiry&&Date.now()-r.ts>PL_TTL) return res(null); res(r.text); }; req.onerror=()=>res(null); }); }catch(e){return null;} }
+
+// -------------------------------------------------------
+// FETCH PLAYLIST avec proxy local + cache
+// -------------------------------------------------------
+const FALLBACK_PROXIES = [
+    u => `proxy.php?url=${encodeURIComponent(u)}`,
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+];
+
 async function fetchPlaylistWithWatchdog(url) {
     lastActivityTime = Date.now();
-    const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 20000);
-    try {
-        const result = await fetchWithCorsProxy(url, controller.signal);
-        clearTimeout(timeout);
-        if(!result) return;
-        const text = result.text;
-        if(text) onVideoChunkLoaded(text.length, 100);
-        const lines = text.split('\n');
-        let batch = [];
-        for(let i=0; i<lines.length; i+=200) {
-            processLines(lines.slice(i, i+200), batch);
-            if(batch.length >= 50) { flushBatch(batch); await new Promise(r=>setTimeout(r,5)); }
-            lastActivityTime = Date.now();
-        }
-        flushBatch(batch);
-    } catch(e) {
-        clearTimeout(timeout);
-        if(e.name !== 'AbortError') console.warn('[Fetch] Erreur:', e);
+
+    // 1. Cache IndexedDB d'abord (instantane, fonctionne offline)
+    const cached = await loadPL(url);
+    if(cached) {
+        console.log('[Cache] Playlist depuis IndexedDB:', url);
+        updateOfflineBadge(true);
+        parsePLText(cached);
+        refreshPlaylistInBackground(url);
+        return;
     }
+
+    // 2. Essai reseau avec chaque proxy
+    for(let i=0; i<FALLBACK_PROXIES.length; i++) {
+        const proxyUrl = FALLBACK_PROXIES[i](url);
+        const controller = new AbortController();
+        const timeout = setTimeout(()=>controller.abort(), 18000);
+        try {
+            const res = await fetch(proxyUrl, {signal:controller.signal});
+            clearTimeout(timeout);
+            if(!res.ok) continue;
+            const text = await res.text();
+            if(!text || !text.includes('#EXTM3U')) continue;
+            await savePL(url, text);
+            updateOfflineBadge(false);
+            parsePLText(text);
+            return;
+        } catch(e) {
+            clearTimeout(timeout);
+        }
+    }
+
+    // 3. Cache expire en dernier recours
+    const stale = await loadPL(url, true);
+    if(stale) { updateOfflineBadge(true); parsePLText(stale); }
+}
+
+function parsePLText(text) {
+    if(text) onVideoChunkLoaded(text.length, 100);
+    const lines = text.split('\n');
+    let batch = [];
+    (function processChunk(i) {
+        if(i >= lines.length) { flushBatch(batch); return; }
+        processLines(lines.slice(i, i+300), batch);
+        if(batch.length >= 50) flushBatch(batch);
+        lastActivityTime = Date.now();
+        setTimeout(()=>processChunk(i+300), 0);
+    })(0);
+}
+
+async function refreshPlaylistInBackground(url) {
+    for(let i=0; i<FALLBACK_PROXIES.length; i++) {
+        try {
+            const res = await fetch(FALLBACK_PROXIES[i](url));
+            if(!res.ok) continue;
+            const text = await res.text();
+            if(text && text.includes('#EXTM3U')) {
+                await savePL(url, text);
+                updateOfflineBadge(false);
+                console.log('[Cache] Raffraichi en arriere-plan');
+                return;
+            }
+        } catch(e) {}
+    }
+}
+
+function updateOfflineBadge(fromCache) {
+    let badge = document.getElementById('offline-badge');
+    if(!badge) {
+        badge = document.createElement('span');
+        badge.id = 'offline-badge';
+        badge.style.cssText = 'font-size:9px;background:rgba(255,165,0,0.2);color:orange;border:1px solid rgba(255,165,0,0.4);padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:0.5px;margin-left:4px;';
+        document.getElementById('status-pill').appendChild(badge);
+    }
+    badge.style.display = fromCache ? 'inline-block' : 'none';
+    badge.textContent = 'CACHE';
 }
 
 function processLines(lines, batch) {
@@ -1544,97 +1613,6 @@ function addSource() { document.getElementById('localFileInput').click(); }
 
 async function forceReload() {
     showMyConfirm("Réinitialiser l'application ?", async()=>{ await clearDB(); location.reload(); });
-}
-
-// =======================================================
-// PROXY CORS MULTI-FALLBACK
-// =======================================================
-const CORS_PROXIES = [
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    url => `https://cors-anywhere.herokuapp.com/${url}`,
-];
-
-async function fetchWithCorsProxy(url, signal) {
-    // Essaie d'abord depuis IndexedDB (cache playlist M3U)
-    const cached = await loadPlaylistFromCache(url);
-    if(cached) {
-        console.log('[Cache] Playlist chargée depuis cache local:', url);
-        showToastNotif('📦 Chaînes chargées depuis le cache');
-        document.getElementById('offline-badge').style.display = 'inline-block';
-        return { text: cached, fromCache: true };
-    }
-    // Sinon essaie chaque proxy
-    document.getElementById('offline-badge').style.display = 'none';
-    for(let i=0; i<CORS_PROXIES.length; i++) {
-        const proxyUrl = CORS_PROXIES[i](url);
-        try {
-            const res = await fetch(proxyUrl, { signal });
-            if(res.ok) {
-                const text = await res.text();
-                if(text && text.includes('#EXTM3U')) {
-                    // Sauvegarde dans le cache IndexedDB
-                    await savePlaylistToCache(url, text);
-                    return { text, fromCache: false };
-                }
-            }
-        } catch(e) {
-            if(e.name === 'AbortError') throw e;
-            console.warn(`[Proxy ${i+1}] Échec:`, proxyUrl);
-        }
-    }
-    // Aucun proxy n'a fonctionné — essaie le cache même expiré
-    const stale = await loadPlaylistFromCache(url, true);
-    if(stale) {
-        showToastNotif('⚠️ Réseau indispo — cache utilisé');
-        document.getElementById('offline-badge').style.display = 'inline-block';
-        return { text: stale, fromCache: true };
-    }
-    return null;
-}
-
-// Cache des playlists M3U dans IndexedDB
-const PLAYLIST_CACHE_DB = 'MyBoxTV_PlaylistCache';
-const PLAYLIST_CACHE_VERSION = 1;
-const PLAYLIST_TTL = 6 * 60 * 60 * 1000; // 6h
-
-function openPlaylistCacheDB() {
-    return new Promise((res, rej) => {
-        const r = indexedDB.open(PLAYLIST_CACHE_DB, PLAYLIST_CACHE_VERSION);
-        r.onerror = () => rej();
-        r.onsuccess = e => res(e.target.result);
-        r.onupgradeneeded = e => {
-            const db = e.target.result;
-            if(!db.objectStoreNames.contains('playlists')) {
-                db.createObjectStore('playlists', { keyPath: 'url' });
-            }
-        };
-    });
-}
-
-async function savePlaylistToCache(url, text) {
-    try {
-        const db = await openPlaylistCacheDB();
-        const tx = db.transaction('playlists', 'readwrite');
-        tx.objectStore('playlists').put({ url, text, ts: Date.now() });
-    } catch(e) {}
-}
-
-async function loadPlaylistFromCache(url, ignoreExpiry=false) {
-    try {
-        const db = await openPlaylistCacheDB();
-        const tx = db.transaction('playlists', 'readonly');
-        const req = tx.objectStore('playlists').get(url);
-        return new Promise(res => {
-            req.onsuccess = () => {
-                const r = req.result;
-                if(!r) return res(null);
-                if(!ignoreExpiry && Date.now() - r.ts > PLAYLIST_TTL) return res(null);
-                res(r.text);
-            };
-            req.onerror = () => res(null);
-        });
-    } catch(e) { return null; }
 }
 
 // AUTO-INIT
