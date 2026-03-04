@@ -9,6 +9,8 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.fedapay.com/checkout.js?v=1.1.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --red: #e50914;
@@ -358,8 +360,54 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
 /* DIVIDER */
 .divider{width:80px;height:2px;background:linear-gradient(90deg,transparent,var(--red),transparent);margin:60px auto}
 
-/* RESPONSIVE */
-@media(max-width:1100px){
+/* ===================== NOVELAS BG VIDEO ===================== */
+#novelas-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+#novelas-bg video{width:100%;height:100%;object-fit:cover;opacity:0.18;filter:blur(2px) saturate(0.6)}
+#novelas-bg::after{content:'';position:absolute;inset:0;background:rgba(3,3,3,0.82)}
+
+/* ===================== FEDAPAY MODAL ===================== */
+.fp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:8000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(12px)}
+.fp-overlay.open{display:flex}
+.fp-box{background:#0e0e0e;border:1px solid rgba(229,9,20,0.3);border-radius:24px;padding:40px;max-width:440px;width:calc(100% - 40px);position:relative;box-shadow:0 0 80px rgba(229,9,20,0.15)}
+.fp-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#555;font-size:22px;cursor:pointer;transition:color 0.2s}
+.fp-close:hover{color:white}
+.fp-title{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:2px;margin-bottom:28px;display:flex;align-items:center;gap:10px}
+.fp-title .crown{color:gold}
+.fp-label{font-size:11px;color:#666;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+.fp-select{width:100%;padding:13px 16px;background:#151515;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:white;font-family:'Exo 2',sans-serif;font-size:13px;margin-bottom:18px;cursor:pointer;transition:border-color 0.2s}
+.fp-select:focus{border-color:var(--red);outline:none}
+.fp-price-box{background:#050505;border:1px solid rgba(46,204,113,0.25);padding:20px;border-radius:14px;margin:20px 0;text-align:center}
+.fp-price-label{font-size:10px;color:#555;letter-spacing:2px;margin-bottom:8px}
+.fp-price-amount{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;color:#2ecc71}
+.fp-price-currency{font-size:14px;color:#2ecc71;font-weight:400;margin-left:4px}
+.fp-btn-pay{width:100%;padding:16px;border-radius:50px;background:linear-gradient(135deg,#0066ff,#0044cc);border:none;color:white;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.3s;box-shadow:0 8px 32px rgba(0,102,255,0.3);margin-bottom:10px}
+.fp-btn-pay:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,102,255,0.4)}
+.fp-btn-pay:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.fp-btn-cancel{width:100%;padding:14px;border-radius:50px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#666;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.fp-btn-cancel:hover{border-color:#444;color:white}
+.fp-info-strip{display:flex;justify-content:center;gap:24px;margin-top:20px;flex-wrap:wrap}
+.fp-info-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#444}
+.fp-info-item i{color:#555}
+
+/* SUCCESS MODAL */
+.fp-success-box{background:#0e0e0e;border:1px solid rgba(46,204,113,0.3);border-radius:24px;padding:48px 40px;max-width:440px;width:calc(100% - 40px);text-align:center;box-shadow:0 0 80px rgba(46,204,113,0.1)}
+.fp-success-icon{font-size:64px;color:#2ecc71;margin-bottom:20px;animation:bounceIn 0.6s ease}
+@keyframes bounceIn{0%{transform:scale(0)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+.fp-success-title{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:#2ecc71;margin-bottom:12px}
+.fp-success-text{font-size:13px;color:#888;line-height:1.8;margin-bottom:28px}
+.fp-id-box{background:#050505;border:2px dashed rgba(46,204,113,0.3);padding:20px;border-radius:14px;margin-bottom:24px}
+.fp-id-label{font-size:10px;color:#555;letter-spacing:2px;margin-bottom:10px}
+.fp-id-value{font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:white;letter-spacing:4px}
+.fp-btn-copy{width:100%;padding:14px;border-radius:50px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);color:#ccc;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.fp-btn-copy:hover{background:#222;color:white}
+.fp-btn-watch{width:100%;padding:16px;border-radius:50px;background:var(--red);border:none;color:white;font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 32px var(--red-glow);transition:all 0.3s}
+.fp-btn-watch:hover{transform:translateY(-2px);box-shadow:0 16px 40px var(--red-glow)}
+
+/* APP RELIABILITY BANNER */
+.app-reliability-banner{background:linear-gradient(135deg,rgba(255,215,0,0.06),rgba(229,9,20,0.04));border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:20px 28px;margin:32px 0;display:flex;align-items:center;gap:16px}
+.arb-icon{font-size:28px;flex-shrink:0}
+.arb-text{font-size:13px;color:var(--muted2);line-height:1.7}
+.arb-text strong{color:var(--gold)}
   .features-grid{grid-template-columns:repeat(2,1fr)}
   .devices-grid{grid-template-columns:repeat(3,1fr)}
   .pricing-grid{grid-template-columns:1fr;gap:16px}
@@ -389,6 +437,70 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
 <!-- CUSTOM CURSOR -->
 <div class="cursor" id="cursor"></div>
 <div class="cursor-dot" id="cursorDot"></div>
+
+<!-- NOVELAS TV BACKGROUND VIDEO -->
+<div id="novelas-bg">
+  <video id="novelas-video" autoplay muted loop playsinline crossorigin="anonymous"></video>
+</div>
+
+<!-- FEDAPAY SUBSCRIBE MODAL -->
+<div class="fp-overlay" id="fp-subscribe">
+  <div class="fp-box">
+    <button class="fp-close" onclick="closeFPModal()"><i class="fas fa-times"></i></button>
+    <div class="fp-title"><span class="crown">👑</span> S'ABONNER À MY BOX TV</div>
+
+    <div class="fp-label">Durée d'abonnement</div>
+    <select id="fp-days" class="fp-select" onchange="fpUpdatePrice()">
+      <option value="30">1 Mois</option>
+      <option value="90">3 Mois</option>
+      <option value="365">1 An (2 mois offerts 🎁)</option>
+    </select>
+
+    <div class="fp-label">Nombre d'écrans simultanés</div>
+    <select id="fp-screens" class="fp-select" onchange="fpUpdatePrice()">
+      <option value="1">1 Écran — Essentiel</option>
+      <option value="2">2 Écrans — Premium</option>
+      <option value="4">4 Écrans — Famille / Pro</option>
+    </select>
+
+    <div class="fp-price-box">
+      <div class="fp-price-label">MONTANT À PAYER</div>
+      <div class="fp-price-amount" id="fp-price">300<span class="fp-price-currency">FCFA</span></div>
+    </div>
+
+    <button class="fp-btn-pay" id="fp-btn-pay" onclick="fpPay()">
+      <i class="fas fa-credit-card"></i> PAYER AVEC FEDAPAY
+    </button>
+    <button class="fp-btn-cancel" onclick="closeFPModal()">Annuler</button>
+
+    <div class="fp-info-strip">
+      <div class="fp-info-item"><i class="fas fa-lock"></i> Paiement sécurisé</div>
+      <div class="fp-info-item"><i class="fas fa-shield-alt"></i> Remboursement 7j</div>
+      <div class="fp-info-item"><i class="fas fa-bolt"></i> Accès immédiat</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEDAPAY SUCCESS MODAL -->
+<div class="fp-overlay" id="fp-success">
+  <div class="fp-success-box">
+    <div class="fp-success-icon">✅</div>
+    <div class="fp-success-title">PAIEMENT RÉUSSI !</div>
+    <p class="fp-success-text">Votre compte a été activé avec succès.<br>Votre reçu PDF a été téléchargé automatiquement.</p>
+
+    <div class="fp-id-box">
+      <div class="fp-id-label">VOTRE ID DE CONNEXION</div>
+      <div class="fp-id-value" id="fp-new-id">...</div>
+    </div>
+
+    <button class="fp-btn-copy" onclick="fpCopyId()">
+      <i class="fas fa-copy"></i> COPIER L'ID
+    </button>
+    <button class="fp-btn-watch" onclick="fpGoWatch()">
+      <i class="fas fa-tv"></i> ACCÉDER À LA TV EN DIRECT
+    </button>
+  </div>
+</div>
 
 <!-- PRELOADER -->
 <div id="preloader">
@@ -439,12 +551,12 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
   </div>
 
   <div style="position:relative;z-index:2">
-    <span class="hero-label"><span class="dot"></span> STREAMING IPTV PREMIUM &nbsp;·&nbsp; N°1 EN FRANCE</span>
+    <span class="hero-label"><span class="dot"></span> STREAMING IPTV PREMIUM &nbsp;·&nbsp; N°1 EN AFRIQUE & FRANCE</span>
     <h1>L'UNIVERS TV<br>SANS <span class="red">LIMITES</span><br><span class="outline">REDÉFINI</span></h1>
-    <p class="hero-sub">Plus de <strong>40 000 chaînes</strong> live, films & séries en 4K UHD.<br>Un seul abonnement, <strong>tous vos écrans.</strong></p>
+    <p class="hero-sub">Plus de <strong>40 000 chaînes</strong> live dont <strong>Novelas TV, Ivoir+</strong> & vos préférées.<br>Un seul abonnement, <strong>tous vos écrans.</strong></p>
     <div class="hero-btns">
-      <a href="#pricing" class="btn-hero-main"><i class="fas fa-play" style="margin-right:10px"></i>Commencer Maintenant</a>
-      <a href="#live-tv" class="btn-hero-sec"><i class="fas fa-tv" style="margin-right:10px"></i>Voir le Live</a>
+      <a href="#pricing" class="btn-hero-main" onclick="openFPModal(event)"><i class="fas fa-play" style="margin-right:10px"></i>Commencer Maintenant</a>
+      <a href="https://myboxtv.pages.dev/" target="_blank" class="btn-hero-sec"><i class="fas fa-broadcast-tower" style="margin-right:10px"></i>Regarder en Direct</a>
     </div>
   </div>
 
@@ -553,6 +665,17 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
     <h2 class="section-title reveal">Live TV <span class="red">Instantané</span></h2>
     <p class="section-sub reveal">Zappez parmi des milliers de chaînes sans aucun délai. L'expérience TV réinventée.</p>
 
+    <!-- APP RELIABILITY BANNER -->
+    <div class="app-reliability-banner reveal">
+      <div class="arb-icon">📱</div>
+      <div class="arb-text">
+        <strong>⭐ L'application est plus fiable que le Web Player</strong> pour lire toutes les chaînes, notamment
+        <strong>Novelas TV, Ivoir+</strong>, et les chaînes africaines & internationales.
+        Téléchargez l'app pour une expérience optimale sans freeze.
+        <br><a href="https://myboxtv.pages.dev/storebox#" target="_blank" style="color:var(--red);text-decoration:none;font-weight:700;font-size:12px;margin-top:4px;display:inline-block">→ Télécharger l'application ici</a>
+      </div>
+    </div>
+
     <div class="live-showcase">
       <div class="tv-mockup-wrap reveal-left">
         <div class="tv-glow"></div>
@@ -602,8 +725,10 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
             <div class="lf-desc">FR, EN, AR, ES, IT, TR, DE et 50+ langues. Le monde entier dans votre salon.</div>
           </div>
         </div>
-      </div>
-    </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+          <a href="https://myboxtv.pages.dev/" target="_blank" class="btn-hero-main" style="font-size:12px;padding:14px 28px"><i class="fas fa-broadcast-tower" style="margin-right:8px"></i>Regarder en Direct</a>
+          <a href="https://myboxtv.pages.dev/storebox#" target="_blank" class="btn-hero-sec" style="font-size:12px;padding:14px 28px"><i class="fas fa-download" style="margin-right:8px"></i>Télécharger l'App</a>
+        </div>
   </div>
 
   <!-- Channel Ticker -->
@@ -705,6 +830,15 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
     <h2 class="section-title reveal">Téléchargez<br><span class="red">My Box TV</span></h2>
     <p class="section-sub reveal">Toujours à jour, toujours officiel. Choisissez la version adaptée à votre appareil.</p>
 
+    <div class="app-reliability-banner reveal" style="margin-top:32px">
+      <div class="arb-icon">⭐</div>
+      <div class="arb-text">
+        <strong>L'application est PLUS FIABLE que le navigateur</strong> pour regarder toutes vos chaînes préférées :
+        <strong>Novelas TV, Ivoir+, Novelas Ivoir</strong>, chaînes africaines, arabes, françaises & bien d'autres.
+        Téléchargez l'app pour une lecture fluide, sans freeze, avec le guide EPG complet.
+      </div>
+    </div>
+
     <div class="store-filter-bar" id="deviceFilters">
       <button class="dev-btn active" data-device="all" onclick="filterDevice(this)"><i class="fas fa-th"></i> Tous</button>
       <button class="dev-btn" data-device="apk" onclick="filterDevice(this)"><i class="fab fa-android"></i> Android APK</button>
@@ -755,7 +889,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
           <li class="off"><i class="fas fa-times-circle"></i> Enregistrement Cloud</li>
           <li class="off"><i class="fas fa-times-circle"></i> Qualité 4K</li>
         </ul>
-        <a href="#" class="btn-price btn-price-outline">Commencer</a>
+        <a href="#" class="btn-price btn-price-outline" onclick="openFPModal(event,1)">Commencer</a>
       </div>
 
       <!-- PREMIUM -->
@@ -776,7 +910,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
           <li><i class="fas fa-check-circle"></i> Anti-freeze Premium</li>
           <li><i class="fas fa-check-circle"></i> Support prioritaire 24/7</li>
         </ul>
-        <a href="#" class="btn-price btn-price-fill">Souscrire Maintenant</a>
+        <a href="#" class="btn-price btn-price-fill" onclick="openFPModal(event,2)">Souscrire Maintenant</a>
       </div>
 
       <!-- ENTERPRISE -->
@@ -796,7 +930,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
           <li><i class="fas fa-check-circle"></i> IP dédiée exclusive</li>
           <li><i class="fas fa-check-circle"></i> Manager dédié</li>
         </ul>
-        <a href="#" class="btn-price btn-price-ghost">Contacter</a>
+        <a href="#" class="btn-price btn-price-ghost" onclick="openFPModal(event,4)">Souscrire</a>
       </div>
     </div>
 
@@ -936,8 +1070,8 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
     <h2 class="reveal">Prêt à vivre<br>l'IPTV <span class="red">Premium</span> ?</h2>
     <p class="reveal" style="transition-delay:0.1s">Commencez votre essai gratuit 24h aujourd'hui.<br>Aucun risque, satisfaction garantie.</p>
     <div class="hero-btns reveal" style="transition-delay:0.2s">
-      <a href="#pricing" class="btn-hero-main"><i class="fas fa-rocket" style="margin-right:10px"></i>Démarrer Maintenant</a>
-      <a href="#" class="btn-hero-sec" onclick="openWhatsApp()"><i class="fab fa-whatsapp" style="margin-right:10px"></i>Essai Gratuit 24h</a>
+      <a href="#" class="btn-hero-main" onclick="openFPModal(event)"><i class="fas fa-rocket" style="margin-right:10px"></i>Démarrer Maintenant</a>
+      <a href="https://wa.me/22963828767?text=Bonjour%2C+je+veux+un+essai+gratuit+24h+My+Box+TV" target="_blank" class="btn-hero-sec"><i class="fab fa-whatsapp" style="margin-right:10px"></i>Essai Gratuit 24h</a>
     </div>
   </div>
 </section>
@@ -952,7 +1086,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
         <a href="#" class="social-btn"><i class="fab fa-facebook-f"></i></a>
         <a href="#" class="social-btn"><i class="fab fa-instagram"></i></a>
         <a href="#" class="social-btn"><i class="fab fa-telegram-plane"></i></a>
-        <a href="#" class="social-btn"><i class="fab fa-whatsapp"></i></a>
+        <a href="https://wa.me/22963828767" target="_blank" class="social-btn"><i class="fab fa-whatsapp"></i></a>
         <a href="#" class="social-btn"><i class="fab fa-youtube"></i></a>
       </div>
     </div>
@@ -966,17 +1100,17 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
     </div>
     <div class="footer-col">
       <h4>Applications</h4>
-      <a href="#">Android APK</a>
-      <a href="#">Android TV</a>
-      <a href="#">iOS App</a>
-      <a href="#">Windows</a>
-      <a href="#">Fire TV</a>
-      <a href="#">Web Player</a>
+      <a href="https://myboxtv.pages.dev/storebox#" target="_blank">Android APK</a>
+      <a href="https://myboxtv.pages.dev/storebox#" target="_blank">Android TV</a>
+      <a href="https://myboxtv.pages.dev/storebox#" target="_blank">iOS App</a>
+      <a href="https://myboxtv.pages.dev/storebox#" target="_blank">Windows</a>
+      <a href="https://myboxtv.pages.dev/storebox#" target="_blank">Fire TV</a>
+      <a href="https://myboxtv.pages.dev/" target="_blank">Web Player</a>
     </div>
     <div class="footer-col">
       <h4>Support</h4>
-      <a href="#">Contact</a>
-      <a href="#">WhatsApp</a>
+      <a href="https://wa.me/22963828767" target="_blank">Contact WhatsApp</a>
+      <a href="https://wa.me/22963828767" target="_blank">WhatsApp Direct</a>
       <a href="#">Telegram</a>
       <a href="#">Centre d'aide</a>
       <a href="#">Remboursement</a>
@@ -993,17 +1127,29 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:80px
 <div id="toast"></div>
 
 <!-- WHATSAPP FLOAT -->
-<a href="#" onclick="openWhatsApp()" style="position:fixed;bottom:30px;right:30px;z-index:300;width:56px;height:56px;background:#25d366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;box-shadow:0 8px 32px rgba(37,211,102,0.4);text-decoration:none;transition:all 0.3s;animation:whatsFloat 3s ease infinite" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+<a href="https://wa.me/22963828767?text=Bonjour%2C+je+suis+intéressé+par+My+Box+TV+IPTV" target="_blank" style="position:fixed;bottom:30px;right:30px;z-index:300;width:56px;height:56px;background:#25d366;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;box-shadow:0 8px 32px rgba(37,211,102,0.4);text-decoration:none;transition:transform 0.3s" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
   <i class="fab fa-whatsapp"></i>
 </a>
-@keyframes whatsFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-
-<style>
-@keyframes whatsFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-a[href="#"][onclick="openWhatsApp()"]:last-of-type{animation:whatsFloat 3s ease infinite}
-</style>
 
 <script>
+/* ==================== NOVELAS TV BACKGROUND HLS ==================== */
+const NOVELAS_URL = 'https://stormcast-telenovelatv-1-fr.samsung.wurl.tv/playlist.m3u8';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwwmndJ-PnznJsU5Oqc9qa1IKJAut114uCsJVMhLMIvsArUjpcgA7fhzjMUgXcivRksyA/exec';
+
+(function initNovelasBG() {
+  const vid = document.getElementById('novelas-video');
+  if (!vid) return;
+  if (Hls.isSupported()) {
+    const hls = new Hls({ startLevel: 0, capLevelToPlayerSize: true });
+    hls.loadSource(NOVELAS_URL);
+    hls.attachMedia(vid);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => { vid.play().catch(()=>{}); });
+  } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+    vid.src = NOVELAS_URL;
+    vid.play().catch(()=>{});
+  }
+})();
+
 /* ==================== PRELOADER ==================== */
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -1011,6 +1157,8 @@ window.addEventListener('load', () => {
     setTimeout(() => document.getElementById('preloader').remove(), 800);
   }, 2200);
 });
+
+
 
 /* ==================== CURSOR ==================== */
 const cursor = document.getElementById('cursor');
@@ -1280,7 +1428,7 @@ function showToast(msg) {
 }
 
 function openWhatsApp() {
-  window.open('https://wa.me/?text=Bonjour%2C+je+suis+intéressé+par+My+Box+TV+IPTV+Premium','_blank');
+  window.open('https://wa.me/22963828767?text=Bonjour%2C+je+suis+intéressé+par+My+Box+TV+IPTV+Premium','_blank');
 }
 </script>
 </body>
