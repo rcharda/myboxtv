@@ -471,7 +471,7 @@ textarea { resize: vertical; min-height: 80px; }
 // =============================================
 // CONFIG — remplace par ton URL Apps Script
 // =============================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9ia-SQSENcmevA0mdlsYfiUNQQB6eStrDjjSAFJWbxITxxNcg_54juCM_rg69KW2RcQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzImlCfInTfzz047NEt5uBo70J2mNx349fNE9KMURb1uu45aadjs7JpUx-v33jkPvBbhA/exec';
 
 // Types d'appareils disponibles
 const DEVICE_TYPES = [
@@ -567,14 +567,13 @@ async function publishApp() {
 
   setLoading(true);
 
-  const payload = { action: 'publish', name, version, status, date, notes, logo, versions };
-
   try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: { 'Content-Type': 'application/json' }
+    const params = new URLSearchParams({
+      action: 'publish',
+      name, version, status, date, notes, logo,
+      versions: JSON.stringify(versions)
     });
+    const resp = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
     const data = await resp.json();
     if (data.success) {
       showToast('✅ Application publiée !', 'success');
@@ -701,11 +700,8 @@ async function confirmDelete(i) {
   const p = posts[i];
   closeDeleteModal();
   try {
-    const resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'delete', rowId: p.rowId }),
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const params = new URLSearchParams({ action: 'delete', rowId: p.rowId });
+    const resp = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`);
     const data = await resp.json();
     if (data.success) {
       showToast('Publication supprimée', 'success');
