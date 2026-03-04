@@ -420,24 +420,77 @@
         .tp-name { color: white; font-weight: 600; font-size: 13px; }
         .tp-checkbox { width: 16px; height: 16px; accent-color: var(--primary); }
 
-        /* ===== KEYBOARD SHORTCUTS ===== */
-        /* Responsive */
+        /* ===== RESPONSIVE — MOBILE (≤600px) ===== */
         @media (max-width: 600px) {
             .desktop-only { display: none !important; }
-            #bottom-bar { gap: 5px; padding: 6px 10px; bottom: 10px; }
-            .btn-ctrl { width: 38px; height: 38px; font-size: 14px; }
-            .btn-large { width: 46px; height: 46px; font-size: 18px; }
-            #channel-menu { width: 88vw; }
-            :root { --sidebar-w: 88vw; }
-            .grid-view { grid-template-columns: repeat(3, 1fr); }
-            .settings-panel { flex-direction: column; height: 90vh; }
-            .settings-sidebar { width: 100%; display: flex; overflow-x: auto; padding: 10px; border-right: none; border-bottom: 1px solid var(--border); }
+            #bottom-bar { gap: 4px; padding: 5px 8px; bottom: 8px; max-width: 98vw; }
+            .btn-ctrl { width: 36px; height: 36px; font-size: 13px; }
+            .btn-large { width: 44px; height: 44px; font-size: 17px; }
+            #channel-menu { width: 85vw; }
+            :root { --sidebar-w: 85vw; }
+            .grid-view { grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 6px; }
+            .settings-panel { flex-direction: column; height: 92vh; width: 98%; }
+            .settings-sidebar { width: 100%; display: flex; overflow-x: auto; padding: 8px 6px; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; -webkit-overflow-scrolling: touch; }
             .settings-sidebar-title { display: none; }
+            .settings-tab { padding: 8px 10px; font-size: 11px; white-space: nowrap; margin-bottom: 0; margin-right: 3px; }
+            .settings-content { padding: 14px; }
+            .shortcut-grid { grid-template-columns: 1fr; }
+            #sleep-options { grid-template-columns: repeat(2,1fr); }
+            #status-pill { top: 8px; right: 8px; font-size: 10px; padding: 5px 10px; }
         }
-        @media (max-width: 700px) {
-            .settings-panel { flex-direction: column; }
-            .settings-sidebar { width: 100%; height: auto; display: flex; overflow-x: auto; }
+        /* ===== RESPONSIVE — SMALL TABLET (601–768px) ===== */
+        @media (min-width: 601px) and (max-width: 768px) {
+            .desktop-only { display: none !important; }
+            #channel-menu { width: 300px; }
+            :root { --sidebar-w: 300px; }
+            .settings-panel { flex-direction: column; height: 90vh; }
+            .settings-sidebar { width: 100%; display: flex; overflow-x: auto; padding: 8px; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+            .settings-sidebar-title { display: none; }
+            .settings-tab { white-space: nowrap; margin-bottom: 0; margin-right: 3px; }
         }
+        /* ===== RESPONSIVE — TABLET (769–1024px) ===== */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            :root { --sidebar-w: 280px; }
+            #channel-menu { width: var(--sidebar-w); }
+        }
+        /* ===== SMART TV (grand écran, pointer coarse ou fine) ===== */
+        @media (min-width: 1280px) {
+            :root { --sidebar-w: 340px; }
+            .btn-ctrl { width: 50px; height: 50px; font-size: 19px; }
+            .btn-large { width: 62px; height: 62px; font-size: 24px; }
+            .channel-row { padding: 11px 16px; }
+            .ch-name { font-size: 14px; }
+            #bottom-bar { gap: 10px; padding: 10px 18px; }
+        }
+        /* ===== TOUCH DEVICE — cibles plus grandes ===== */
+        @media (pointer: coarse) {
+            .channel-row { min-height: 50px; }
+            .fav-btn { padding: 10px; }
+            .btn-ctrl { min-width: 38px; min-height: 38px; }
+            .np-btn { padding: 14px; font-size: 18px; }
+        }
+        /* ===== LANDSCAPE MOBILE ===== */
+        @media (max-width: 900px) and (orientation: landscape) {
+            #bottom-bar { bottom: 5px; padding: 4px 8px; gap: 3px; }
+            .btn-ctrl { width: 32px; height: 32px; font-size: 12px; }
+            .btn-large { width: 40px; height: 40px; font-size: 15px; }
+        }
+        /* ===== WATCH OS (≤200px) ===== */
+        @media (max-width: 200px) {
+            #bottom-bar { flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: 8px; }
+            .btn-ctrl { width: 26px; height: 26px; font-size: 10px; }
+            .btn-large { width: 32px; height: 32px; font-size: 13px; }
+            .desktop-only { display: none !important; }
+            #channel-menu { width: 95vw; }
+            :root { --sidebar-w: 95vw; }
+            #status-pill { font-size: 7px; padding: 3px 6px; top: 3px; right: 3px; }
+        }
+        /* ===== FOCUS TV (navigation télécommande) ===== */
+        .tv-focused { outline: 3px solid var(--primary) !important; outline-offset: 2px; box-shadow: 0 0 14px var(--primary-glow); }
+        /* ===== SETTINGS au-dessous des modals alert/confirm ===== */
+        #settings-modal { z-index: 200; }
+        /* ===== VEILLE overlay ===== */
+        #standby-overlay { position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer; }
 
         /* ===== PULSE ANIM ===== */
         @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--primary-glow)} 50%{box-shadow:0 0 18px var(--primary-glow)} }
@@ -546,6 +599,7 @@
             <div class="settings-tab" onclick="showTab('tab-keys')"><i class="fas fa-keyboard"></i> Raccourcis</div>
             <div class="settings-tab" onclick="showTab('tab-sub')"><i class="fas fa-id-card"></i> Compte</div>
             <div class="settings-tab" onclick="forceReload()" style="color:#ff5555;margin-top:20px;"><i class="fas fa-redo"></i> Réinitialiser</div>
+            <div class="settings-tab" onclick="standbySystem()" style="color:#ffd700;"><i class="fas fa-power-off"></i> Veille</div>
             <div class="settings-tab" onclick="closeSettings()" style="color:#555;"><i class="fas fa-times"></i> Fermer</div>
         </div>
         <div class="settings-content">
@@ -976,7 +1030,7 @@ async function processSuccessfulPayment(newKey, days, screens) {
 
     try {
         // 1. Enregistrement réel dans Google Sheets via l'API admin
-        await fetch(
+        await apiFetch(
             `${API_URL}?action=admin_user_action&type=add` +
             `&key=${encodeURIComponent(newKey)}` +
             `&days=${encodeURIComponent(days)}` +
@@ -1604,13 +1658,52 @@ async function quickScan() {
     });
 }
 
+// Détecte si on est en local (file://)
+const IS_LOCAL = location.protocol === 'file:';
+
+// Liste de proxies CORS — essayés dans l'ordre jusqu'à succès
+const CORS_PROXIES = [
+    u => "https://corsproxy.io/?" + encodeURIComponent(u),
+    u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+    u => "https://thingproxy.freeboard.io/fetch/" + u,
+];
+
+async function fetchWithCORSFallback(url, signal) {
+    const opts = signal ? { signal } : {};
+    if (!IS_LOCAL) {
+        try {
+            const res = await fetch(url, opts);
+            if (res.ok) return res;
+        } catch(e) {
+            if (e && e.name === 'AbortError') throw e;
+        }
+    }
+    for (const makeProxy of CORS_PROXIES) {
+        try {
+            const res = await fetch(makeProxy(url), opts);
+            if (res.ok) return res;
+        } catch(e) {
+            if (e && e.name === 'AbortError') throw e;
+        }
+    }
+    return fetch(url, opts);
+}
+
+async function apiFetch(url) {
+    try { const res = await fetchWithCORSFallback(url); return await res.text(); } catch(e) { return ''; }
+}
+
+async function apiFetchJSON(url) {
+    try { const res = await fetchWithCORSFallback(url); return await res.json(); } catch(e) { return null; }
+}
+
 async function fetchPlaylistWithWatchdog(url) {
     lastActivityTime = Date.now();
     const controller = new AbortController();
     // 60s timeout pour les grandes playlists
     const timeout = setTimeout(()=>controller.abort(), 60000);
     try {
-        const res = await fetch("https://api.allorigins.win/raw?url="+encodeURIComponent(url), {signal:controller.signal});
+        const res = await fetchWithCORSFallback(url, controller.signal);
         clearTimeout(timeout); if(!res.ok) return;
         const len = res.headers.get("Content-Length");
         if(len) onVideoChunkLoaded(parseInt(len),100);
@@ -1624,7 +1717,7 @@ async function fetchPlaylistWithWatchdog(url) {
             if(batch.length>=50) { flushBatch(batch); await new Promise(r=>setTimeout(r,10)); }
         }
         processLines([buffer],batch); flushBatch(batch);
-    } catch(e) {}
+    } catch(e) { clearTimeout(timeout); }
 }
 
 function processLines(lines, batch) {
@@ -1689,8 +1782,7 @@ function startRealTimeCheck() {
     setInterval(async()=>{
         const key=localStorage.getItem('mybox_key'); if(!key) return;
         try {
-            const res=await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
-            const text=await res.text();
+            const text=await apiFetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
             if(!text.includes("SUCCESS")) {
                 // Abonnement expiré ou révoqué → déconnexion propre
                 localStorage.removeItem('mybox_auth');
@@ -1720,8 +1812,7 @@ async function login() {
     const btn=document.querySelector('#login-screen .btn-primary');
     btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Connexion...'; btn.disabled=true;
     try {
-        const res=await fetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
-        const text=await res.text();
+        const text=await apiFetch(`${API_URL}?action=login&key=${encodeURIComponent(key)}&device=${encodeURIComponent(deviceId)}`);
         if(text.includes("MAINTENANCE")) { showMyAlert("Maintenance en cours."); btn.innerHTML='<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled=false; return; }
         if(text.includes("SUCCESS")) {
             localStorage.setItem('mybox_auth','OK'); localStorage.setItem('mybox_key',key); localStorage.setItem('mybox_raw_status',text);
@@ -1735,7 +1826,7 @@ async function login() {
 
 async function logout() {
     showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async()=>{
-        try { await fetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); } catch(e){}
+        try { await apiFetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); } catch(e){}
         localStorage.removeItem('mybox_auth'); location.reload();
     });
 }
@@ -1749,8 +1840,8 @@ async function initApp() {
 
     if(appMode==='premium') {
         try {
-            const res=await fetch(`${API_URL}?action=get_playlists`);
-            const sources=await res.json();
+            const sources=await apiFetchJSON(`${API_URL}?action=get_playlists`);
+            if(!sources) throw new Error('no sources');
             allChannels=[DEFAULT_CHANNEL]; loadedUrls=new Set([DEFAULT_CHANNEL.url]);
             sources.forEach(s=>{ const ch={name:s.name,url:s.url,category:s.category||'TV',logo:''}; allChannels.push(ch); loadedUrls.add(ch.url); allCategories.add(ch.category); });
             renderList(true);
@@ -1762,7 +1853,7 @@ async function initApp() {
     }
 
     try {
-        const res=await fetch(`${API_URL}?action=get_message`); const text=await res.text();
+        const text=await apiFetch(`${API_URL}?action=get_message`);
         if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display='flex';
         if(text.startsWith("MSG:")&&text.length>5) { const msg=text.replace("MSG:",""); setTimeout(()=>showToastNotif("📢 "+msg),2000); }
     } catch(e) {}
@@ -1771,8 +1862,8 @@ async function initApp() {
 async function fetchTranspondersList() {
     if(appMode==='premium') return;
     try {
-        const res=await fetch(`${API_URL}?action=admin_get_m3u_sources`);
-        const json=await res.json();
+        const json=await apiFetchJSON(`${API_URL}?action=admin_get_m3u_sources`);
+        if(!json) { console.warn('No transponders returned'); return; }
         availableTransponders=json;
         renderTranspondersUI();
         // Charger TOUTES les sources du sheet, une par une, en temps réel
@@ -1807,5 +1898,198 @@ function handleTitanScan(input) {
     reader.readAsText(file);
 }
 </script>
-</body>
+
+<!-- ======================================================= -->
+<!-- NOUVELLES FONCTIONS : responsive, sidebar auto-hide,    -->
+<!-- TV remote, veille, bug logout — SANS toucher l'existant -->
+<!-- ======================================================= -->
+<script>
+
+// -------------------------------------------------------
+// 1. BUG LOGOUT — ferme les paramètres avant le confirm
+// -------------------------------------------------------
+// On redéfinit logout() par-dessus l'ancienne (JS last-wins)
+async function logout() {
+    closeSettings(); // ferme le panel settings d'abord
+    setTimeout(() => {
+        showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async () => {
+            try { await apiFetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); } catch(e){}
+            localStorage.removeItem('mybox_auth'); location.reload();
+        });
+    }, 220); // laisse le temps au settings de se fermer
+}
+
+// -------------------------------------------------------
+// 2. VEILLE / STANDBY
+// -------------------------------------------------------
+function standbySystem() {
+    closeSettings();
+    setTimeout(() => {
+        showMyConfirm("Mettre le système en veille ?", () => {
+            if(hls) { hls.destroy(); hls = null; }
+            video.pause(); video.src = '';
+            const ov = document.createElement('div');
+            ov.id = 'standby-overlay';
+            ov.innerHTML = '<i class="fas fa-power-off" style="font-size:58px;color:#2a2a2a;margin-bottom:18px;"></i>'
+                         + '<div style="color:#2a2a2a;font-family:Orbitron,sans-serif;font-size:13px;letter-spacing:3px;">EN VEILLE</div>'
+                         + '<div style="color:#1a1a1a;font-size:10px;margin-top:10px;">Appuyez pour réveiller</div>';
+            ov.addEventListener('click', () => {
+                document.body.removeChild(ov);
+                if(allChannels[currentChannelIndex]) playChannel(currentChannelIndex);
+            });
+            // Support télécommande : n'importe quelle touche réveille
+            const wakeKey = (e) => { document.body.removeChild(ov); document.removeEventListener('keydown', wakeKey); if(allChannels[currentChannelIndex]) playChannel(currentChannelIndex); };
+            document.addEventListener('keydown', wakeKey);
+            document.body.appendChild(ov);
+            showToastNotif('Système en veille');
+        });
+    }, 220);
+}
+
+// -------------------------------------------------------
+// 3. SIDEBAR AUTO-HIDE (se cache après 4s d'inactivité)
+// -------------------------------------------------------
+let _sidebarHideTimer = null;
+
+function _resetSidebarTimer() {
+    clearTimeout(_sidebarHideTimer);
+    if (document.body.classList.contains('menu-open')) {
+        _sidebarHideTimer = setTimeout(() => {
+            document.body.classList.remove('menu-open');
+        }, 4000);
+    }
+}
+
+// Toute interaction utilisateur réinitialise le timer
+['mousemove','mousedown','touchstart','touchmove','keydown','scroll','click'].forEach(ev => {
+    document.addEventListener(ev, () => {
+        if (document.body.classList.contains('menu-open')) _resetSidebarTimer();
+    }, { passive: true });
+});
+
+// Souris vers le bord gauche → ouvre la sidebar (PC)
+document.addEventListener('mousemove', (e) => {
+    if (e.clientX < 28 && !document.body.classList.contains('menu-open')) {
+        document.body.classList.add('menu-open');
+        _resetSidebarTimer();
+    }
+});
+
+// Swipe depuis la gauche → ouvre ; swipe vers la gauche → ferme (mobile/tactile)
+let _txStart = 0, _tyStart = 0;
+document.addEventListener('touchstart', (e) => {
+    _txStart = e.touches[0].clientX;
+    _tyStart = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - _txStart;
+    const dy = Math.abs(e.changedTouches[0].clientY - _tyStart);
+    if (_txStart < 28 && dx > 50 && dy < 80) {         // swipe droite depuis bord gauche
+        document.body.classList.add('menu-open');
+        _resetSidebarTimer();
+    } else if (dx < -60 && dy < 80 && document.body.classList.contains('menu-open')) { // swipe gauche
+        document.body.classList.remove('menu-open');
+    }
+}, { passive: true });
+
+// Patcher toggleMenu pour lancer le timer auto-hide
+const _origToggleMenu = toggleMenu;
+window.toggleMenu = function() {
+    _origToggleMenu();
+    if (document.body.classList.contains('menu-open')) _resetSidebarTimer();
+};
+
+// -------------------------------------------------------
+// 4. TV REMOTE — navigation par télécommande / clavier
+//    (s'ajoute sans écraser le keydown existant)
+// -------------------------------------------------------
+let _tvFocusIdx = -1;
+
+function _getTVItems() {
+    return Array.from(document.querySelectorAll('#channel-list .channel-row, #channel-list .grid-card'));
+}
+function _setTVFocus(idx) {
+    document.querySelectorAll('.tv-focused').forEach(el => el.classList.remove('tv-focused'));
+    const items = _getTVItems();
+    if (items[idx]) {
+        _tvFocusIdx = idx;
+        items[idx].classList.add('tv-focused');
+        items[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
+// Second listener keydown — complémente l'existant (qui gère M, F, K, Z, I, /, arrows pour vol+chan)
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+
+    const menuOpen = document.body.classList.contains('menu-open');
+    const settingsOpen = document.getElementById('settings-modal').style.display === 'flex';
+
+    // Escape / Back : ferme settings → ferme menu
+    if (e.key === 'Escape' || e.key === 'Backspace') {
+        if (settingsOpen) { closeSettings(); e.preventDefault(); return; }
+        if (menuOpen)     { document.body.classList.remove('menu-open'); e.preventDefault(); return; }
+    }
+
+    // Quand le menu est ouvert : flèches haut/bas naviguent dans la liste
+    if (menuOpen) {
+        const items = _getTVItems();
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            _setTVFocus(Math.min(_tvFocusIdx + 1, items.length - 1));
+            _resetSidebarTimer();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            _setTVFocus(Math.max(_tvFocusIdx - 1, 0));
+            _resetSidebarTimer();
+        } else if (e.key === 'Enter' && _tvFocusIdx >= 0 && items[_tvFocusIdx]) {
+            items[_tvFocusIdx].click();
+            e.preventDefault();
+        }
+        // ArrowRight ferme la sidebar (retour au player)
+        if (e.key === 'ArrowRight' && !settingsOpen) {
+            document.body.classList.remove('menu-open');
+            e.preventDefault();
+        }
+        return; // on laisse l'existant gérer le reste en dehors du menu
+    }
+
+    // Menu fermé : flèche gauche ouvre la sidebar
+    if (e.key === 'ArrowLeft' && !menuOpen && !settingsOpen) {
+        document.body.classList.add('menu-open');
+        _tvFocusIdx = 0;
+        _setTVFocus(0);
+        _resetSidebarTimer();
+        e.preventDefault();
+    }
+});
+
+// -------------------------------------------------------
+// 5. CHARGEMENT PROGRESSIF — affiche les chaînes dès qu'elles
+//    sont trouvées ET sauvegarde en DB au fur et à mesure
+//    (redéfinition de fetchTranspondersList uniquement)
+// -------------------------------------------------------
+async function fetchTranspondersList() {
+    if (appMode === 'premium') return;
+    try {
+        const json = await apiFetchJSON(`${API_URL}?action=admin_get_m3u_sources`);
+        if (!json) { console.warn('No transponders returned'); return; }
+        availableTransponders = json;
+        renderTranspondersUI();
+        document.getElementById('scan-info').style.display = 'flex';
+        for (let i = 0; i < availableTransponders.length; i++) {
+            document.getElementById('scan-text').innerText = `Chargement source ${i+1}/${availableTransponders.length}...`;
+            await fetchPlaylistWithWatchdog(availableTransponders[i]);
+            // Sauvegarde progressive après chaque source
+            saveChannelsToDB(allChannels);
+        }
+        document.getElementById('scan-info').style.display = 'none';
+        showToastNotif(`✅ ${allChannels.length} chaînes chargées`);
+    } catch(e) {
+        document.getElementById('scan-info').style.display = 'none';
+        console.warn('fetchTranspondersList error', e);
+    }
+}
+
+</script>
 </html>
