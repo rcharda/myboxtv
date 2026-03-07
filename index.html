@@ -802,7 +802,6 @@
     <div><div id="toast-name"></div><div id="toast-cat"></div></div>
 </div>
 
-<!-- OVERLAY tactile : toucher la zone vide à droite du menu ferme le menu -->
 <div id="menu-overlay" onclick="document.body.classList.remove('menu-open')"></div>
 
 <div id="video-layer">
@@ -969,8 +968,8 @@ function updatePrice() {
     const days = parseInt(document.getElementById('sub-days').value);
     const screens = parseInt(document.getElementById('sub-screens').value);
 
-    // Grille de prix : 1 Ecran = 100, 2 Ecrans = 500, 4 Ecrans = 900
-    let priceMois = 100;
+    // Grille de prix : 1 Ecran = 300, 2 Ecrans = 500, 4 Ecrans = 900
+    let priceMois = 300;
     if (screens === 2) priceMois = 500;
     else if (screens === 4) priceMois = 900; 
 
@@ -1329,13 +1328,14 @@ function renderBatch() {
 function updateCategoryChips() {
     const bar = document.getElementById('cat-scroll-bar');
     const area = document.getElementById('chips-area');
-    if(bar.childElementCount === allCategories.size && area.childElementCount === allCategories.size) return;
+    
     let html = '';
     Array.from(allCategories).sort().forEach(cat => {
         const active = selectedCategories.includes(cat) ? 'active' : '';
         html += `<div class="cat-chip ${active}" onclick="toggleCat('${cat}')">${cat}</div>`;
     });
-    bar.innerHTML = html;
+    if(bar) bar.innerHTML = html;
+    
     let chipsHtml = '';
     Array.from(allCategories).sort().forEach(cat => {
         const active = selectedCategories.includes(cat) ? 'selected' : '';
@@ -1825,10 +1825,13 @@ async function login() {
 }
 
 async function logout() {
-    showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async()=>{
-        try { await apiFetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); } catch(e){}
-        localStorage.removeItem('mybox_auth'); location.reload();
-    });
+    closeSettings(); // ferme le panel settings d'abord
+    setTimeout(() => {
+        showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async () => {
+            try { await apiFetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); } catch(e){}
+            localStorage.removeItem('mybox_auth'); location.reload();
+        });
+    }, 220); // laisse le temps au settings de se fermer
 }
 
 // =======================================================
@@ -1838,24 +1841,81 @@ async function initApp() {
     if(!appMode) { openSettings(); showMyAlert("Bienvenue sur My Box TV !\nChoisissez un Mode de Réception pour commencer."); return; }
     updateModeUI(); enforceNovelasIntegrity(); renderList(true); playChannel(0); refreshNetworkUI(0);
 
-    if(appMode==='premium') {
+    if(appMode === 'premium') {
         try {
-            const sources=await apiFetchJSON(`${API_URL}?action=get_playlists`);
+            // Afficher la barre de progression pour que l'utilisateur patiente
+            document.getElementById('scan-info').style.display = 'flex';
+            document.getElementById('scan-text').innerText = 'Connexion aux serveurs Premium...';
+
+            const sources = await apiFetchJSON(`${API_URL}?action=get_playlists`);
             if(!sources) throw new Error('no sources');
-            allChannels=[DEFAULT_CHANNEL]; loadedUrls=new Set([DEFAULT_CHANNEL.url]);
-            sources.forEach(s=>{ const ch={name:s.name,url:s.url,category:s.category||'TV',logo:''}; allChannels.push(ch); loadedUrls.add(ch.url); allCategories.add(ch.category); });
+
+            // Nettoyage complet
+            allChannels = [DEFAULT_CHANNEL];
+            loadedUrls = new Set([DEFAULT_CHANNEL.url]);
+            allCategories = new Set(['Favoris']);
+            selectedCategories = [];
+
+            // Lecture des sources (Col D: url/lien, Col E: name/nom)
+            for(let i = 0; i < sources.length; i++) {
+                let s = sources[i];
+                let sourceUrl = s.url || s.lien; // Supporte url ou lien
+                let sourceName = s.name || s.nom || `Bouquet ${i+1}`; // Supporte name ou nom
+
+                if(sourceUrl) {
+                    // Met à jour le texte pour montrer l'avancée
+                    document.getElementById('scan-text').innerText = `Chargement : ${sourceName} (${i+1}/${sources.length})...`;
+
+                    // S'il s'agit d'une playlist (.m3u / .m3u8 contenant des chaînes), on la scanne
+                    if(sourceUrl.includes('.m3u') || sourceUrl.includes('get.php') || sourceUrl.includes('playlist')) {
+                        await fetchPlaylistWithWatchdog(sourceUrl);
+                    } else {
+                        // Flux vidéo direct
+                        const ch = { name: sourceName, url: sourceUrl, category: s.category || 'Premium', logo: '' };
+                        allChannels.push(ch);
+                        loadedUrls.add(ch.url);
+                        allCategories.add(ch.category || 'Premium');
+                    }
+                }
+            }
+
+            // Masquer la barre de progression une fois terminé
+            document.getElementById('scan-info').style.display = 'none';
+            updateCategoryChips();
             renderList(true);
-        } catch(e) { console.log('Premium err',e); }
+            showToastNotif(`✅ Premium activé : ${allChannels.length} chaînes chargées`);
+
+        } catch(e) {
+            console.log('Premium err', e);
+            document.getElementById('scan-info').style.display = 'none';
+            showToastNotif('Erreur de chargement Premium');
+        }
     } else {
-        const cached=await loadChannelsFromDB();
-        if(cached.length>5) { const ext=cached.filter(c=>c.url!==DEFAULT_CHANNEL.url); allChannels=[DEFAULT_CHANNEL,...ext]; allChannels.forEach(c=>{ loadedUrls.add(c.url); if(c.category) allCategories.add(c.category); }); updateCategoryChips(); renderList(true); }
+        // --- MODE TRANSPONDEUR ---
+        allCategories = new Set(['Favoris']);
+        selectedCategories = [];
+
+        const cached = await loadChannelsFromDB();
+        if(cached.length > 5) {
+            const ext = cached.filter(c => c.url !== DEFAULT_CHANNEL.url);
+            allChannels = [DEFAULT_CHANNEL, ...ext];
+            allChannels.forEach(c => {
+                loadedUrls.add(c.url);
+                if(c.category) allCategories.add(c.category);
+            });
+            updateCategoryChips();
+            renderList(true);
+        }
         fetchTranspondersList();
     }
 
     try {
-        const text=await apiFetch(`${API_URL}?action=get_message`);
-        if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display='flex';
-        if(text.startsWith("MSG:")&&text.length>5) { const msg=text.replace("MSG:",""); setTimeout(()=>showToastNotif("📢 "+msg),2000); }
+        const text = await apiFetch(`${API_URL}?action=get_message`);
+        if(text.includes("MAINTENANCE")) document.getElementById('maint-screen').style.display = 'flex';
+        if(text.startsWith("MSG:") && text.length > 5) {
+            const msg = text.replace("MSG:","");
+            setTimeout(() => showToastNotif("📢 " + msg), 2000);
+        }
     } catch(e) {}
 }
 
@@ -1867,13 +1927,18 @@ async function fetchTranspondersList() {
         availableTransponders=json;
         renderTranspondersUI();
         // Charger TOUTES les sources du sheet, une par une, en temps réel
+        document.getElementById('scan-info').style.display = 'flex';
         for(let i=0; i<availableTransponders.length; i++) {
+            document.getElementById('scan-text').innerText = `Chargement source ${i+1}/${availableTransponders.length}...`;
             await fetchPlaylistWithWatchdog(availableTransponders[i]);
+            saveChannelsToDB(allChannels);
         }
-        // Sauvegarder en cache après chargement complet
-        saveChannelsToDB(allChannels);
+        document.getElementById('scan-info').style.display = 'none';
         showToastNotif(`✅ ${allChannels.length} chaînes chargées`);
-    } catch(e) { console.warn('fetchTranspondersList error', e); }
+    } catch(e) { 
+        document.getElementById('scan-info').style.display = 'none';
+        console.warn('fetchTranspondersList error', e); 
+    }
 }
 
 function addSource() { document.getElementById('localFileInput').click(); }
@@ -1899,25 +1964,7 @@ function handleTitanScan(input) {
 }
 </script>
 
-<!-- ======================================================= -->
-<!-- NOUVELLES FONCTIONS : responsive, sidebar auto-hide,    -->
-<!-- TV remote, veille, bug logout — SANS toucher l'existant -->
-<!-- ======================================================= -->
 <script>
-
-// -------------------------------------------------------
-// 1. BUG LOGOUT — ferme les paramètres avant le confirm
-// -------------------------------------------------------
-// On redéfinit logout() par-dessus l'ancienne (JS last-wins)
-async function logout() {
-    closeSettings(); // ferme le panel settings d'abord
-    setTimeout(() => {
-        showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async () => {
-            try { await apiFetch(`${API_URL}?action=logout&key=${localStorage.getItem('mybox_key')}&device=${deviceId}`); } catch(e){}
-            localStorage.removeItem('mybox_auth'); location.reload();
-        });
-    }, 220); // laisse le temps au settings de se fermer
-}
 
 // -------------------------------------------------------
 // 2. VEILLE / STANDBY
@@ -2064,32 +2111,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// -------------------------------------------------------
-// 5. CHARGEMENT PROGRESSIF — affiche les chaînes dès qu'elles
-//    sont trouvées ET sauvegarde en DB au fur et à mesure
-//    (redéfinition de fetchTranspondersList uniquement)
-// -------------------------------------------------------
-async function fetchTranspondersList() {
-    if (appMode === 'premium') return;
-    try {
-        const json = await apiFetchJSON(`${API_URL}?action=admin_get_m3u_sources`);
-        if (!json) { console.warn('No transponders returned'); return; }
-        availableTransponders = json;
-        renderTranspondersUI();
-        document.getElementById('scan-info').style.display = 'flex';
-        for (let i = 0; i < availableTransponders.length; i++) {
-            document.getElementById('scan-text').innerText = `Chargement source ${i+1}/${availableTransponders.length}...`;
-            await fetchPlaylistWithWatchdog(availableTransponders[i]);
-            // Sauvegarde progressive après chaque source
-            saveChannelsToDB(allChannels);
-        }
-        document.getElementById('scan-info').style.display = 'none';
-        showToastNotif(`✅ ${allChannels.length} chaînes chargées`);
-    } catch(e) {
-        document.getElementById('scan-info').style.display = 'none';
-        console.warn('fetchTranspondersList error', e);
-    }
-}
-
 </script>
+</body>
 </html>
