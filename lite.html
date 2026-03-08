@@ -15,8 +15,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -37,20 +35,46 @@
         }
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
         body { margin: 0; font-family: 'Exo 2', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+
+        /* ===== VIDEO ===== */
         #video-layer { position: fixed; inset: 0; z-index: 0; background: #000; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: contain; }
+
+        /* ===== AMBIENT GLOW ===== */
         #ambient-canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.15; mix-blend-mode: screen; }
+
+        /* ===== UI OVERLAY ===== */
         #ui-layer { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
-        #status-pill { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.75); backdrop-filter: blur(12px); padding: 7px 14px; border-radius: 30px; border: 1px solid var(--border); font-size: 11px; color: #fff; z-index: 60; display: flex; align-items: center; gap: 10px; pointer-events: none; transition: var(--transition); }
+
+        /* ===== STATUS BAR ===== */
+        #status-pill {
+            position: absolute; top: 16px; right: 16px;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(12px);
+            padding: 7px 14px; border-radius: 30px;
+            border: 1px solid var(--border); font-size: 11px; color: #fff;
+            z-index: 60; display: flex; align-items: center; gap: 10px;
+            pointer-events: none; transition: var(--transition);
+        }
         #led { width: 7px; height: 7px; background: red; border-radius: 50%; transition: 0.4s; box-shadow: 0 0 6px red; flex-shrink: 0; }
         #led.green { background: #0f0; box-shadow: 0 0 8px #0f0; }
         #led.orange { background: orange; box-shadow: 0 0 8px orange; animation: blink 1s infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        #now-playing-toast { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; display: flex; align-items: center; gap: 12px; pointer-events: none; opacity: 0; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); max-width: 90vw; z-index: 50; }
+
+        /* ===== NOW PLAYING TOAST ===== */
+        #now-playing-toast {
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(15px);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+            pointer-events: none; opacity: 0; transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+            max-width: 90vw; z-index: 50;
+        }
         #now-playing-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         #toast-logo { width: 32px; height: 32px; object-fit: contain; background: #fff; border-radius: 5px; padding: 2px; }
         #toast-name { font-weight: 700; font-size: 14px; }
         #toast-cat { font-size: 11px; color: #888; }
+
+        /* ===== SIGNAL BARS ===== */
         .signal-container { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
         .sig-bar { width: 3px; background: #333; border-radius: 1px; transition: background 0.3s; }
         .sig-bar.b1{height:25%;}.sig-bar.b2{height:50%;}.sig-bar.b3{height:75%;}.sig-bar.b4{height:100%;}
@@ -58,43 +82,102 @@
         .sig-lvl-2 .b1,.sig-lvl-2 .b2{background:#ffd700;}
         .sig-lvl-3 .b1,.sig-lvl-3 .b2,.sig-lvl-3 .b3{background:#ff8c00;}
         .sig-lvl-4 .sig-bar{background:#00ff00;}
-        #channel-menu { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100%; background: var(--glass); backdrop-filter: blur(20px); transform: translateX(-100%); transition: transform var(--transition); display: flex; flex-direction: column; z-index: 100; pointer-events: auto; border-right: 1px solid var(--border); }
+
+        /* ===== CHANNEL MENU ===== */
+        #channel-menu {
+            position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100%;
+            background: var(--glass); backdrop-filter: blur(20px);
+            transform: translateX(-100%); transition: transform var(--transition);
+            display: flex; flex-direction: column; z-index: 100;
+            pointer-events: auto; border-right: 1px solid var(--border);
+        }
         body.menu-open #channel-menu { transform: translateX(0); }
-        .menu-header { padding: 12px 15px 8px; background: linear-gradient(180deg, #111 0%, #0d0d0d 100%); border-bottom: 1px solid rgba(229,9,20,0.3); flex-shrink: 0; }
+
+        .menu-header {
+            padding: 12px 15px 8px;
+            background: linear-gradient(180deg, #111 0%, #0d0d0d 100%);
+            border-bottom: 1px solid rgba(229,9,20,0.3);
+            flex-shrink: 0;
+        }
         .menu-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
         .menu-logo { height: 28px; }
         .menu-badges { display: flex; align-items: center; gap: 6px; }
-        #mode-badge { font-size: 9px; font-weight: 700; font-family: 'Orbitron', sans-serif; background: #222; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px; }
+        #mode-badge {
+            font-size: 9px; font-weight: 700; font-family: 'Orbitron', sans-serif;
+            background: #222; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px;
+        }
+
+        /* ===== SEARCH ===== */
         .search-wrap { position: relative; padding: 8px 12px; flex-shrink: 0; }
-        #searchInput { width: 100%; padding: 10px 36px 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 13px; font-family: 'Exo 2', sans-serif; transition: border-color var(--transition); }
+        #searchInput {
+            width: 100%; padding: 10px 36px 10px 14px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; color: white; font-size: 13px; font-family: 'Exo 2', sans-serif;
+            transition: border-color var(--transition);
+        }
         #searchInput:focus { border-color: var(--primary); }
         .search-icon { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); color: #555; font-size: 13px; }
         #search-clear { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); color: #555; font-size: 12px; cursor: pointer; display: none; }
+
+        /* ===== FILTER BAR ===== */
         .filter-bar { display: flex; gap: 5px; padding: 4px 10px 8px; flex-shrink: 0; }
-        .btn-mini { flex: 1; padding: 7px 5px; border-radius: 6px; border: 1px solid #333; background: var(--surface2); color: #aaa; font-size: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all var(--transition); font-family: 'Exo 2', sans-serif; }
+        .btn-mini {
+            flex: 1; padding: 7px 5px; border-radius: 6px; border: 1px solid #333;
+            background: var(--surface2); color: #aaa; font-size: 10px; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+            transition: all var(--transition); font-family: 'Exo 2', sans-serif;
+        }
         .btn-mini:hover { border-color: #555; color: #fff; }
         .btn-mini.active { background: rgba(229,9,20,0.2); color: white; border-color: var(--primary); }
         .btn-local { background: linear-gradient(135deg, rgba(229,9,20,0.3), rgba(150,0,0,0.3)); color: #ff6b6b; border-color: rgba(229,9,20,0.4); }
+
+        /* ===== CATEGORY SCROLL ===== */
         .cat-scroll { display: flex; gap: 5px; padding: 0 10px 8px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
         .cat-scroll::-webkit-scrollbar { display: none; }
-        .cat-chip { flex-shrink: 0; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; cursor: pointer; background: var(--surface2); border: 1px solid #333; color: #aaa; transition: all var(--transition); white-space: nowrap; }
+        .cat-chip {
+            flex-shrink: 0; padding: 4px 10px; border-radius: 20px;
+            font-size: 10px; font-weight: 600; cursor: pointer;
+            background: var(--surface2); border: 1px solid #333; color: #aaa;
+            transition: all var(--transition); white-space: nowrap;
+        }
         .cat-chip.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+        /* ===== SCAN INFO ===== */
         #scan-info { display: none; flex-direction: column; gap: 4px; padding: 5px 12px; flex-shrink: 0; }
         #scan-text { font-size: 10px; color: #0f0; font-family: 'Orbitron', monospace; }
         #scan-progress { width: 100%; height: 2px; background: #222; border-radius: 2px; overflow: hidden; }
         #scan-bar { height: 100%; width: 40%; background: linear-gradient(90deg, #0f0, #0a0); animation: scanMove 1.2s infinite ease-in-out; }
         @keyframes scanMove { 0%{margin-left:-40%} 100%{margin-left:100%} }
-        .count-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 12px 6px; font-size: 10px; color: #555; flex-shrink: 0; }
+
+        /* ===== COUNT BAR ===== */
+        .count-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 12px 6px; font-size: 10px; color: #555; flex-shrink: 0;
+        }
+
+        /* ===== CHANNEL LIST ===== */
         #channel-list { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #333 transparent; }
         #channel-list::-webkit-scrollbar { width: 3px; }
         #channel-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-        .channel-row { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background var(--transition); position: relative; overflow: hidden; }
-        .channel-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--primary); transition: width 0.2s; }
+
+        /* ===== LIST VIEW ===== */
+        .channel-row {
+            display: flex; align-items: center; padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;
+            transition: background var(--transition); position: relative; overflow: hidden;
+        }
+        .channel-row::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+            background: var(--primary); transition: width 0.2s;
+        }
         .channel-row:hover { background: rgba(255,255,255,0.04); }
         .channel-row:hover::before { width: 2px; }
         .channel-row.active { background: rgba(229,9,20,0.1); }
         .channel-row.active::before { width: 3px; }
-        .ch-logo { width: 34px; height: 34px; object-fit: contain; background: #fff; padding: 2px; border-radius: 5px; margin-right: 10px; flex-shrink: 0; }
+        .ch-logo {
+            width: 34px; height: 34px; object-fit: contain;
+            background: #fff; padding: 2px; border-radius: 5px; margin-right: 10px; flex-shrink: 0;
+        }
         .ch-info { flex: 1; min-width: 0; }
         .ch-name { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ch-meta { display: flex; gap: 6px; align-items: center; margin-top: 2px; }
@@ -105,19 +188,50 @@
         .fav-btn { color: #333; padding: 6px; font-size: 12px; flex-shrink: 0; transition: color var(--transition); }
         .fav-btn.active { color: #ffd700; text-shadow: 0 0 6px gold; }
         .fav-btn:hover { color: #666; }
+
+        /* ===== GRID VIEW ===== */
         .grid-view { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; }
-        .grid-card { background: var(--surface2); border-radius: 8px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); aspect-ratio: 1; cursor: pointer; transition: all var(--transition); position: relative; overflow: hidden; }
-        .grid-card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(229,9,20,0.15), transparent 70%); opacity: 0; transition: opacity 0.2s; }
+        .grid-card {
+            background: var(--surface2); border-radius: 8px; padding: 10px 6px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1px solid var(--border); aspect-ratio: 1; cursor: pointer;
+            transition: all var(--transition); position: relative; overflow: hidden;
+        }
+        .grid-card::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at center, rgba(229,9,20,0.15), transparent 70%);
+            opacity: 0; transition: opacity 0.2s;
+        }
         .grid-card:hover { border-color: #444; transform: scale(1.03); }
         .grid-card:hover::after { opacity: 1; }
         .grid-card.active { border-color: var(--primary); background: rgba(229,9,20,0.1); }
         .grid-img { width: 36px; height: 36px; object-fit: contain; background: #fff; padding: 2px; border-radius: 5px; margin-bottom: 5px; }
         .grid-title { font-size: 8.5px; text-align: center; overflow: hidden; text-overflow: ellipsis; width: 100%; font-weight: 700; color: #ccc; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+        /* ===== EPG MINI ===== */
         .ch-epg { font-size: 9px; color: #0af; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none; }
         .channel-row:hover .ch-epg { display: block; }
-        #bottom-bar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(12,12,12,0.95); backdrop-filter: blur(16px); padding: 8px 14px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.08); display: flex; gap: 8px; align-items: center; z-index: 90; pointer-events: auto; max-width: 96vw; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
-        .btn-ctrl { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; flex-shrink: 0; transition: all var(--transition); position: relative; overflow: hidden; }
-        .btn-ctrl::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,0.2), transparent); opacity: 0; transition: opacity 0.2s; }
+
+        /* ===== BOTTOM BAR ===== */
+        #bottom-bar {
+            position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+            background: rgba(12,12,12,0.95); backdrop-filter: blur(16px);
+            padding: 8px 14px; border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex; gap: 8px; align-items: center; z-index: 90;
+            pointer-events: auto; max-width: 96vw; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .btn-ctrl {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; cursor: pointer; flex-shrink: 0;
+            transition: all var(--transition); position: relative; overflow: hidden;
+        }
+        .btn-ctrl::after {
+            content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,0.2), transparent);
+            opacity: 0; transition: opacity 0.2s;
+        }
         .btn-ctrl:active::after { opacity: 1; }
         .btn-ctrl:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); transform: scale(1.05); }
         .btn-ctrl:active { transform: scale(0.93); }
@@ -126,24 +240,71 @@
         .btn-large:hover { background: #ff1a24; }
         .btn-separator { width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 2px; flex-shrink: 0; }
         .desktop-only { display: flex; }
-        #vol-popup { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(12,12,12,0.95); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 30px; padding: 8px 16px; display: none; align-items: center; gap: 10px; z-index: 95; pointer-events: auto; }
+
+        /* ===== VOLUME SLIDER ===== */
+        #vol-popup {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: rgba(12,12,12,0.95); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); border-radius: 30px;
+            padding: 8px 16px; display: none; align-items: center; gap: 10px;
+            z-index: 95; pointer-events: auto;
+        }
         #vol-popup.show { display: flex; }
         #vol-icon { font-size: 14px; color: #888; }
         #vol-slider { width: 100px; accent-color: var(--primary); }
         #vol-pct { font-size: 11px; color: #888; width: 32px; }
-        #sleep-indicator { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 11px; color: #ffd700; z-index: 70; display: none; align-items: center; gap: 6px; pointer-events: none; }
+
+        /* ===== SLEEP TIMER INDICATOR ===== */
+        #sleep-indicator {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 5px 14px; font-size: 11px; color: #ffd700;
+            z-index: 70; display: none; align-items: center; gap: 6px;
+            pointer-events: none;
+        }
         #sleep-indicator.show { display: flex; }
-        #ch-info-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0) ; pointer-events: none; z-index: 20; transition: background 0.3s; }
-        #ch-banner { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.92) 40%); padding: 60px 24px 90px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); pointer-events: none; }
+
+        /* ===== CHANNEL INFO OVERLAY ===== */
+        #ch-info-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0) ; pointer-events: none; z-index: 20;
+            transition: background 0.3s;
+        }
+        #ch-banner {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.92) 40%);
+            padding: 60px 24px 90px;
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+            pointer-events: none;
+        }
         #ch-banner.visible { transform: translateY(0); }
         #banner-logo { width: 60px; height: 60px; object-fit: contain; background: #fff; border-radius: 10px; padding: 4px; margin-bottom: 10px; }
         #banner-name { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 1px; }
         #banner-cat { font-size: 13px; color: #888; margin-top: 4px; }
         #banner-prog { font-size: 12px; color: var(--accent-blue); margin-top: 8px; }
-        #menu-overlay { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: var(--sidebar-w); z-index: 99; background: transparent; -webkit-tap-highlight-color: transparent; }
+
+        /* ===== TOUCH OVERLAY — ferme le menu en touchant la zone vide ===== */
+        #menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0; right: 0; bottom: 0;
+            left: var(--sidebar-w);
+            z-index: 99;
+            background: transparent;
+            -webkit-tap-highlight-color: transparent;
+        }
         body.menu-open #menu-overlay { display: block; }
+
+        /* ===== MODALS ===== */
+        /* z-index 9999 : toujours au-dessus du menu (z=100) et des settings (z=200) */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 9999; align-items: center; justify-content: center; pointer-events: auto; }
-        .modal-box { background: var(--surface); padding: 28px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 1px solid rgba(229,9,20,0.3); box-shadow: 0 0 40px rgba(229,9,20,0.15); animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .modal-box {
+            background: var(--surface); padding: 28px; border-radius: 16px;
+            width: 90%; max-width: 400px; text-align: center;
+            border: 1px solid rgba(229,9,20,0.3); box-shadow: 0 0 40px rgba(229,9,20,0.15);
+            animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
         @keyframes modalIn { from{transform:scale(0.92) translateY(10px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
         .modal-logo { width: 70px; margin-bottom: 12px; border-radius: 10px; }
         .modal-title { color: var(--primary); margin: 0 0 12px; font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 1px; }
@@ -152,37 +313,70 @@
         .btn-primary:hover { background: #ff1a24; box-shadow: 0 4px 16px var(--primary-glow); }
         .btn-secondary { background: #2a2a2a; color: #ccc; border: none; padding: 11px 32px; border-radius: 50px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all var(--transition); font-family: 'Exo 2', sans-serif; }
         .btn-secondary:hover { background: #333; color: white; }
-        .settings-panel { background: var(--surface); width: 92%; max-width: 820px; height: 82vh; border-radius: 16px; border: 1px solid var(--border); display: flex; overflow: hidden; animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ===== SETTINGS ===== */
+        .settings-panel {
+            background: var(--surface); width: 92%; max-width: 820px; height: 82vh;
+            border-radius: 16px; border: 1px solid var(--border); display: flex; overflow: hidden;
+            animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
         .settings-sidebar { width: 190px; background: #0d0d0d; padding: 20px 12px; border-right: 1px solid var(--border); flex-shrink: 0; overflow-y: auto; }
         .settings-sidebar-title { font-family: 'Orbitron', sans-serif; font-size: 11px; color: var(--primary); letter-spacing: 2px; margin-bottom: 16px; padding-left: 8px; }
-        .settings-tab { padding: 11px 12px; cursor: pointer; color: #666; font-weight: 600; border-radius: 8px; margin-bottom: 3px; font-size: 13px; display: flex; align-items: center; gap: 10px; transition: all var(--transition); }
+        .settings-tab {
+            padding: 11px 12px; cursor: pointer; color: #666; font-weight: 600;
+            border-radius: 8px; margin-bottom: 3px; font-size: 13px;
+            display: flex; align-items: center; gap: 10px;
+            transition: all var(--transition);
+        }
         .settings-tab:hover { color: #aaa; background: rgba(255,255,255,0.04); }
         .settings-tab.active { background: rgba(229,9,20,0.12); color: white; }
         .settings-tab i { width: 16px; text-align: center; }
         .settings-content { flex: 1; padding: 24px; overflow-y: auto; }
         .settings-section-title { font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 1.5px; color: var(--primary); margin-bottom: 16px; }
         .settings-desc { color: #666; font-size: 11px; margin-bottom: 20px; line-height: 1.5; }
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; background: var(--surface2); padding: 14px 16px; border-radius: 10px; margin-bottom: 8px; border: 1px solid transparent; transition: border-color var(--transition); }
+
+        .toggle-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--surface2); padding: 14px 16px; border-radius: 10px;
+            margin-bottom: 8px; border: 1px solid transparent; transition: border-color var(--transition);
+        }
         .toggle-row:has(input:checked) { border-color: rgba(229,9,20,0.2); }
         .toggle-row-info { flex: 1; margin-right: 16px; }
         .toggle-row-title { font-weight: 600; font-size: 13px; }
         .toggle-row-desc { font-size: 10px; color: #666; margin-top: 2px; line-height: 1.4; }
         input[type="radio"] { accent-color: var(--primary); width: 16px; height: 16px; }
+
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; }
         .chip { padding: 7px 14px; background: var(--surface2); border-radius: 20px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); transition: all var(--transition); }
         .chip:hover { border-color: #555; color: white; }
         .chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
-        .data-box { background: var(--surface2); padding: 16px 18px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); }
+
+        .data-box {
+            background: var(--surface2); padding: 16px 18px; border-radius: 10px;
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid var(--border);
+        }
         .data-val { font-size: 22px; font-weight: 900; font-family: 'Orbitron', sans-serif; color: var(--primary); }
         .data-label { font-size: 11px; color: #666; margin-top: 2px; }
         .data-icon { font-size: 22px; color: #333; }
+
+        /* ===== SLEEP TIMER PANEL ===== */
         #sleep-options { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
-        .sleep-btn { padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: #aaa; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; transition: all var(--transition); font-family: 'Exo 2', sans-serif; }
+        .sleep-btn {
+            padding: 12px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 8px; color: #aaa; font-size: 12px; font-weight: 700;
+            cursor: pointer; text-align: center; transition: all var(--transition);
+            font-family: 'Exo 2', sans-serif;
+        }
         .sleep-btn:hover { border-color: #555; color: white; }
         .sleep-btn.active { background: rgba(229,9,20,0.15); border-color: var(--primary); color: var(--primary); }
+
+        /* ===== SHORTCUT BAR IN SETTINGS ===== */
         .shortcut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .shortcut-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
         .shortcut-key { background: #333; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-family: monospace; color: #aaa; }
+
+        /* ===== ACCOUNT INFO ===== */
         .account-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
         .account-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
         .account-row:last-child { border-bottom: none; }
@@ -191,19 +385,42 @@
         .account-status-badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
         .badge-active { background: rgba(46,204,113,0.2); color: var(--accent-green); }
         .badge-expired { background: rgba(229,9,20,0.2); color: var(--primary); }
+
+        /* ===== MAINTENANCE ===== */
         #maint-screen { display:none; position:fixed; inset:0; background:#070707; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-        #admin-msg-box { position: fixed; top: -80px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--primary), #900); color: white; padding: 14px 28px; border-radius: 30px; z-index: 10001; display: none; box-shadow: 0 8px 32px rgba(229,9,20,0.4); font-weight: 700; text-align: center; max-width: 90%; font-size: 14px; transition: top 0.5s cubic-bezier(0.4,0,0.2,1); }
+
+        /* ===== ADMIN MSG ===== */
+        #admin-msg-box {
+            position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), #900);
+            color: white; padding: 14px 28px; border-radius: 30px; z-index: 10001;
+            display: none; box-shadow: 0 8px 32px rgba(229,9,20,0.4);
+            font-weight: 700; text-align: center; max-width: 90%; font-size: 14px;
+            transition: top 0.5s cubic-bezier(0.4,0,0.2,1);
+        }
         #admin-msg-box.show { top: 16px; }
-        #pin-code { width: 130px; font-size: 28px; text-align: center; letter-spacing: 12px; padding: 12px; background: var(--surface2); color: white; border: 1px solid var(--border); border-radius: 10px; margin: 16px auto; display: block; font-family: 'Orbitron', sans-serif; }
+
+        /* ===== PIN MODAL ===== */
+        #pin-code {
+            width: 130px; font-size: 28px; text-align: center; letter-spacing: 12px;
+            padding: 12px; background: var(--surface2); color: white; border: 1px solid var(--border);
+            border-radius: 10px; margin: 16px auto; display: block; font-family: 'Orbitron', sans-serif;
+        }
         #pin-code:focus { border-color: var(--primary); }
+
+        /* ===== NUMPAD ===== */
         #numpad { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; width: 180px; margin: 0 auto 16px; }
         .np-btn { padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 16px; font-weight: 700; cursor: pointer; transition: all var(--transition); text-align: center; }
         .np-btn:hover { background: #333; border-color: #555; }
         .np-btn:active { transform: scale(0.92); }
         .np-btn.del { color: var(--primary); font-size: 14px; }
+
+        /* ===== TP ITEMS ===== */
         .tp-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--surface2); margin-bottom: 5px; border-radius: 8px; border: 1px solid var(--border); }
         .tp-name { color: white; font-weight: 600; font-size: 13px; }
         .tp-checkbox { width: 16px; height: 16px; accent-color: var(--primary); }
+
+        /* ===== RESPONSIVE — MOBILE (≤600px) ===== */
         @media (max-width: 600px) {
             .desktop-only { display: none !important; }
             #bottom-bar { gap: 4px; padding: 5px 8px; bottom: 8px; max-width: 98vw; }
@@ -221,6 +438,7 @@
             #sleep-options { grid-template-columns: repeat(2,1fr); }
             #status-pill { top: 8px; right: 8px; font-size: 10px; padding: 5px 10px; }
         }
+        /* ===== RESPONSIVE — SMALL TABLET (601–768px) ===== */
         @media (min-width: 601px) and (max-width: 768px) {
             .desktop-only { display: none !important; }
             #channel-menu { width: 300px; }
@@ -230,10 +448,12 @@
             .settings-sidebar-title { display: none; }
             .settings-tab { white-space: nowrap; margin-bottom: 0; margin-right: 3px; }
         }
+        /* ===== RESPONSIVE — TABLET (769–1024px) ===== */
         @media (min-width: 769px) and (max-width: 1024px) {
             :root { --sidebar-w: 280px; }
             #channel-menu { width: var(--sidebar-w); }
         }
+        /* ===== SMART TV (grand écran, pointer coarse ou fine) ===== */
         @media (min-width: 1280px) {
             :root { --sidebar-w: 340px; }
             .btn-ctrl { width: 50px; height: 50px; font-size: 19px; }
@@ -242,17 +462,20 @@
             .ch-name { font-size: 14px; }
             #bottom-bar { gap: 10px; padding: 10px 18px; }
         }
+        /* ===== TOUCH DEVICE — cibles plus grandes ===== */
         @media (pointer: coarse) {
             .channel-row { min-height: 50px; }
             .fav-btn { padding: 10px; }
             .btn-ctrl { min-width: 38px; min-height: 38px; }
             .np-btn { padding: 14px; font-size: 18px; }
         }
+        /* ===== LANDSCAPE MOBILE ===== */
         @media (max-width: 900px) and (orientation: landscape) {
             #bottom-bar { bottom: 5px; padding: 4px 8px; gap: 3px; }
             .btn-ctrl { width: 32px; height: 32px; font-size: 12px; }
             .btn-large { width: 40px; height: 40px; font-size: 15px; }
         }
+        /* ===== WATCH OS (≤200px) ===== */
         @media (max-width: 200px) {
             #bottom-bar { flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: 8px; }
             .btn-ctrl { width: 26px; height: 26px; font-size: 10px; }
@@ -262,16 +485,40 @@
             :root { --sidebar-w: 95vw; }
             #status-pill { font-size: 7px; padding: 3px 6px; top: 3px; right: 3px; }
         }
+        /* ===== FOCUS TV (navigation télécommande) ===== */
         .tv-focused { outline: 3px solid var(--primary) !important; outline-offset: 2px; box-shadow: 0 0 14px var(--primary-glow); }
+        /* ===== SETTINGS au-dessous des modals alert/confirm ===== */
         #settings-modal { z-index: 200; }
+        /* ===== VEILLE overlay ===== */
         #standby-overlay { position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer; }
+
+        /* ===== PULSE ANIM ===== */
         @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--primary-glow)} 50%{box-shadow:0 0 18px var(--primary-glow)} }
         .pulsing { animation: pulse 2s infinite; }
-        #scroll-top-btn { position: absolute; bottom: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; background: rgba(229,9,20,0.2); border: 1px solid rgba(229,9,20,0.4); color: var(--primary); font-size: 13px; display: none; align-items: center; justify-content: center; cursor: pointer; pointer-events: auto; transition: all var(--transition); z-index: 5; }
+
+        /* ===== SCROLL TO TOP BTN ===== */
+        #scroll-top-btn {
+            position: absolute; bottom: 12px; right: 12px;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(229,9,20,0.2); border: 1px solid rgba(229,9,20,0.4);
+            color: var(--primary); font-size: 13px; display: none;
+            align-items: center; justify-content: center; cursor: pointer;
+            pointer-events: auto; transition: all var(--transition); z-index: 5;
+        }
         #scroll-top-btn:hover { background: rgba(229,9,20,0.4); }
-        #ctx-menu { position: fixed; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px; z-index: 500; display: none; min-width: 170px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); animation: ctxIn 0.15s ease; }
+
+        /* ===== CONTEXT MENU ===== */
+        #ctx-menu {
+            position: fixed; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 6px; z-index: 500; display: none; min-width: 170px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7); animation: ctxIn 0.15s ease;
+        }
         @keyframes ctxIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
-        .ctx-item { padding: 9px 12px; border-radius: 7px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: #ccc; transition: background var(--transition); }
+        .ctx-item {
+            padding: 9px 12px; border-radius: 7px; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; color: #ccc;
+            transition: background var(--transition);
+        }
         .ctx-item:hover { background: rgba(255,255,255,0.07); color: white; }
         .ctx-item i { width: 14px; text-align: center; }
         .ctx-item.danger { color: #ff6b6b; }
@@ -659,11 +906,41 @@
 
 <script>
 // =======================================================
-// CONFIGURATION SUPABASE (remplace l'ancien Google Script)
+// CONFIGURATION SUPABASE (Version Supabase)
 // =======================================================
 const SUPABASE_URL = "https://yvcdadenofftnbljutwk.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2Y2RhZGVub2ZmdG5ibGp1dHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzQ0ODIsImV4cCI6MjA4ODQ1MDQ4Mn0.xqJzLpQszFmph599FBIvdE7NF88_i-JkABG-aSrAndE";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2Y2RhZGVub2ZmdG5ibGp1dHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzQ0ODIsImV4cCI6MjA4ODQ1MDQ4Mn0.xqJzLpQszFmph599FBIvdE7NF88_i-JkABG-aSrAndE";
+const SB_HEADERS = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+};
+
+async function sbGet(table, params) {
+    try {
+        const q = params ? '?' + params : '';
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${q}`, { headers: SB_HEADERS });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch(e) { return null; }
+}
+async function sbPatch(table, params, body) {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+            method: 'PATCH', headers: SB_HEADERS, body: JSON.stringify(body)
+        });
+        return res.ok;
+    } catch(e) { return false; }
+}
+async function sbInsert(table, body) {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+            method: 'POST', headers: SB_HEADERS, body: JSON.stringify(body)
+        });
+        return res.ok;
+    } catch(e) { return false; }
+}
 
 // =======================================================
 // CONFIGURATION
@@ -766,6 +1043,7 @@ function payWithFedaPay() {
                 showToastNotif("⚠️ Paiement annulé.");
                 return;
             }
+            // Paiement approuvé ou tenté → on enregistre dans Sheets et affiche le reçu
             if(resp.transaction && (resp.transaction.status === 'approved' || resp.transaction.status === 'approved_and_captured')) {
                 processSuccessfulPayment(newKey, days, screens);
             } else {
@@ -782,21 +1060,23 @@ async function processSuccessfulPayment(newKey, days, screens) {
     btn.disabled = true;
 
     try {
-        const today = new Date().toISOString().split('T')[0];
-        // Enregistrement dans la table "utilisateurs" Supabase
-        await supabase.from('utilisateurs').insert([{
+        // 1. Enregistrement dans Supabase
+        await sbInsert('utilisateurs', {
             cle: newKey,
-            duree: days.toString(),
-            max_ecrans: parseInt(screens),
+            duree: parseInt(days),
             appareils: '',
-            date_activation: today
-        }]);
+            date_activation: new Date().toISOString().split('T')[0],
+            max_ecrans: parseInt(screens),
+            message: ''
+        });
     } catch(e) {
         console.warn("Erreur enregistrement Supabase :", e);
     }
 
+    // 2. Génération et téléchargement automatique du reçu PDF
     generateReceiptPDF(newKey, days, screens);
 
+    // 3. Affichage du succès avec l'ID visible
     document.getElementById('subscribe-modal').style.display = 'none';
     document.getElementById('new-sub-id').innerText = newKey;
     document.getElementById('success-modal').style.display = 'flex';
@@ -812,27 +1092,32 @@ function generateReceiptPDF(key, days, screens) {
     const now = new Date();
     const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
 
+    // En-tête
     doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(26); doc.setFont("helvetica", "bold");
     doc.text("MY BOX TV", 105, 20, null, null, "center");
     doc.setFontSize(11); doc.setTextColor(229, 9, 20); doc.text("REÇU DE PAIEMENT & CERTIFICAT D'ABONNEMENT", 105, 32, null, null, "center");
     doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text("Date : " + dateStr, 105, 40, null, null, "center");
 
+    // Montant payé
     doc.setFillColor(0, 100, 0); doc.rect(40, 50, 130, 18, 'F');
     doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica", "bold");
     doc.text("✓  PAIEMENT CONFIRMÉ  —  " + amount + " FCFA", 105, 62, null, null, "center");
 
+    // ID de connexion
     doc.setTextColor(0, 0, 0); doc.setFontSize(13); doc.setFont("helvetica", "normal");
     doc.text("VOTRE ID DE CONNEXION :", 105, 82, null, null, "center");
     doc.setFillColor(240, 240, 240); doc.setDrawColor(229, 9, 20); doc.setLineWidth(1.5); doc.rect(35, 86, 140, 26, 'FD');
     doc.setFont("courier", "bold"); doc.setFontSize(28); doc.setTextColor(229, 9, 20);
     doc.text(key, 105, 103, null, null, "center");
 
+    // Détails abonnement
     doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); doc.setFontSize(12); doc.setLineWidth(0.1);
     doc.text(`VALIDITÉ : ${days} Jours`, 45, 124); doc.text(`ÉCRANS : ${screens}`, 125, 124);
 
     doc.setDrawColor(200, 200, 200); doc.line(20, 130, 190, 130);
 
+    // Instructions
     doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 142);
     doc.setFontSize(11); doc.setFont("helvetica", "normal");
     doc.text("1. Connectez votre appareil à Internet.", 22, 153);
@@ -842,9 +1127,11 @@ function generateReceiptPDF(key, days, screens) {
 
     doc.line(20, 188, 190, 188);
 
+    // Avertissement
     doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont("helvetica", "italic");
     doc.text("Conservez précieusement cet ID. Ne le partagez pas. Valide sur " + screens + " appareil(s) simultané(s).", 105, 197, null, null, "center");
 
+    // Pied de page
     doc.setFillColor(245, 245, 245); doc.rect(0, 255, 210, 45, 'F');
     doc.setTextColor(229, 9, 20); doc.setFontSize(12); doc.setFont("helvetica", "bold");
     doc.text("SUPPORT TECHNIQUE — WHATSAPP", 105, 268, null, null, "center");
@@ -867,10 +1154,12 @@ function closeSuccessAndLogin() {
     const newKey = document.getElementById('new-sub-id').innerText.trim();
     document.getElementById('success-modal').style.display = 'none';
     document.getElementById('subscribe-modal').style.display = 'none';
+    // Pré-remplir et connecter automatiquement
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('licenseKey').value = newKey;
-    setTimeout(() => login(), 300); 
+    setTimeout(() => login(), 300); // légère pause pour que l'UI se mette à jour
 }
+
 
 // =======================================================
 // AMBIENT CANVAS
@@ -1406,7 +1695,7 @@ async function quickScan() {
 // Détecte si on est en local (file://)
 const IS_LOCAL = location.protocol === 'file:';
 
-// Liste de proxies CORS
+// Liste de proxies CORS — essayés dans l'ordre jusqu'à succès
 const CORS_PROXIES = [
     u => "https://corsproxy.io/?" + encodeURIComponent(u),
     u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
@@ -1434,9 +1723,18 @@ async function fetchWithCORSFallback(url, signal) {
     return fetch(url, opts);
 }
 
+async function apiFetch(url) {
+    try { const res = await fetchWithCORSFallback(url); return await res.text(); } catch(e) { return ''; }
+}
+
+async function apiFetchJSON(url) {
+    try { const res = await fetchWithCORSFallback(url); return await res.json(); } catch(e) { return null; }
+}
+
 async function fetchPlaylistWithWatchdog(url) {
     lastActivityTime = Date.now();
     const controller = new AbortController();
+    // 60s timeout pour les grandes playlists
     const timeout = setTimeout(()=>controller.abort(), 60000);
     try {
         const res = await fetchWithCORSFallback(url, controller.signal);
@@ -1463,6 +1761,7 @@ function processLines(lines, batch) {
         if(line.startsWith('#EXTINF:')) {
             const parts=line.split(',');
             const name=parts[1]||'Sans Nom';
+            // Regex élargie : logo, espaces tolérés
             const logo=(line.match(/tvg-logo=["']?([^"'\s>]*)["']?/)||[])[1]||'';
             let cat='Autres';
             const grp=line.match(/group-title=["']?([^"']*?)["']?(?:\s|$)/);
@@ -1472,6 +1771,8 @@ function processLines(lines, batch) {
             cur={name,logo,category:cat}; allCategories.add(cat);
         } else if(line.startsWith('http')&&!line.endsWith('.m3u')&&!line.endsWith('.m3u8\n')) {
             if(cur) {
+                // Accepte TOUT lien HTTP qui n'est pas une playlist .m3u
+                // (inclut .m3u8, .ts, .mp4, /live/, /stream/, etc.)
                 const isPlaylist = line.toLowerCase().endsWith('.m3u');
                 if(!isPlaylist) {
                     const ch={...cur,url:line};
@@ -1489,76 +1790,131 @@ function flushBatch(batch) {
     if(!batch.length) return;
     allChannels=allChannels.concat(batch); batch.length=0;
     enforceNovelasIntegrity();
+    // Toujours afficher en temps réel + mettre à jour le compteur
     document.getElementById('count-display').innerText=allChannels.length+' trouvées';
     renderList(true);
     updateCategoryChips();
 }
 
 // =======================================================
-// AUTH & SUPABASE
+// AUTH — Supabase
 // =======================================================
-function updateAccountDisplay(key, raw) {
+function updateAccountDisplay(key, rawStatus) {
     document.getElementById('sub-id').innerText = key;
     document.getElementById('sub-device').innerText = deviceId;
-    if(raw && raw.split(':').length>=3) {
-        const parts = raw.split(':');
-        document.getElementById('sub-details').innerText = parts[1]+' jours';
-        const badge = document.getElementById('sub-status');
-        if(parseInt(parts[1])>0) { badge.innerText='ACTIF'; badge.className='account-status-badge badge-active'; }
-        else { badge.innerText='EXPIRÉ'; badge.className='account-status-badge badge-expired'; }
+    if (rawStatus) {
+        const parts = rawStatus.split(':');
+        if (parts.length >= 2) {
+            const duree = parts[1];
+            document.getElementById('sub-details').innerText = duree === 'VIE' ? 'À vie' : duree + ' jours';
+            const badge = document.getElementById('sub-status');
+            const active = duree === 'VIE' || parseInt(duree) > 0;
+            badge.innerText = active ? 'ACTIF' : 'EXPIRÉ';
+            badge.className = 'account-status-badge ' + (active ? 'badge-active' : 'badge-expired');
+        }
     }
+}
+
+function _calcDaysLeft(user) {
+    if (!user) return 0;
+    if (user.duree === 'VIE') return 9999;
+    const d = parseInt(user.duree);
+    if (isNaN(d)) return 0;
+    return d;
+}
+
+function startRealTimeCheck() {
+    setInterval(async () => {
+        const key = localStorage.getItem('mybox_key');
+        if (!key) return;
+        try {
+            const data = await sbGet('utilisateurs', 'cle=eq.' + encodeURIComponent(key) + '&select=duree,appareils,max_ecrans,message');
+            if (!data || data.length === 0 || _calcDaysLeft(data[0]) <= 0) {
+                localStorage.removeItem('mybox_auth');
+                localStorage.removeItem('mybox_key');
+                localStorage.removeItem('mybox_raw_status');
+                if (hls) { hls.destroy(); hls = null; }
+                video.pause(); video.src = '';
+                document.getElementById('settings-modal').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('login-msg').style.color = '#ff8c00';
+                document.getElementById('login-msg').innerText = '⛔ Abonnement expiré. Renouvelez votre abonnement.';
+                document.getElementById('licenseKey').value = '';
+                document.body.classList.remove('menu-open');
+            } else {
+                const u = data[0];
+                const raw = 'SUCCESS:' + u.duree + ':' + u.max_ecrans;
+                updateAccountDisplay(key, raw);
+                localStorage.setItem('mybox_raw_status', raw);
+                if (u.message && u.message !== localStorage.getItem('mybox_last_msg')) {
+                    localStorage.setItem('mybox_last_msg', u.message);
+                    setTimeout(() => showToastNotif('📢 ' + u.message), 1500);
+                }
+            }
+        } catch(e) {}
+    }, 5000);
 }
 
 async function login() {
     const key = document.getElementById('licenseKey').value.trim();
-    if(!key) return;
+    if (!key) return;
     const btn = document.querySelector('#login-screen .btn-primary');
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...'; btn.disabled = true;
-    
     try {
-        const { data: config } = await supabase.from('config').select('maintenance').single();
-        if(config && (config.maintenance === true || config.maintenance === 'true')) { 
-            showMyAlert("Maintenance en cours."); 
-            btn.innerHTML='<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled=false; 
-            return; 
+        // 1. Check config for maintenance
+        const cfg = await sbGet('config', 'id=eq.1&select=maintenance,message_accueil');
+        if (cfg && cfg[0] && cfg[0].maintenance === true) {
+            showMyAlert('Maintenance en cours.');
+            btn.innerHTML = '<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled = false;
+            return;
         }
 
-        const { data: user, error } = await supabase.from('utilisateurs').select('*').eq('cle', key).single();
-        
-        if(user) {
-            let appareilsStr = user.appareils || "";
-            let appareils = appareilsStr.split(',').map(a => a.trim()).filter(a => a.length > 0);
-            let isRegistered = appareils.includes(deviceId);
-            
-            if(!isRegistered) {
-                if(appareils.length < (user.max_ecrans || 1)) {
-                    appareils.push(deviceId);
-                    await supabase.from('utilisateurs').update({ appareils: appareils.join(',') }).eq('cle', key);
-                    isRegistered = true;
-                } else {
-                    document.getElementById('login-msg').innerText = "Nombre maximum d'écrans atteint.";
-                    btn.innerHTML = '<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled = false;
-                    return;
-                }
-            }
-
-            if(isRegistered) {
-                const statusText = `SUCCESS:${user.duree}:${user.max_ecrans}`;
-                localStorage.setItem('mybox_auth','OK'); 
-                localStorage.setItem('mybox_key',key); 
-                localStorage.setItem('mybox_raw_status', statusText);
-                
-                updateAccountDisplay(key, statusText);
-                document.getElementById('login-screen').style.display='none';
-                initApp(); 
-                startRealTimeCheck();
-            }
-        } else { 
-            document.getElementById('login-msg').innerText = 'ID invalide ou inexistant.'; 
+        // 2. Check user
+        const data = await sbGet('utilisateurs', 'cle=eq.' + encodeURIComponent(key) + '&select=*');
+        if (!data || data.length === 0) {
+            document.getElementById('login-msg').innerText = 'ID invalide ou abonnement expiré.';
+            btn.innerHTML = '<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled = false;
+            return;
         }
-    } catch(e) { 
-        console.error(e);
-        document.getElementById('login-msg').innerText = 'Erreur de connexion Internet.'; 
+
+        const user = data[0];
+        const daysLeft = _calcDaysLeft(user);
+        if (daysLeft <= 0) {
+            document.getElementById('login-msg').innerText = 'Abonnement expiré. Renouvelez votre abonnement.';
+            btn.innerHTML = '<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled = false;
+            return;
+        }
+
+        // 3. Check device limit
+        const devices = user.appareils ? user.appareils.split(',').map(d => d.trim()).filter(Boolean) : [];
+        if (!devices.includes(deviceId)) {
+            if (devices.length >= (user.max_ecrans || 1)) {
+                document.getElementById('login-msg').innerText = 'Limite d\'appareils atteinte (' + user.max_ecrans + ' max).';
+                btn.innerHTML = '<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled = false;
+                return;
+            }
+            // Register device
+            devices.push(deviceId);
+            await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(key), { appareils: devices.join(',') });
+        }
+
+        // 4. SUCCESS
+        const raw = 'SUCCESS:' + user.duree + ':' + user.max_ecrans;
+        localStorage.setItem('mybox_auth', 'OK');
+        localStorage.setItem('mybox_key', key);
+        localStorage.setItem('mybox_raw_status', raw);
+        updateAccountDisplay(key, raw);
+
+        // Show welcome message if any
+        if (user.message && user.message.trim() && user.message !== '---') {
+            setTimeout(() => showToastNotif('📢 ' + user.message), 2000);
+        }
+
+        document.getElementById('login-screen').style.display = 'none';
+        initApp();
+        startRealTimeCheck();
+    } catch(e) {
+        document.getElementById('login-msg').innerText = 'Erreur de connexion Internet.';
     }
     btn.innerHTML = '<i class="fas fa-tv"></i> ACCÉDER'; btn.disabled = false;
 }
@@ -1568,154 +1924,134 @@ async function logout() {
     setTimeout(() => {
         showMyConfirm("Voulez-vous vraiment vous déconnecter ?", async () => {
             const key = localStorage.getItem('mybox_key');
-            try { 
-                const { data: user } = await supabase.from('utilisateurs').select('appareils').eq('cle', key).single();
-                if(user && user.appareils) {
-                    let appareils = user.appareils.split(',').map(a => a.trim()).filter(a => a !== deviceId && a.length > 0);
-                    await supabase.from('utilisateurs').update({ appareils: appareils.join(',') }).eq('cle', key);
-                }
-            } catch(e){}
-            localStorage.removeItem('mybox_auth'); 
+            if (key) {
+                try {
+                    const data = await sbGet('utilisateurs', 'cle=eq.' + encodeURIComponent(key) + '&select=appareils');
+                    if (data && data[0]) {
+                        const devices = (data[0].appareils || '').split(',').map(d => d.trim()).filter(d => d && d !== deviceId);
+                        await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(key), { appareils: devices.join(',') });
+                    }
+                } catch(e) {}
+            }
+            localStorage.removeItem('mybox_auth');
             location.reload();
         });
     }, 220);
 }
 
-function startRealTimeCheck() {
-    setInterval(async () => {
-        const key = localStorage.getItem('mybox_key'); if(!key) return;
-        try {
-            const { data: user } = await supabase.from('utilisateurs').select('appareils, duree, max_ecrans').eq('cle', key).single();
-            if(!user || !user.appareils || !user.appareils.includes(deviceId)) {
-                localStorage.removeItem('mybox_auth');
-                localStorage.removeItem('mybox_key');
-                localStorage.removeItem('mybox_raw_status');
-                if(hls) { hls.destroy(); hls=null; }
-                video.pause(); video.src='';
-                
-                document.getElementById('settings-modal').style.display='none';
-                document.getElementById('login-screen').style.display='flex';
-                document.getElementById('login-msg').style.color='#ff8c00';
-                document.getElementById('login-msg').innerText='⛔ Abonnement expiré ou appareil déconnecté.';
-                document.getElementById('licenseKey').value='';
-                document.body.classList.remove('menu-open');
-            } else {
-                const statusText = `SUCCESS:${user.duree}:${user.max_ecrans}`;
-                updateAccountDisplay(key, statusText);
-                localStorage.setItem('mybox_raw_status', statusText);
-            }
-        } catch(e){}
-    }, 15000); 
-}
-
 // =======================================================
-// INIT & SUPABASE LOAD
+// INIT — Supabase
 // =======================================================
 async function initApp() {
     if(!appMode) { openSettings(); showMyAlert("Bienvenue sur My Box TV !\nChoisissez un Mode de Réception pour commencer."); return; }
     updateModeUI(); enforceNovelasIntegrity(); renderList(true); playChannel(0); refreshNetworkUI(0);
+
+    // Check config (maintenance + message)
+    try {
+        const cfg = await sbGet('config', 'id=eq.1&select=maintenance,message_accueil');
+        if (cfg && cfg[0]) {
+            if (cfg[0].maintenance === true) {
+                document.getElementById('maint-screen').style.display = 'flex';
+                return;
+            }
+            if (cfg[0].message_accueil && cfg[0].message_accueil.trim()) {
+                setTimeout(() => showToastNotif('📢 ' + cfg[0].message_accueil), 2000);
+            }
+        }
+    } catch(e) {}
 
     if(appMode === 'premium') {
         try {
             document.getElementById('scan-info').style.display = 'flex';
             document.getElementById('scan-text').innerText = 'Connexion aux serveurs Premium...';
 
+            // Get sources from 'chaines' table (direct channels) + 'sources' table (playlists)
+            const [chaines, sources] = await Promise.all([
+                sbGet('chaines', 'select=nom,url_flux,groupe,statut'),
+                sbGet('sources', 'select=nom,lien')
+            ]);
+
+            // Nettoyage complet
             allChannels = [DEFAULT_CHANNEL];
             loadedUrls = new Set([DEFAULT_CHANNEL.url]);
             allCategories = new Set(['Favoris']);
             selectedCategories = [];
 
-            const { data: chaines } = await supabase.from('chaines').select('*').eq('statut', 'OK');
-            if(chaines && chaines.length > 0) {
-                for(let c of chaines) {
-                    if(!loadedUrls.has(c.url_flux)) {
-                        const ch = { name: c.nom, url: c.url_flux, category: c.groupe || 'Premium', logo: '' };
+            // Add direct channels from 'chaines' table
+            if (chaines && chaines.length > 0) {
+                for (let i = 0; i < chaines.length; i++) {
+                    const c = chaines[i];
+                    if (c.url_flux && !loadedUrls.has(c.url_flux) && !hiddenChannels.includes(c.url_flux)) {
+                        const cat = c.groupe || 'Premium';
+                        const ch = { name: c.nom || 'Chaîne', url: c.url_flux, category: cat, logo: '' };
                         allChannels.push(ch);
-                        loadedUrls.add(ch.url_flux);
-                        allCategories.add(ch.category || 'Premium');
+                        loadedUrls.add(c.url_flux);
+                        allCategories.add(cat);
                     }
                 }
             }
 
-            const { data: sources } = await supabase.from('sources').select('*');
-            if(sources && sources.length > 0) {
-                for(let i = 0; i < sources.length; i++) {
-                    let s = sources[i];
-                    let sourceUrl = s.lien; 
-                    let sourceName = s.nom || `Bouquet ${i+1}`; 
-
-                    if(sourceUrl) {
-                        document.getElementById('scan-text').innerText = `Chargement : ${sourceName}...`;
-                        if(sourceUrl.includes('.m3u') || sourceUrl.includes('get.php') || sourceUrl.includes('playlist')) {
-                            await fetchPlaylistWithWatchdog(sourceUrl);
-                        } else {
-                            if(!loadedUrls.has(sourceUrl)) {
-                                const ch = { name: sourceName, url: sourceUrl, category: 'Premium', logo: '' };
-                                allChannels.push(ch);
-                                loadedUrls.add(ch.url);
-                                allCategories.add('Premium');
-                            }
-                        }
+            // Load playlists from 'sources' table
+            if (sources && sources.length > 0) {
+                for (let i = 0; i < sources.length; i++) {
+                    const s = sources[i];
+                    if (s.lien) {
+                        document.getElementById('scan-text').innerText = `Chargement : ${s.nom || 'Source '+(i+1)} (${i+1}/${sources.length})...`;
+                        await fetchPlaylistWithWatchdog(s.lien);
                     }
                 }
             }
-            
+
             document.getElementById('scan-info').style.display = 'none';
             updateCategoryChips();
             renderList(true);
             showToastNotif(`✅ Premium activé : ${allChannels.length} chaînes chargées`);
 
         } catch(e) {
-            console.error('Premium err', e);
+            console.log('Premium err', e);
             document.getElementById('scan-info').style.display = 'none';
             showToastNotif('Erreur de chargement Premium');
         }
     } else {
+        // --- MODE TRANSPONDEUR ---
         allCategories = new Set(['Favoris']);
         selectedCategories = [];
+
         const cached = await loadChannelsFromDB();
         if(cached.length > 5) {
             const ext = cached.filter(c => c.url !== DEFAULT_CHANNEL.url);
             allChannels = [DEFAULT_CHANNEL, ...ext];
-            allChannels.forEach(c => { loadedUrls.add(c.url); if(c.category) allCategories.add(c.category); });
+            allChannels.forEach(c => {
+                loadedUrls.add(c.url);
+                if(c.category) allCategories.add(c.category);
+            });
             updateCategoryChips();
             renderList(true);
         }
         fetchTranspondersList();
     }
-
-    try {
-        const { data: configData } = await supabase.from('config').select('message_accueil, maintenance').single();
-        if(configData) {
-            if(configData.maintenance === true || configData.maintenance === 'true') {
-                document.getElementById('maint-screen').style.display = 'flex';
-            }
-            if(configData.message_accueil) {
-                setTimeout(() => showToastNotif("📢 " + configData.message_accueil), 2000);
-            }
-        }
-    } catch(e) {}
 }
 
 async function fetchTranspondersList() {
     if(appMode==='premium') return;
     try {
-        const { data: transponders } = await supabase.from('sources').select('lien');
-        if(!transponders) return;
-        
-        availableTransponders = transponders.map(t => t.lien);
+        const sources = await sbGet('sources', 'select=nom,lien');
+        if (!sources || sources.length === 0) { console.warn('No transponders'); return; }
+
+        availableTransponders = sources.map(s => s.lien).filter(Boolean);
         renderTranspondersUI();
-        
+
         document.getElementById('scan-info').style.display = 'flex';
-        for(let i=0; i < availableTransponders.length; i++) {
-            document.getElementById('scan-text').innerText = `Chargement source ${i+1}/${availableTransponders.length}...`;
-            await fetchPlaylistWithWatchdog(availableTransponders[i]);
+        for(let i = 0; i < sources.length; i++) {
+            document.getElementById('scan-text').innerText = `Chargement source ${i+1}/${sources.length}...`;
+            await fetchPlaylistWithWatchdog(sources[i].lien);
             saveChannelsToDB(allChannels);
         }
         document.getElementById('scan-info').style.display = 'none';
         showToastNotif(`✅ ${allChannels.length} chaînes chargées`);
-    } catch(e) { 
+    } catch(e) {
         document.getElementById('scan-info').style.display = 'none';
+        console.warn('fetchTranspondersList error', e);
     }
 }
 
