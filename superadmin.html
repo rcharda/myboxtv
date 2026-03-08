@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - My Box TV (Supabase)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; margin: 0; }
+
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: #1e1e1e; padding: 40px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: white; margin: 5px 0; }
+        button { padding: 10px 20px; background: #e50914; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background .2s; }
+        button:hover { background: #ff0f1f; }
+
+        #dashboard { display: none; padding: 20px; max-width: 1300px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #e50914; margin: 0; display:flex; align-items:center; gap:15px; }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { background: #333; padding: 10px 20px; border-radius: 5px; cursor: pointer; border: none; color: #eee; font-weight: bold; }
+        .tab-btn.active { background: #e50914; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+
+        table { width: 100%; border-collapse: collapse; background: #1e1e1e; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 13px 15px; text-align: left; border-bottom: 1px solid #2a2a2a; font-size: 13px; }
+        th { background: #252525; color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+        tr:hover { background: #242424; }
+
+        .action-btn { padding: 6px 10px; font-size: 12px; margin-right: 4px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+        .btn-pdf  { background: #28a745; }
+        .btn-edit { background: #007bff; }
+        .btn-del  { background: #ff4444; }
+        .btn-rst  { background: #555; }
+
+        .add-form { background: #1e1e1e; border: 1px solid #2e2e2e; padding: 18px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .add-form h3 { margin: 0; color: #aaa; font-size: 13px; }
+
+        .maint-status { padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-left: 10px; }
+        .maint-on  { background: red;   color: white; }
+        .maint-off { background: green; color: white; }
+
+        .badge-vie    { background: rgba(0,170,255,.2); color: #0af;    padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight:700; }
+        .badge-active { background: rgba(46,204,113,.2); color: #2ecc71; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight:700; }
+        .badge-exp    { background: rgba(229,9,20,.2);   color: #e50914; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight:700; }
+
+        #stats-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { background: #1e1e1e; border: 1px solid #2e2e2e; border-radius: 10px; padding: 16px 22px; flex: 1; min-width: 130px; }
+        .stat-val  { font-size: 28px; font-weight: 900; color: #e50914; }
+        .stat-lbl  { font-size: 11px; color: #666; margin-top: 2px; }
+
+        /* chaines tab */
+        #chaines-section .add-form { gap: 8px; }
+        #chaines-section select { min-width: 120px; }
+
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1e1e1e; border: 1px solid #333; color: #eee; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 13px; transition: transform .3s ease; pointer-events:none; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media(max-width:600px){
+            .add-form input[style*="width:400px"] { width: 100% !important; }
+            th:nth-child(3), td:nth-child(3) { display:none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login-overlay">
+    <div class="login-box">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="100" style="margin-bottom:20px; border-radius:10px;">
+        <h2 style="color:#e50914; margin-top:0;">ADMIN ACCESS</h2>
+        <br>
+        <input type="password" id="admin-pass" placeholder="Mot de passe" onkeyup="if(event.key==='Enter')adminLogin()" style="width:220px; display:block; margin:0 auto 12px;">
+        <button onclick="adminLogin()" style="width:100%; max-width:242px; padding:13px;">ENTRER</button>
+        <div id="login-error" style="color:red; margin-top:10px; font-size:13px;"></div>
+    </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="dashboard">
+    <div class="header">
+        <h1>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="55" style="border-radius:8px;">
+            MY BOX TV <span style="font-size:14px; color:#aaa;">MANAGER</span>
+        </h1>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button id="maint-btn" onclick="toggleMaintenance()" style="background:#444; font-size:12px;">
+                <i class="fas fa-tools"></i> MAINTENANCE
+            </button>
+            <span id="maint-display" class="maint-status">...</span>
+            <button onclick="downloadBackup()" style="background:#007bff; font-size:12px;">
+                <i class="fas fa-download"></i> BACKUP CSV
+            </button>
+            <button onclick="loadData()" style="background:#444; font-size:12px;">
+                <i class="fas fa-sync-alt"></i> ACTUALISER
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats-bar">
+        <div class="stat-card"><div class="stat-val" id="st-total">—</div><div class="stat-lbl">Abonnés total</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-active">—</div><div class="stat-lbl">Actifs</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-vie">—</div><div class="stat-lbl">À vie</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-sources">—</div><div class="stat-lbl">Sources M3U</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-chaines">—</div><div class="stat-lbl">Chaînes directes</div></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('users-section')"><i class="fas fa-users"></i> UTILISATEURS</button>
+        <button class="tab-btn" onclick="showTab('sources-section')"><i class="fas fa-link"></i> SOURCES M3U</button>
+        <button class="tab-btn" onclick="showTab('chaines-section')"><i class="fas fa-tv"></i> CHAÎNES DIRECTES</button>
+        <button class="tab-btn" onclick="showTab('message-section')"><i class="fas fa-bullhorn"></i> MESSAGE</button>
+    </div>
+
+    <!-- ---- UTILISATEURS ---- -->
+    <div id="users-section" class="section active">
+        <div class="add-form">
+            <h3>Nouveau Client :</h3>
+            <input type="text" id="new-key" placeholder="ID (vide = auto)" style="width:180px;">
+            <select id="new-days">
+                <option value="30">30 Jours</option>
+                <option value="60">60 Jours</option>
+                <option value="90">3 Mois</option>
+                <option value="365">1 An</option>
+                <option value="VIE">À VIE</option>
+            </select>
+            <select id="new-screens">
+                <option value="1">1 Écran</option>
+                <option value="2">2 Écrans</option>
+                <option value="4">4 Écrans</option>
+                <option value="10">10 Écrans</option>
+                <option value="50">50 Écrans</option>
+            </select>
+            <input type="text" id="new-msg" placeholder="Message perso (opt.)" style="width:200px;">
+            <button onclick="addUser()"><i class="fas fa-plus"></i> CRÉER & PDF</button>
+        </div>
+        <table>
+            <thead><tr><th>CLÉ</th><th>DURÉE</th><th>ÉCRANS</th><th>APPAREILS</th><th>DATE</th><th>MESSAGE</th><th>ACTIONS</th></tr></thead>
+            <tbody id="users-body"></tbody>
+        </table>
+    </div>
+
+    <!-- ---- SOURCES M3U ---- -->
+    <div id="sources-section" class="section">
+        <div class="add-form">
+            <h3>Ajouter Source :</h3>
+            <input type="text" id="new-source-name" placeholder="Nom" style="width:200px;">
+            <input type="text" id="new-source-link" placeholder="https://..." style="width:420px;">
+            <button onclick="addSource()"><i class="fas fa-plus"></i> AJOUTER</button>
+        </div>
+        <table>
+            <thead><tr><th>#</th><th>NOM</th><th>LIEN</th><th>ACTIONS</th></tr></thead>
+            <tbody id="sources-body"></tbody>
+        </table>
+    </div>
+
+    <!-- ---- CHAÎNES DIRECTES ---- -->
+    <div id="chaines-section" class="section">
+        <div class="add-form">
+            <h3>Ajouter Chaîne :</h3>
+            <input type="text" id="new-ch-nom" placeholder="Nom" style="width:160px;">
+            <input type="text" id="new-ch-url" placeholder="https://... (flux)" style="width:340px;">
+            <input type="text" id="new-ch-groupe" placeholder="Groupe/Catégorie" style="width:160px;">
+            <select id="new-ch-statut">
+                <option value="OK">OK</option>
+                <option value="HS">HS</option>
+            </select>
+            <button onclick="addChaine()"><i class="fas fa-plus"></i> AJOUTER</button>
+        </div>
+        <table>
+            <thead><tr><th>NOM</th><th>URL</th><th>GROUPE</th><th>STATUT</th><th>ACTIONS</th></tr></thead>
+            <tbody id="chaines-body"></tbody>
+        </table>
+    </div>
+
+    <!-- ---- MESSAGE ---- -->
+    <div id="message-section" class="section">
+        <div style="background:#1e1e1e; border:1px solid #2e2e2e; padding:24px; border-radius:10px; max-width:600px;">
+            <h3 style="margin-top:0; color:#aaa;"><i class="fas fa-bullhorn"></i> Message d'accueil global</h3>
+            <p style="font-size:12px; color:#555;">Affiché à tous les utilisateurs au démarrage. Laisser vide pour désactiver.</p>
+            <input type="text" id="global-msg-input" style="width:100%; padding:14px; box-sizing:border-box;" placeholder="Ex: Maintenance prévue ce soir à 22h...">
+            <button onclick="saveMessage()" style="width:100%; margin-top:12px; padding:13px;">
+                <i class="fas fa-save"></i> METTRE À JOUR
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+// =====================================================
+// SUPABASE CONFIG
+// =====================================================
+const SUPABASE_URL = "https://yvcdadenofftnbljutwk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2Y2RhZGVub2ZmdG5ibGp1dHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzQ0ODIsImV4cCI6MjA4ODQ1MDQ4Mn0.xqJzLpQszFmph599FBIvdE7NF88_i-JkABG-aSrAndE";
+const ADMIN_PASSWORD = "ADMIN1234";
+
+const SB_HEADERS = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+};
+
+// =====================================================
+// HELPERS SUPABASE
+// =====================================================
+async function sbGet(table, params) {
+    const q = params ? '?' + params : '';
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${q}`, { headers: SB_HEADERS });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+}
+async function sbInsert(table, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST', headers: SB_HEADERS, body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+}
+async function sbPatch(table, filter, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+        method: 'PATCH', headers: SB_HEADERS, body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res;
+}
+async function sbDelete(table, filter) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+        method: 'DELETE', headers: SB_HEADERS
+    });
+    if (!res.ok) throw new Error(await res.text());
+}
+
+// =====================================================
+// TOAST
+// =====================================================
+let _toastT;
+function toast(msg, color='#eee') {
+    const el = document.getElementById('toast');
+    el.innerText = msg; el.style.color = color; el.classList.add('show');
+    clearTimeout(_toastT);
+    _toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// =====================================================
+// LOGIN — mot de passe direct HTML
+// =====================================================
+function adminLogin() {
+    const pass = document.getElementById('admin-pass').value;
+    if (pass === ADMIN_PASSWORD) {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadData();
+    } else {
+        document.getElementById('login-error').innerText = '❌ Mot de passe incorrect';
+    }
+}
+
+// =====================================================
+// LOAD DATA
+// =====================================================
+let globalUsers = [], globalSources = [], globalChaines = [];
+
+async function loadData() {
+    try {
+        const [users, sources, chaines, cfg] = await Promise.all([
+            sbGet('utilisateurs', 'select=*&order=date_activation.desc'),
+            sbGet('sources', 'select=*&order=id.asc'),
+            sbGet('chaines', 'select=*&order=nom.asc'),
+            sbGet('config', 'id=eq.1&select=maintenance,message_accueil')
+        ]);
+
+        globalUsers   = users   || [];
+        globalSources = sources || [];
+        globalChaines = chaines || [];
+
+        // ---- STATS ----
+        const total   = globalUsers.length;
+        const vie     = globalUsers.filter(u => u.duree === 'VIE').length;
+        const active  = globalUsers.filter(u => u.duree === 'VIE' || parseInt(u.duree) > 0).length;
+        document.getElementById('st-total').innerText   = total;
+        document.getElementById('st-active').innerText  = active;
+        document.getElementById('st-vie').innerText     = vie;
+        document.getElementById('st-sources').innerText = globalSources.length;
+        document.getElementById('st-chaines').innerText = globalChaines.length;
+
+        // ---- MAINTENANCE ----
+        if (cfg && cfg[0]) {
+            const on = cfg[0].maintenance === true;
+            const el = document.getElementById('maint-display');
+            el.innerText   = on ? 'ACTIF ⛔' : 'INACTIF ✅';
+            el.className   = 'maint-status ' + (on ? 'maint-on' : 'maint-off');
+            const msgInput = document.getElementById('global-msg-input');
+            if (msgInput) msgInput.value = cfg[0].message_accueil || '';
+        }
+
+        // ---- USERS TABLE ----
+        const tbody = document.getElementById('users-body');
+        tbody.innerHTML = '';
+        globalUsers.forEach(u => {
+            const devCount = u.appareils ? u.appareils.split(',').filter(d => d.trim()).length : 0;
+            const isVie    = u.duree === 'VIE';
+            const days     = isVie ? '∞' : parseInt(u.duree);
+            const badgeCls = isVie ? 'badge-vie' : days > 0 ? 'badge-active' : 'badge-exp';
+            const badgeTxt = isVie ? 'À VIE' : days > 0 ? days + 'j' : 'EXPIRÉ';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:700; color:white; font-family:monospace; letter-spacing:1px;">${esc(u.cle)}</td>
+                <td><span class="${badgeCls}">${badgeTxt}</span></td>
+                <td>${u.max_ecrans || 1}</td>
+                <td style="color:#666; font-size:12px;">${devCount} / ${u.max_ecrans || 1} connecté(s)</td>
+                <td style="color:#555; font-size:11px;">${u.date_activation || '—'}</td>
+                <td style="color:#aaa; font-size:11px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(u.message||'')}">${esc(u.message || '—')}</td>
+                <td style="white-space:nowrap;">
+                    <button class="action-btn btn-pdf"  onclick="generatePDF('${esc(u.cle)}','${u.duree}','${u.max_ecrans||1}')" title="PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button class="action-btn btn-edit" onclick="editUser('${esc(u.cle)}','${u.duree}','${u.max_ecrans||1}','${esc(u.message||'')}')" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-rst"  onclick="resetDevices('${esc(u.cle)}')" title="Reset appareils"><i class="fas fa-unlock"></i></button>
+                    <button class="action-btn btn-del"  onclick="deleteUser('${esc(u.cle)}')" title="Supprimer"><i class="fas fa-trash"></i></button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+
+        // ---- SOURCES TABLE ----
+        const sBo = document.getElementById('sources-body');
+        sBo.innerHTML = '';
+        globalSources.forEach((s, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:#555; font-size:12px;">${s.id}</td>
+                <td style="font-weight:600;">${esc(s.nom)}</td>
+                <td style="color:#666; font-size:11px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(s.lien)}">${esc(s.lien)}</td>
+                <td><button class="action-btn btn-del" onclick="deleteSource(${s.id})"><i class="fas fa-trash"></i></button></td>`;
+            sBo.appendChild(tr);
+        });
+
+        // ---- CHAÎNES TABLE ----
+        const cBo = document.getElementById('chaines-body');
+        cBo.innerHTML = '';
+        globalChaines.forEach(c => {
+            const statColor = c.statut === 'OK' ? '#2ecc71' : '#ff4444';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${esc(c.nom)}</td>
+                <td style="color:#666; font-size:11px; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(c.url_flux)}">${esc(c.url_flux)}</td>
+                <td><span style="background:rgba(255,255,255,.07); padding:2px 8px; border-radius:10px; font-size:11px;">${esc(c.groupe||'—')}</span></td>
+                <td><span style="color:${statColor}; font-weight:700; font-size:12px;">${esc(c.statut||'—')}</span></td>
+                <td>
+                    <button class="action-btn btn-edit" onclick="editChaine('${c.id}','${esc(c.nom)}','${esc(c.url_flux)}','${esc(c.groupe||'')}','${c.statut||'OK'}')"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-del"  onclick="deleteChaine('${c.id}')"><i class="fas fa-trash"></i></button>
+                </td>`;
+            cBo.appendChild(tr);
+        });
+
+    } catch(e) {
+        toast('❌ Erreur chargement : ' + e.message, '#ff6b6b');
+        console.error(e);
+    }
+}
+
+// XSS safety
+function esc(s) { return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// =====================================================
+// UTILISATEURS
+// =====================================================
+async function addUser() {
+    let key = document.getElementById('new-key').value.trim().toUpperCase();
+    if (!key) {
+        const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let r = "";
+        for (let i = 0; i < 6; i++) r += c.charAt(Math.floor(Math.random() * c.length));
+        key = "BOX-" + r;
+    }
+    const days    = document.getElementById('new-days').value;
+    const screens = parseInt(document.getElementById('new-screens').value);
+    const msg     = document.getElementById('new-msg').value.trim();
+
+    if (!confirm(`Créer l'abonnement "${key}" (${days} j / ${screens} écran(s)) ?`)) return;
+
+    try {
+        await sbInsert('utilisateurs', {
+            cle:              key,
+            duree:            days,
+            appareils:        '',
+            date_activation:  new Date().toISOString().split('T')[0],
+            max_ecrans:       screens,
+            message:          msg
+        });
+        toast('✅ Abonné ' + key + ' créé !', '#2ecc71');
+        generatePDF(key, days, screens);
+        document.getElementById('new-key').value  = '';
+        document.getElementById('new-msg').value  = '';
+        loadData();
+    } catch(e) {
+        toast('❌ ' + e.message, '#ff6b6b');
+    }
+}
+
+async function deleteUser(k) {
+    if (!confirm('Supprimer l\'abonné "' + k + '" définitivement ?')) return;
+    try {
+        await sbDelete('utilisateurs', 'cle=eq.' + encodeURIComponent(k));
+        toast('🗑 Abonné supprimé', '#ff6b6b');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function editUser(k, oldD, oldS, oldMsg) {
+    const d   = prompt('Durée (jours ou VIE) :', oldD);   if (d === null) return;
+    const s   = prompt('Nb écrans :', oldS);               if (s === null) return;
+    const msg = prompt('Message perso (opt.) :', oldMsg);  if (msg === null) return;
+    try {
+        await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(k), {
+            duree: d, max_ecrans: parseInt(s), message: msg
+        });
+        toast('✅ Abonné modifié', '#2ecc71');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function resetDevices(k) {
+    if (!confirm('Réinitialiser les appareils de "' + k + '" ?')) return;
+    try {
+        await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(k), { appareils: '' });
+        toast('🔓 Appareils réinitialisés', '#2ecc71');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// SOURCES M3U
+// =====================================================
+async function addSource() {
+    const n = document.getElementById('new-source-name').value.trim();
+    const l = document.getElementById('new-source-link').value.trim();
+    if (!l) { toast('⚠️ Entrez un lien', '#ffd700'); return; }
+    try {
+        await sbInsert('sources', { nom: n || 'Source', lien: l });
+        toast('✅ Source ajoutée', '#2ecc71');
+        document.getElementById('new-source-name').value = '';
+        document.getElementById('new-source-link').value = '';
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function deleteSource(id) {
+    if (!confirm('Supprimer cette source ?')) return;
+    try {
+        await sbDelete('sources', 'id=eq.' + id);
+        toast('🗑 Source supprimée', '#ff6b6b');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// CHAÎNES DIRECTES
+// =====================================================
+async function addChaine() {
+    const nom    = document.getElementById('new-ch-nom').value.trim();
+    const url    = document.getElementById('new-ch-url').value.trim();
+    const groupe = document.getElementById('new-ch-groupe').value.trim();
+    const statut = document.getElementById('new-ch-statut').value;
+    if (!nom || !url) { toast('⚠️ Nom et URL obligatoires', '#ffd700'); return; }
+    try {
+        await sbInsert('chaines', { nom, url_flux: url, groupe: groupe || 'Général', statut });
+        toast('✅ Chaîne ajoutée', '#2ecc71');
+        document.getElementById('new-ch-nom').value    = '';
+        document.getElementById('new-ch-url').value    = '';
+        document.getElementById('new-ch-groupe').value = '';
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function editChaine(id, oldNom, oldUrl, oldGroupe, oldStatut) {
+    const nom    = prompt('Nom :', oldNom);    if (nom === null) return;
+    const url    = prompt('URL flux :', oldUrl); if (url === null) return;
+    const groupe = prompt('Groupe :', oldGroupe); if (groupe === null) return;
+    const statut = prompt('Statut (OK / HS) :', oldStatut); if (statut === null) return;
+    try {
+        await sbPatch('chaines', 'id=eq.' + id, { nom, url_flux: url, groupe, statut: statut.toUpperCase() });
+        toast('✅ Chaîne modifiée', '#2ecc71');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+async function deleteChaine(id) {
+    if (!confirm('Supprimer cette chaîne ?')) return;
+    try {
+        await sbDelete('chaines', 'id=eq.' + id);
+        toast('🗑 Chaîne supprimée', '#ff6b6b');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// MESSAGE D'ACCUEIL
+// =====================================================
+async function saveMessage() {
+    const msg = document.getElementById('global-msg-input').value.trim();
+    try {
+        await sbPatch('config', 'id=eq.1', { message_accueil: msg });
+        toast('✅ Message mis à jour', '#2ecc71');
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// MAINTENANCE
+// =====================================================
+async function toggleMaintenance() {
+    const current = document.getElementById('maint-display').innerText.includes('ACTIF');
+    const newState = !current;
+    if (!confirm('Passer la maintenance à ' + (newState ? 'ON ⛔' : 'OFF ✅') + ' ?')) return;
+    try {
+        await sbPatch('config', 'id=eq.1', { maintenance: newState });
+        toast('Maintenance ' + (newState ? 'activée ⛔' : 'désactivée ✅'), newState ? '#ff6b6b' : '#2ecc71');
+        loadData();
+    } catch(e) { toast('❌ ' + e.message, '#ff6b6b'); }
+}
+
+// =====================================================
+// BACKUP CSV
+// =====================================================
+function downloadBackup() {
+    if (!globalUsers.length) { toast('⚠️ Aucune donnée', '#ffd700'); return; }
+    let csv = "CLE,DUREE,APPAREILS,DATE_ACTIVATION,MAX_ECRANS,MESSAGE\n";
+    globalUsers.forEach(u => {
+        csv += [u.cle, u.duree, u.appareils || '', u.date_activation || '', u.max_ecrans || 1, u.message || '']
+            .map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n';
+    });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup_myboxtv_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('💾 Backup téléchargé', '#2ecc71');
+}
+
+// =====================================================
+// TABS
+// =====================================================
+function showTab(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+// =====================================================
+// PDF GENERATOR (identique à l'original)
+// =====================================================
+function generatePDF(key, days, screens) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+
+    doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 42, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(28); doc.setFont("helvetica","bold");
+    doc.text("MY BOX TV", 105, 20, null, null, "center");
+    doc.setFontSize(12); doc.setTextColor(229,9,20);
+    doc.text("CERTIFICAT D'ABONNEMENT", 105, 31, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("Émis le " + dateStr, 105, 39, null, null, "center");
+
+    doc.setTextColor(0,0,0); doc.setFontSize(14); doc.setFont("helvetica","normal");
+    doc.text("VOTRE ID DE CONNEXION :", 105, 60, null, null, "center");
+    doc.setFillColor(240,240,240); doc.setDrawColor(229,9,20); doc.setLineWidth(1.5); doc.rect(35, 65, 140, 27, 'FD');
+    doc.setFont("courier","bold"); doc.setFontSize(30); doc.setTextColor(229,9,20);
+    doc.text(key, 105, 83, null, null, "center");
+
+    doc.setFont("helvetica","normal"); doc.setTextColor(0,0,0); doc.setFontSize(12); doc.setLineWidth(0.1);
+    doc.text("VALIDITÉ : " + days + " Jours", 45, 106);
+    doc.text("ÉCRANS : " + screens, 125, 106);
+    doc.setDrawColor(200,200,200); doc.line(20, 115, 190, 115);
+
+    doc.setFontSize(14); doc.setFont("helvetica","bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 128);
+    doc.setFontSize(11); doc.setFont("helvetica","normal");
+    doc.text("1. Connectez votre appareil à Internet.", 22, 140);
+    doc.text("2. Ouvrez l'application MY BOX TV.", 22, 150);
+    doc.text("3. Entrez votre ID ci-dessus dans le champ de connexion.", 22, 160);
+    doc.text("4. Profitez de +14.000 chaînes en HD/4K !", 22, 170);
+    doc.line(20, 180, 190, 180);
+
+    doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont("helvetica","italic");
+    doc.text("Conservez précieusement cet ID. Ne le partagez pas. Valide sur " + screens + " appareil(s) simultané(s).", 105, 190, null, null, "center");
+
+    doc.setFillColor(245,245,245); doc.rect(0, 255, 210, 45, 'F');
+    doc.setTextColor(229,9,20); doc.setFontSize(12); doc.setFont("helvetica","bold");
+    doc.text("SUPPORT TECHNIQUE — WHATSAPP", 105, 268, null, null, "center");
+    doc.setTextColor(0,0,0); doc.setFont("helvetica","normal"); doc.setFontSize(14);
+    doc.text("63 82 87 67", 105, 280, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("www.myboxtv.com  —  Merci de votre confiance !", 105, 291, null, null, "center");
+
+    doc.save(`Abonnement_${key}.pdf`);
+}
+</script>
+</body>
+</html>
