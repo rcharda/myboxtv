@@ -297,13 +297,19 @@
         body.menu-open #menu-overlay { display: block; }
 
         /* ===== MODALS ===== */
-        /* z-index 9999 : toujours au-dessus du menu (z=100) et des settings (z=200) */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 9999; align-items: center; justify-content: center; pointer-events: auto; }
+        .modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.92); z-index: 9999;
+            overflow-y: auto; overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            pointer-events: auto;
+        }
         .modal-box {
-            background: var(--surface); padding: 28px; border-radius: 16px;
-            width: 90%; max-width: 400px; text-align: center;
-            border: 1px solid rgba(229,9,20,0.3); box-shadow: 0 0 40px rgba(229,9,20,0.15);
+            background: var(--surface); padding: 28px; border-radius: 20px;
+            width: calc(100% - 32px); max-width: 420px; text-align: center;
+            border: 1px solid rgba(229,9,20,0.3); box-shadow: 0 0 60px rgba(229,9,20,0.2);
             animation: modalIn 0.3s cubic-bezier(0.4,0,0.2,1);
+            margin: 20px auto; position: relative;
         }
         @keyframes modalIn { from{transform:scale(0.92) translateY(10px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
         .modal-logo { width: 70px; margin-bottom: 12px; border-radius: 10px; }
@@ -386,6 +392,74 @@
         .badge-active { background: rgba(46,204,113,0.2); color: var(--accent-green); }
         .badge-expired { background: rgba(229,9,20,0.2); color: var(--primary); }
 
+        /* ===== TARIFS CARDS ===== */
+        #tarifs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        @media (min-width: 380px) {
+            #tarifs-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .tarif-card {
+            background: var(--surface2); border: 2px solid var(--border);
+            border-radius: 14px; padding: 16px 12px 14px; cursor: pointer;
+            transition: all 0.22s ease; text-align: center; position: relative;
+            overflow: hidden; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; min-height: 110px;
+        }
+        .tarif-card:hover { border-color: #555; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .tarif-card.selected { border-color: var(--primary); background: rgba(229,9,20,0.1); box-shadow: 0 0 18px rgba(229,9,20,0.25); }
+        .tarif-card.has-promo { border-color: rgba(255,200,0,0.4); }
+        .tarif-card.selected.has-promo { border-color: #ffc800; background: rgba(255,200,0,0.08); }
+        .tarif-card-badge {
+            position: absolute; top: 0; right: 0;
+            padding: 3px 9px; border-radius: 0 12px 0 10px;
+            font-size: 9px; font-weight: 900; letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .tarif-card-label { font-size: 10px; color: #888; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+        .tarif-card-duree { font-size: 13px; color: #ddd; margin-bottom: 6px; font-weight: 700; }
+        .tarif-card-prix { font-family: 'Orbitron', sans-serif; font-weight: 900; line-height: 1; }
+        .tarif-card-prix .old-prix { font-size: 10px; color: #555; text-decoration: line-through; display: block; margin-bottom: 2px; }
+        .tarif-card-prix .real-prix { font-size: 16px; color: var(--accent-green); }
+        .tarif-card-prix .real-prix.promo { color: #ffc800; }
+        .tarif-card-fcfa { font-size: 9px; color: #666; margin-top: 3px; }
+
+        /* ===== PARRAINAGE ===== */
+        .parrain-input-wrap {
+            display: flex; gap: 8px; align-items: center; margin-top: 6px;
+        }
+        .parrain-input-wrap input {
+            flex: 1; padding: 10px 12px; background: var(--surface2);
+            border: 1px solid var(--border); border-radius: 8px;
+            color: white; font-size: 12px; font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+        .parrain-input-wrap input:focus { border-color: var(--accent-blue); outline: none; }
+        .parrain-input-wrap input.valid { border-color: var(--accent-green); }
+        .parrain-input-wrap input.invalid { border-color: var(--primary); }
+
+        /* Code parrainage personnel */
+        .parrain-code-box {
+            background: linear-gradient(135deg, rgba(0,170,255,0.1), rgba(0,170,255,0.05));
+            border: 1px solid rgba(0,170,255,0.3); border-radius: 12px;
+            padding: 16px; margin-bottom: 14px; text-align: center;
+        }
+        .parrain-code-box .code-label { font-size: 10px; color: #0af; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700; }
+        .parrain-code-box .code-val {
+            font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900;
+            color: white; letter-spacing: 3px; cursor: pointer;
+            padding: 10px; background: rgba(0,0,0,0.4); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .parrain-code-box .code-val:hover { background: rgba(0,170,255,0.15); }
+        .parrain-stats { display: flex; gap: 10px; margin-top: 10px; }
+        .parrain-stat { flex: 1; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; text-align: center; }
+        .parrain-stat-val { font-size: 20px; font-weight: 900; color: #0af; font-family: 'Orbitron', sans-serif; }
+        .parrain-stat-lbl { font-size: 9px; color: #555; margin-top: 2px; }
+
         /* ===== MAINTENANCE ===== */
         #maint-screen { display:none; position:fixed; inset:0; background:#070707; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
 
@@ -419,6 +493,15 @@
         .tp-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--surface2); margin-bottom: 5px; border-radius: 8px; border: 1px solid var(--border); }
         .tp-name { color: white; font-weight: 600; font-size: 13px; }
         .tp-checkbox { width: 16px; height: 16px; accent-color: var(--primary); }
+
+        /* ===== RESPONSIVE MODAL (≤480px) ===== */
+        @media (max-width: 480px) {
+            .modal { padding: 14px 10px; }
+            .modal-box { padding: 24px 18px 20px !important; border-radius: 16px !important; }
+            #tarifs-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+            .tarif-card { min-height: 96px; padding: 12px 8px 10px; }
+            .tarif-card-prix .real-prix { font-size: 14px; }
+        }
 
         /* ===== RESPONSIVE — MOBILE (≤600px) ===== */
         @media (max-width: 600px) {
@@ -524,6 +607,74 @@
         .ctx-item.danger { color: #ff6b6b; }
         .ctx-item.danger:hover { background: rgba(229,9,20,0.15); }
         .ctx-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+        /* ===== TICKET ANIMÉ ===== */
+        .ticket-wrap {
+            position: relative; margin-bottom: 16px; cursor: default;
+        }
+        .ticket-svg-bg {
+            width: 100%; display: block;
+        }
+        .ticket-content {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px 20px; text-align: center;
+        }
+        .ticket-icon {
+            font-size: 22px; margin-bottom: 4px;
+            animation: ticketPulse 2s infinite;
+        }
+        .ticket-label {
+            font-size: 9px; letter-spacing: 2px; color: #888; text-transform: uppercase; margin-bottom: 2px;
+        }
+        .ticket-price-row {
+            display: flex; align-items: baseline; gap: 6px; justify-content: center; margin-bottom: 2px;
+        }
+        .ticket-old-price {
+            font-size: 11px; color: #555; text-decoration: line-through;
+        }
+        .ticket-main-price {
+            font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; line-height: 1;
+        }
+        .ticket-main-price.green { color: #2ecc71; text-shadow: 0 0 12px rgba(46,204,113,0.5); }
+        .ticket-main-price.gold  { color: #ffc800; text-shadow: 0 0 12px rgba(255,200,0,0.5); }
+        .ticket-fcfa { font-size: 11px; color: #666; }
+        .ticket-promo-badge {
+            background: rgba(255,200,0,0.15); border: 1px solid rgba(255,200,0,0.4);
+            color: #ffc800; font-size: 9px; font-weight: 900;
+            padding: 2px 8px; border-radius: 20px; margin-top: 2px;
+        }
+        .ticket-shine {
+            position: absolute; top: 0; left: -75%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+            animation: ticketShine 3s infinite;
+            pointer-events: none; border-radius: inherit;
+        }
+        @keyframes ticketPulse {
+            0%,100% { transform: scale(1); filter: drop-shadow(0 0 4px currentColor); }
+            50%      { transform: scale(1.12); filter: drop-shadow(0 0 10px currentColor); }
+        }
+        @keyframes ticketShine {
+            0%   { left: -75%; }
+            60%  { left: 125%; }
+            100% { left: 125%; }
+        }
+        @keyframes ticketGlow {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(46,204,113,0.3)); }
+            50%     { filter: drop-shadow(0 0 16px rgba(46,204,113,0.6)); }
+        }
+        .ticket-svg-container {
+            position: relative; overflow: hidden; border-radius: 14px;
+            animation: ticketGlow 2.5s infinite;
+        }
+        .ticket-svg-container.promo-glow {
+            animation: ticketGlowGold 2.5s infinite;
+        }
+        @keyframes ticketGlowGold {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(255,200,0,0.3)); }
+            50%     { filter: drop-shadow(0 0 16px rgba(255,200,0,0.7)); }
+        }
     </style>
 </head>
 <body>
@@ -587,8 +738,8 @@
     </div>
 </div>
 
-<div id="settings-modal" class="modal">
-    <div class="settings-panel">
+<div id="settings-modal" class="modal" style="display:none;">
+    <div class="settings-panel" style="margin:20px auto;">
         <div class="settings-sidebar">
             <div class="settings-sidebar-title">RÉGLAGES</div>
             <div class="settings-tab active" onclick="showTab('tab-general')"><i class="fas fa-satellite-dish"></i> Sources</div>
@@ -697,6 +848,40 @@
                     <div class="account-row"><span class="account-row-label">Expiration</span><span class="account-row-val" id="sub-details">--</span></div>
                     <div class="account-row"><span class="account-row-label">Appareils</span><span class="account-row-val" id="sub-device">--</span></div>
                 </div>
+
+                <!-- PARRAINAGE -->
+                <div class="settings-section-title" style="margin-top:18px;">
+                    <i class="fas fa-users" style="color:var(--accent-blue);margin-right:6px;"></i>PARRAINAGE
+                </div>
+                <p style="font-size:11px;color:#555;margin:0 0 12px;">Partagez votre code — votre ami gagne <b style="color:var(--accent-green);">+7 jours</b>, vous gagnez <b style="color:#ffc800;">+15 jours</b> gratuits.</p>
+
+                <div class="parrain-code-box">
+                    <div class="code-label"><i class="fas fa-share-alt"></i> VOTRE CODE DE PARRAINAGE</div>
+                    <div class="code-val" id="parrain-code-display" onclick="copyCodeParrainage()">
+                        <span id="parrain-code-val">CHARGEMENT...</span>
+                        <i class="fas fa-copy" style="font-size:14px;color:#0af;"></i>
+                    </div>
+                    <div style="font-size:10px;color:#333;margin-top:8px;">Cliquez pour copier</div>
+                </div>
+
+                <div class="parrain-stats">
+                    <div class="parrain-stat">
+                        <div class="parrain-stat-val" id="parrain-nb-filleuls">—</div>
+                        <div class="parrain-stat-lbl">Amis parrainés</div>
+                    </div>
+                    <div class="parrain-stat">
+                        <div class="parrain-stat-val" id="parrain-jours-gagnes">—</div>
+                        <div class="parrain-stat-lbl">Jours gagnés</div>
+                    </div>
+                </div>
+
+                <!-- Bouton Prolonger -->
+                <button onclick="openRenewFromSettings()" class="btn-primary"
+                    style="width:100%;margin-top:18px;margin-bottom:8px;padding:13px;border-radius:10px;
+                    background:linear-gradient(135deg,#2ecc71,#1a8a4a);box-shadow:0 4px 16px rgba(46,204,113,0.3);
+                    font-size:13px;font-weight:800;letter-spacing:0.5px;">
+                    <i class="fas fa-sync-alt" style="margin-right:8px;"></i>PROLONGER MON ABONNEMENT
+                </button>
                 <button onclick="logout()" class="btn-primary" style="width:100%;background:#c0392b;margin-bottom:10px;padding:12px;border-radius:10px;">
                     <i class="fas fa-sign-out-alt"></i> DÉCONNECTER
                 </button>
@@ -708,83 +893,151 @@
     </div>
 </div>
 
-<div id="login-screen" class="modal" style="display:flex;background:radial-gradient(ellipse at center, #150000 0%, #000 100%);">
-    <div class="modal-box" style="max-width:340px;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="modal-logo" style="width:90px;">
-        <div class="modal-title" style="font-size:18px;margin-bottom:6px;">MY BOX TV</div>
-        <p style="color:#555;font-size:11px;margin-bottom:20px;letter-spacing:1px;">ENTREZ VOTRE IDENTIFIANT</p>
-        <input type="text" id="licenseKey" placeholder="ID ABONNEMENT"
-            style="width:100%;padding:14px;background:var(--surface2);color:white;border:1px solid var(--border);border-radius:10px;text-align:center;font-size:16px;margin-bottom:12px;font-family:'Orbitron',sans-serif;letter-spacing:2px;"
-            onkeyup="if(event.key==='Enter')login()">
-        <button onclick="login()" class="btn-primary" style="width:100%;padding:14px;border-radius:10px;font-size:15px;letter-spacing:1px;">
+<div id="login-screen" class="modal" style="display:block;background:radial-gradient(ellipse at center, #150000 0%, #000 100%);">
+    <div class="modal-box" style="max-width:380px; padding: 36px 28px 28px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" class="modal-logo" style="width:80px; border-radius:14px; box-shadow:0 0 24px rgba(229,9,20,0.4);">
+        <div class="modal-title" style="font-size:20px;margin-bottom:4px;margin-top:4px;letter-spacing:3px;">MY BOX TV</div>
+        <p style="color:#555;font-size:10px;margin-bottom:24px;letter-spacing:2px;">PLATEFORME DE STREAMING</p>
+
+        <div style="position:relative;margin-bottom:14px;">
+            <i class="fas fa-id-badge" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#555;font-size:14px;"></i>
+            <input type="text" id="licenseKey" placeholder="ID ABONNEMENT"
+                style="width:100%;padding:15px 14px 15px 40px;background:rgba(255,255,255,0.05);color:white;border:1px solid rgba(255,255,255,0.1);border-radius:12px;text-align:left;font-size:15px;font-family:'Orbitron',sans-serif;letter-spacing:2px;transition:border-color 0.2s;box-sizing:border-box;"
+                onfocus="this.style.borderColor='rgba(229,9,20,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"
+                onkeyup="if(event.key==='Enter')login()">
+        </div>
+
+        <button onclick="login()" class="btn-primary" style="width:100%;padding:15px;border-radius:12px;font-size:15px;letter-spacing:2px;box-shadow:0 4px 20px rgba(229,9,20,0.35);">
             <i class="fas fa-tv" style="margin-right:8px;"></i>ACCÉDER
         </button>
         <div id="login-msg" style="color:#ff5555;margin-top:12px;font-size:12px;min-height:16px;"></div>
-        
-        <div style="margin-top:15px; border-top: 1px solid var(--border); padding-top:15px;">
-            <p style="color:#aaa; font-size:12px; margin-bottom:10px;">Pas encore de compte ?</p>
-            <button onclick="openSubscribe()" class="btn-secondary" style="width:100%; padding:12px; border-radius:10px; font-size:14px; background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);">
-                <i class="fas fa-shopping-cart" style="margin-right:8px; color:var(--primary);"></i>S'ABONNER
+
+        <div style="margin-top:20px; border-top: 1px solid rgba(255,255,255,0.07); padding-top:20px;">
+            <p style="color:#666; font-size:11px; margin-bottom:12px; letter-spacing:0.5px;">Pas encore de compte ?</p>
+            <button onclick="openSubscribe()" style="width:100%; padding:13px; border-radius:12px; font-size:13px; font-weight:700; background:transparent; color:#ccc; border:1px solid rgba(255,255,255,0.12); cursor:pointer; font-family:'Exo 2',sans-serif; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; box-sizing:border-box;"
+                onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='rgba(255,255,255,0.25)'"
+                onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.12)'">
+                <i class="fas fa-crown" style="color:gold;font-size:13px;"></i>S'ABONNER MAINTENANT
             </button>
         </div>
-
-        <div style="margin-top:20px;color:#333;font-size:10px;">Powered by My Box TV</div>
+        <div style="margin-top:20px;color:#2a2a2a;font-size:10px;letter-spacing:1px;">Powered by My Box TV</div>
     </div>
 </div>
 
 <div id="subscribe-modal" class="modal">
-    <div class="modal-box">
-        <div class="modal-title" style="color:white; font-size:16px; margin-bottom:20px;">
-            <i class="fas fa-crown" style="color:gold;"></i> S'ABONNER À MY BOX TV
+    <div class="modal-box" style="max-width:440px; padding: 28px 24px 24px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
+            <i class="fas fa-crown" style="color:gold;font-size:20px;"></i>
+            <div class="modal-title" style="color:white;font-size:17px;margin:0;letter-spacing:1px;">S'ABONNER À MY BOX TV</div>
         </div>
-        
-        <div style="text-align:left; margin-bottom:15px;">
-            <label style="color:#aaa; font-size:12px;">Durée d'abonnement :</label>
-            <select id="sub-days" style="width:100%; padding:12px; background:var(--surface2); color:white; border:1px solid var(--border); border-radius:8px; margin-top:5px; font-family:'Exo 2',sans-serif;" onchange="updatePrice()">
-                <option value="30">1 Mois</option>
-                <option value="90">3 Mois</option>
-                <option value="365">1 An (2 mois offerts !)</option>
-            </select>
+        <p style="font-size:11px;color:#555;margin:0 0 20px;text-align:center;letter-spacing:0.5px;">Choisissez votre offre ci-dessous</p>
+
+        <!-- Loading -->
+        <div id="tarifs-loading" style="text-align:center;padding:30px;color:#555;font-size:13px;">
+            <i class="fas fa-spinner fa-spin" style="font-size:20px;margin-bottom:10px;display:block;color:var(--primary);"></i>Chargement des offres...
         </div>
-        
-        <div style="text-align:left; margin-bottom:15px;">
-            <label style="color:#aaa; font-size:12px;">Nombre d'écrans simultanés :</label>
-            <select id="sub-screens" style="width:100%; padding:12px; background:var(--surface2); color:white; border:1px solid var(--border); border-radius:8px; margin-top:5px; font-family:'Exo 2',sans-serif;" onchange="updatePrice()">
-                <option value="1">1 Écran</option>
-                <option value="2">2 Écrans</option>
-                <option value="4">4 Écrans</option>
-            </select>
-        </div>
-        
-        <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border); padding:15px; border-radius:10px; margin:20px 0;">
-            <div style="font-size:11px; color:#aaa; margin-bottom:5px;">MONTANT À PAYER</div>
-            <div style="font-size:28px; color:var(--accent-green); font-weight:bold; font-family:'Orbitron',sans-serif;">
-                <span id="sub-price">300</span> FCFA
+
+        <!-- Offer cards grid — populated dynamically -->
+        <div id="tarifs-grid" style="display:none;"></div>
+
+        <!-- Ticket animé -->
+        <div id="tarifs-price-box" class="ticket-wrap" style="display:none;">
+            <div class="ticket-svg-container" id="ticket-svg-container">
+                <div class="ticket-shine"></div>
+                <svg viewBox="0 0 340 120" xmlns="http://www.w3.org/2000/svg" class="ticket-svg-bg">
+                    <defs>
+                        <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#1a1a1a"/>
+                            <stop offset="100%" stop-color="#0d0d0d"/>
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="blur"/>
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                    <!-- Corps du ticket -->
+                    <rect x="2" y="2" width="336" height="116" rx="14" ry="14" fill="url(#tg)" stroke="rgba(46,204,113,0.35)" stroke-width="1.5"/>
+                    <!-- Découpe gauche -->
+                    <circle cx="2" cy="60" r="12" fill="rgba(0,0,0,0.92)"/>
+                    <!-- Découpe droite -->
+                    <circle cx="338" cy="60" r="12" fill="rgba(0,0,0,0.92)"/>
+                    <!-- Ligne pointillée centrale -->
+                    <line x1="20" y1="60" x2="320" y2="60" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="6,4"/>
+                    <!-- Déco coins -->
+                    <rect x="14" y="14" width="40" height="2" rx="1" fill="rgba(46,204,113,0.2)"/>
+                    <rect x="14" y="14" width="2" height="30" rx="1" fill="rgba(46,204,113,0.2)"/>
+                    <rect x="286" y="14" width="40" height="2" rx="1" fill="rgba(46,204,113,0.2)"/>
+                    <rect x="324" y="14" width="2" height="30" rx="1" fill="rgba(46,204,113,0.2)"/>
+                    <rect x="14" y="104" width="40" height="2" rx="1" fill="rgba(46,204,113,0.1)"/>
+                    <rect x="286" y="104" width="40" height="2" rx="1" fill="rgba(46,204,113,0.1)"/>
+                </svg>
+                <div class="ticket-content">
+                    <div style="display:flex;width:100%;align-items:center;justify-content:space-around;">
+                        <div style="text-align:center;">
+                            <div class="ticket-label">OFFRE</div>
+                            <div id="ticket-offre" style="font-size:11px;font-weight:800;color:#fff;font-family:'Exo 2',sans-serif;">—</div>
+                        </div>
+                        <div style="text-align:center;border-left:1px solid rgba(255,255,255,0.08);border-right:1px solid rgba(255,255,255,0.08);padding:0 16px;">
+                            <div class="ticket-icon" id="ticket-icon" style="color:#2ecc71;">🎫</div>
+                            <div class="ticket-price-row">
+                                <div id="prix-old-display" class="ticket-old-price" style="display:none;"></div>
+                                <span id="sub-price" class="ticket-main-price green">—</span>
+                                <span class="ticket-fcfa">FCFA</span>
+                            </div>
+                            <div id="promo-economy" class="ticket-promo-badge" style="display:none;"></div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div class="ticket-label">DURÉE</div>
+                            <div id="ticket-duree" style="font-size:11px;font-weight:800;color:#fff;font-family:'Exo 2',sans-serif;">—</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <button id="btn-pay" onclick="payWithFedaPay()" class="btn-primary" style="width:100%; padding:14px; border-radius:10px; font-size:14px; background:#007bff; box-shadow:0 0 15px rgba(0,123,255,0.4);">
+
+        <!-- Parrainage code field -->
+        <div id="parrain-section" style="display:none;margin-bottom:16px;">
+            <label style="font-size:11px;color:#666;display:block;margin-bottom:8px;">
+                <i class="fas fa-users" style="color:var(--accent-blue);margin-right:5px;"></i>
+                Code de parrainage <span style="color:#444;">(optionnel — +7 jours bonus)</span>
+            </label>
+            <div class="parrain-input-wrap">
+                <input type="text" id="parrain-code-input" placeholder="PAR-XXXXXX" maxlength="10"
+                    oninput="validateCodeParrainage(this)">
+                <span id="parrain-check-icon" style="font-size:16px;width:20px;"></span>
+            </div>
+            <div id="parrain-code-msg" style="font-size:10px;margin-top:5px;min-height:14px;"></div>
+        </div>
+
+        <button id="btn-pay" onclick="payWithFedaPay()" class="btn-primary"
+            style="display:none;width:100%;padding:15px;border-radius:12px;font-size:14px;font-weight:800;background:linear-gradient(135deg,#0066ff,#004ecc);box-shadow:0 4px 20px rgba(0,100,255,0.4);letter-spacing:0.5px;">
             <i class="fas fa-credit-card" style="margin-right:8px;"></i>PAYER AVEC FEDAPAY
         </button>
-        <button onclick="closeSubscribe()" class="btn-secondary" style="width:100%; margin-top:10px; padding:12px; border-radius:10px; background:transparent; border:1px solid var(--border);">Retour</button>
+        <button onclick="closeSubscribe()"
+            style="width:100%;margin-top:10px;padding:13px;border-radius:12px;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#888;cursor:pointer;font-family:'Exo 2',sans-serif;font-weight:700;font-size:13px;transition:all 0.2s;"
+            onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+            <i class="fas fa-arrow-left" style="margin-right:6px;font-size:11px;"></i>Retour
+        </button>
     </div>
 </div>
 
 <div id="success-modal" class="modal">
-    <div class="modal-box">
-        <i class="fas fa-check-circle" style="font-size:55px; color:var(--accent-green); margin-bottom:15px; animation: pulse 2s infinite;"></i>
-        <div class="modal-title" style="color:var(--accent-green);">PAIEMENT RÉUSSI</div>
-        <p class="modal-text" style="font-size:12px;">Votre compte a été activé avec succès.<br>Votre reçu PDF a été téléchargé.</p>
+    <div class="modal-box" style="max-width:400px; padding: 36px 28px 28px;">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(46,204,113,0.15);border:2px solid rgba(46,204,113,0.4);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+            <i class="fas fa-check" style="font-size:32px; color:var(--accent-green);"></i>
+        </div>
+        <div class="modal-title" style="color:var(--accent-green);font-size:16px;letter-spacing:2px;">PAIEMENT RÉUSSI</div>
+        <p class="modal-text" style="font-size:13px;color:#888;margin-bottom:22px;">Votre compte a été activé avec succès.<br>Votre reçu PDF a été téléchargé.</p>
         
-        <div style="background:var(--surface2); padding:20px; border-radius:10px; border:1px dashed var(--accent-green); margin-bottom:20px;">
-            <div style="font-size:11px; color:#aaa; margin-bottom:8px;">VOTRE ID DE CONNEXION :</div>
-            <div id="new-sub-id" style="font-size:26px; font-weight:bold; color:white; font-family:'Orbitron',sans-serif; letter-spacing:3px;">...</div>
+        <div style="background:rgba(0,0,0,0.4); padding:20px 18px; border-radius:14px; border:1px dashed rgba(46,204,113,0.4); margin-bottom:20px;">
+            <div style="font-size:10px; color:#666; margin-bottom:10px; letter-spacing:1.5px; text-transform:uppercase;">Votre ID de connexion</div>
+            <div id="new-sub-id" style="font-size:24px; font-weight:bold; color:white; font-family:'Orbitron',sans-serif; letter-spacing:3px; word-break:break-all;">...</div>
         </div>
         
-        <button onclick="copyNewId()" class="btn-primary" style="width:100%; margin-bottom:10px; padding:12px; border-radius:10px; background:#2a2a2a; color:white; border:1px solid var(--border);">
-            <i class="fas fa-copy" style="margin-right:8px;"></i>COPIER L'ID
+        <button onclick="copyNewId()" style="width:100%; margin-bottom:10px; padding:13px; border-radius:12px; background:rgba(255,255,255,0.06); color:#ccc; border:1px solid rgba(255,255,255,0.12); cursor:pointer; font-family:'Exo 2',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <i class="fas fa-copy"></i>COPIER L'ID
         </button>
-        <button onclick="closeSuccessAndLogin()" class="btn-primary" style="width:100%; padding:14px; border-radius:10px;">
+        <button onclick="closeSuccessAndLogin()" class="btn-primary" style="width:100%; padding:15px; border-radius:12px; font-size:14px; letter-spacing:0.5px;">
             <i class="fas fa-tv" style="margin-right:8px;"></i>ACCÉDER À LA TV
         </button>
     </div>
@@ -985,67 +1238,266 @@ const led = document.getElementById('led');
 // ABONNEMENT ET PAIEMENT FEDAPAY STANDARD
 // =======================================================
 
-function openSubscribe() {
+// =======================================================
+// TARIFS DYNAMIQUES + PARRAINAGE
+// =======================================================
+
+let _tarifsCache   = null;   // offres chargées depuis Supabase
+let _selectedTarif = null;   // offre sélectionnée {id, screens, days, prix, prix_promo, label_ecran, label_duree}
+let _parrainValide = false;  // code parrainage vérifié
+
+// Fallback si Supabase inaccessible
+const TARIFS_FALLBACK = [
+    { id:1, screens:1, days:30,  label_ecran:'1 Écran',  label_duree:'1 Mois',   prix:300,  prix_promo:null, badge:null,        badge_color:'#e50914' },
+    { id:2, screens:1, days:90,  label_ecran:'1 Écran',  label_duree:'3 Mois',   prix:900,  prix_promo:null, badge:'POPULAIRE', badge_color:'#0af'    },
+    { id:3, screens:1, days:365, label_ecran:'1 Écran',  label_duree:'1 An',     prix:3000, prix_promo:null, badge:null,        badge_color:'#e50914' },
+    { id:4, screens:2, days:30,  label_ecran:'2 Écrans', label_duree:'1 Mois',   prix:500,  prix_promo:null, badge:null,        badge_color:'#e50914' },
+    { id:5, screens:4, days:30,  label_ecran:'4 Écrans', label_duree:'1 Mois',   prix:900,  prix_promo:null, badge:null,        badge_color:'#e50914' },
+];
+
+async function loadTarifsFromDB() {
+    if (_tarifsCache) return _tarifsCache;
+    try {
+        const data = await sbGet('tarifs', 'actif=eq.true&order=ordre.asc');
+        _tarifsCache = (data && data.length > 0) ? data : TARIFS_FALLBACK;
+    } catch(e) {
+        _tarifsCache = TARIFS_FALLBACK;
+    }
+    return _tarifsCache;
+}
+
+async function openSubscribe() {
+    _renewFromSettings = false;
     document.getElementById('login-screen').style.display = 'none';
-    updatePrice();
-    document.getElementById('subscribe-modal').style.display = 'flex';
+    document.getElementById('tarifs-loading').style.display = 'block';
+    document.getElementById('tarifs-grid').style.display   = 'none';
+    document.getElementById('tarifs-price-box').style.display = 'none';
+    document.getElementById('parrain-section').style.display  = 'none';
+    document.getElementById('btn-pay').style.display          = 'none';
+    document.getElementById('subscribe-modal').style.display  = 'block';
+    _selectedTarif = null;
+    // Titre normal
+    const titleEl = document.querySelector('#subscribe-modal .modal-title');
+    if (titleEl) titleEl.innerHTML = '<i class="fas fa-crown" style="color:gold;"></i> S\'ABONNER À MY BOX TV';
+
+    const tarifs = await loadTarifsFromDB();
+    _buildTarifsGrid(tarifs);
+
+    document.getElementById('tarifs-loading').style.display = 'none';
+    document.getElementById('tarifs-grid').style.display    = 'grid';
+}
+
+function _buildTarifsGrid(tarifs) {
+    const grid = document.getElementById('tarifs-grid');
+    grid.innerHTML = '';
+
+    tarifs.forEach((t, i) => {
+        const hasPromo  = t.prix_promo && t.prix_promo < t.prix;
+        const prixFinal = hasPromo ? t.prix_promo : t.prix;
+        const economy   = hasPromo ? Math.round((1 - t.prix_promo / t.prix) * 100) : 0;
+
+        const badgeHtml = t.badge
+            ? `<div class="tarif-card-badge" style="background:${t.badge_color||'#e50914'};color:white;">${t.badge}</div>`
+            : '';
+
+        const oldPrixHtml = hasPromo
+            ? `<span class="old-prix">${t.prix} F</span>`
+            : '';
+
+        const priceClass = hasPromo ? 'real-prix promo' : 'real-prix';
+
+        grid.insertAdjacentHTML('beforeend', `
+        <div class="tarif-card${hasPromo ? ' has-promo' : ''}" id="tarif-card-${t.id}"
+            onclick="selectTarif(${t.id})">
+            ${badgeHtml}
+            <div class="tarif-card-label">${t.label_ecran}</div>
+            <div class="tarif-card-duree">${t.label_duree}</div>
+            <div class="tarif-card-prix">
+                ${oldPrixHtml}
+                <span class="${priceClass}">${prixFinal}</span>
+            </div>
+            <div class="tarif-card-fcfa">FCFA</div>
+        </div>`);
+    });
+}
+
+function selectTarif(id) {
+    const tarifs = _tarifsCache || TARIFS_FALLBACK;
+    _selectedTarif = tarifs.find(t => t.id === id);
+    if (!_selectedTarif) return;
+
+    // Mettre à jour la sélection des cartes
+    document.querySelectorAll('.tarif-card').forEach(c => c.classList.remove('selected'));
+    const card = document.getElementById('tarif-card-' + id);
+    if (card) card.classList.add('selected');
+
+    const hasPromo  = _selectedTarif.prix_promo && _selectedTarif.prix_promo < _selectedTarif.prix;
+    const prixFinal = hasPromo ? _selectedTarif.prix_promo : _selectedTarif.prix;
+
+    // === Ticket animé ===
+    const priceEl = document.getElementById('sub-price');
+    priceEl.innerText = prixFinal;
+    priceEl.className = 'ticket-main-price ' + (hasPromo ? 'gold' : 'green');
+
+    // Infos ticket
+    const offreEl = document.getElementById('ticket-offre');
+    if (offreEl) offreEl.innerText = _selectedTarif.label_ecran || '—';
+    const dureeEl = document.getElementById('ticket-duree');
+    if (dureeEl) dureeEl.innerText = _selectedTarif.label_duree || '—';
+
+    // Icône ticket couleur
+    const iconEl = document.getElementById('ticket-icon');
+    if (iconEl) iconEl.style.color = hasPromo ? '#ffc800' : '#2ecc71';
+
+    // Glow ticket couleur
+    const container = document.getElementById('ticket-svg-container');
+    if (container) {
+        container.className = 'ticket-svg-container' + (hasPromo ? ' promo-glow' : '');
+        // Mettre à jour la couleur du SVG border
+        const rect = container.querySelector('rect');
+        if (rect) rect.setAttribute('stroke', hasPromo ? 'rgba(255,200,0,0.45)' : 'rgba(46,204,113,0.35)');
+    }
+
+    const oldBox = document.getElementById('prix-old-display');
+    if (hasPromo) {
+        oldBox.innerText = _selectedTarif.prix + ' F';
+        oldBox.style.display = 'inline';
+    } else {
+        oldBox.style.display = 'none';
+    }
+
+    const ecoBox = document.getElementById('promo-economy');
+    if (hasPromo) {
+        const pct = Math.round((1 - _selectedTarif.prix_promo / _selectedTarif.prix) * 100);
+        ecoBox.innerText = '-' + pct + '%';
+        ecoBox.style.display = 'inline-block';
+    } else {
+        ecoBox.style.display = 'none';
+    }
+
+    document.getElementById('tarifs-price-box').style.display = 'block';
+    document.getElementById('parrain-section').style.display  = 'block';
+    document.getElementById('btn-pay').style.display          = 'block';
+}
+
+function updatePrice() {
+    // Compatibilité — retourne le prix de l'offre sélectionnée
+    if (!_selectedTarif) return 0;
+    return _selectedTarif.prix_promo && _selectedTarif.prix_promo < _selectedTarif.prix
+        ? _selectedTarif.prix_promo
+        : _selectedTarif.prix;
+}
+
+// ---- Validation code parrainage ----
+let _parainDebounce = null;
+function validateCodeParrainage(input) {
+    const code = input.value.trim().toUpperCase();
+    input.value = code;
+    const icon = document.getElementById('parrain-check-icon');
+    const msg  = document.getElementById('parrain-code-msg');
+    _parrainValide = false;
+
+    if (!code || code.length < 6) {
+        icon.innerText = '';
+        msg.innerText  = '';
+        input.className = '';
+        return;
+    }
+
+    clearTimeout(_parainDebounce);
+    icon.innerText = '⏳';
+    _parainDebounce = setTimeout(async () => {
+        try {
+            const data = await sbGet('utilisateurs',
+                'code_parrainage=eq.' + encodeURIComponent(code) +
+                '&cle=neq.' + encodeURIComponent(localStorage.getItem('mybox_key') || '__none__') +
+                '&select=cle&limit=1');
+            if (data && data.length > 0) {
+                _parrainValide = true;
+                icon.innerText  = '✅';
+                msg.style.color = '#2ecc71';
+                msg.innerText   = '✓ Code valide — +7 jours offerts !';
+                input.className = 'valid';
+            } else {
+                _parrainValide = false;
+                icon.innerText  = '❌';
+                msg.style.color = '#ff5555';
+                msg.innerText   = 'Code introuvable.';
+                input.className = 'invalid';
+            }
+        } catch(e) {
+            icon.innerText = '?';
+        }
+    }, 600);
 }
 
 function closeSubscribe() {
     document.getElementById('subscribe-modal').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
+    // Si on vient des settings on ne montre pas le login
+    if (!_renewFromSettings) {
+        document.getElementById('login-screen').style.display = 'block';
+    }
+    _renewFromSettings = false;
 }
 
-function updatePrice() {
-    const days = parseInt(document.getElementById('sub-days').value);
-    const screens = parseInt(document.getElementById('sub-screens').value);
+let _renewFromSettings = false;
 
-    // Grille de prix : 1 Ecran = 300, 2 Ecrans = 500, 4 Ecrans = 900
-    let priceMois = 300;
-    if (screens === 2) priceMois = 500;
-    else if (screens === 4) priceMois = 900; 
+function openRenewFromSettings() {
+    _renewFromSettings = true;
+    closeSettings();
+    // Prépare le modal subscribe en mode renouvellement
+    document.getElementById('tarifs-loading').style.display = 'block';
+    document.getElementById('tarifs-grid').style.display   = 'none';
+    document.getElementById('tarifs-price-box').style.display = 'none';
+    document.getElementById('parrain-section').style.display  = 'none';
+    document.getElementById('btn-pay').style.display          = 'none';
+    _selectedTarif = null;
 
-    // Multiplicateur : 1 mois = x1, 3 mois = x3, 1 an = x10
-    let multiplier = 1;
-    if (days === 90) multiplier = 3;
-    else if (days === 365) multiplier = 10; 
+    // Titre en mode renouvellement
+    const titleEl = document.querySelector('#subscribe-modal .modal-title');
+    if (titleEl) {
+        titleEl.innerHTML = '<i class="fas fa-sync-alt" style="color:#2ecc71;"></i> PROLONGER MON ABONNEMENT';
+    }
 
-    const total = priceMois * multiplier;
-    document.getElementById('sub-price').innerText = total;
-    return total;
+    document.getElementById('subscribe-modal').style.display = 'block';
+
+    loadTarifsFromDB().then(tarifs => {
+        _buildTarifsGrid(tarifs);
+        document.getElementById('tarifs-loading').style.display = 'none';
+        document.getElementById('tarifs-grid').style.display    = 'grid';
+    });
 }
 
+// ---- Paiement FedaPay ----
 function payWithFedaPay() {
-    const amount = updatePrice();
-    const days = document.getElementById('sub-days').value;
-    const screens = document.getElementById('sub-screens').value;
+    if (!_selectedTarif) { showToastNotif('⚠️ Sélectionnez une offre.'); return; }
 
-    // Génération ID unique client (ex: TV-8472)
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const amount  = updatePrice();
+    const days    = String(_selectedTarif.days);
+    const screens = String(_selectedTarif.screens);
+    const chars   = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let rand = "";
-    for(let i=0;i<6;i++) rand += chars.charAt(Math.floor(Math.random()*chars.length));
+    for (let i = 0; i < 6; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
     const newKey = "TV-" + rand;
+
+    const codeParrain = document.getElementById('parrain-code-input').value.trim().toUpperCase();
 
     FedaPay.init({
         public_key: 'pk_live_1i7UkFPVn-pUhhO1OnoKQncy',
         environment: 'live',
         transaction: {
             amount: amount,
-            description: `Abonnement MyBoxTV - ${newKey}`,
-            custom_metadata: {
-                user_id: newKey,
-                days: days,
-                screens: screens
-            }
+            description: `Abonnement MyBoxTV ${_selectedTarif.label_ecran} ${_selectedTarif.label_duree} - ${newKey}`,
+            custom_metadata: { user_id: newKey, days, screens }
         },
         onComplete: function(resp) {
-            if(resp.reason === FedaPay.DIALOG_DISMISSED) {
+            if (resp.reason === FedaPay.DIALOG_DISMISSED) {
                 showToastNotif("⚠️ Paiement annulé.");
                 return;
             }
-            // Paiement approuvé ou tenté → on enregistre dans Sheets et affiche le reçu
-            if(resp.transaction && (resp.transaction.status === 'approved' || resp.transaction.status === 'approved_and_captured')) {
-                processSuccessfulPayment(newKey, days, screens);
+            if (resp.transaction &&
+                (resp.transaction.status === 'approved' || resp.transaction.status === 'approved_and_captured')) {
+                processSuccessfulPayment(newKey, days, screens, codeParrain);
             } else {
                 showToastNotif("❌ Paiement non validé, réessayez.");
             }
@@ -1053,85 +1505,134 @@ function payWithFedaPay() {
     }).open();
 }
 
-async function processSuccessfulPayment(newKey, days, screens) {
+async function processSuccessfulPayment(newKey, days, screens, codeParrain) {
     const btn = document.getElementById('btn-pay');
     const oldHtml = btn.innerHTML;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ACTIVATION EN COURS...';
-    btn.disabled = true;
+    btn.disabled  = true;
 
     try {
-        // 1. Enregistrement dans Supabase
+        // Générer un code parrainage unique
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let codeParr = "PAR-";
+        for (let i = 0; i < 6; i++) codeParr += chars.charAt(Math.floor(Math.random() * chars.length));
+
+        const daysInt = parseInt(days);
+
+        // 1. Créer l'abonné dans Supabase
         await sbInsert('utilisateurs', {
             cle: newKey,
-            duree: parseInt(days),
+            duree: daysInt,
             appareils: '',
             date_activation: new Date().toISOString().split('T')[0],
             max_ecrans: parseInt(screens),
-            message: ''
+            message: '',
+            code_parrainage: codeParr,
+            parraine_par: (codeParrain && _parrainValide) ? codeParrain : null,
+            bonus_parrain_creditee: false
         });
+
+        // 2. Appliquer parrainage via PATCH direct (sans RPC)
+        let bonusFilleul = 0;
+        if (codeParrain && _parrainValide) {
+            try {
+                bonusFilleul = 7;
+                // +7 jours pour le filleul
+                await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(newKey), { duree: daysInt + 7 });
+                // +15 jours pour le parrain
+                const parrain = await sbGet('utilisateurs',
+                    'code_parrainage=eq.' + encodeURIComponent(codeParrain) + '&select=cle,duree&limit=1');
+                if (parrain && parrain[0]) {
+                    const parrainDuree = parrain[0].duree;
+                    const bonus15 = parrainDuree === 'VIE' ? 0 : 15;
+                    if (bonus15 > 0) {
+                        await sbPatch('utilisateurs', 'cle=eq.' + encodeURIComponent(parrain[0].cle),
+                            { duree: parseInt(parrainDuree || 0) + 15 });
+                    }
+                    // Historique parrainages → alimente les stats dans l'onglet Compte
+                    try {
+                        await sbInsert('parrainages', {
+                            parrain_cle:          parrain[0].cle,
+                            filleul_cle:          newKey,
+                            bonus_parrain_jours:  bonus15,
+                            bonus_filleul_jours:  7,
+                            parrain_credite:      true,
+                            filleul_credite:      true
+                        });
+                    } catch(pe) { console.warn('Parrainage insert err', pe); }
+                }
+            } catch(e) { console.warn('Parrainage err', e); }
+        }
+
+        // 3. PDF
+        generateReceiptPDF(newKey, days, screens, updatePrice(), bonusFilleul, codeParrain);
+
+        // 4. Afficher succès
+        document.getElementById('subscribe-modal').style.display = 'none';
+        document.getElementById('new-sub-id').innerText = newKey;
+        document.getElementById('success-modal').style.display = 'block';
+
+        if (bonusFilleul > 0) {
+            setTimeout(() => showToastNotif('🎁 +' + bonusFilleul + ' jours bonus parrainage !'), 1500);
+        }
+
     } catch(e) {
-        console.warn("Erreur enregistrement Supabase :", e);
+        console.warn("Erreur processSuccessfulPayment:", e);
+        showToastNotif("⚠️ Compte créé mais erreur serveur. Contactez le support.");
     }
 
-    // 2. Génération et téléchargement automatique du reçu PDF
-    generateReceiptPDF(newKey, days, screens);
-
-    // 3. Affichage du succès avec l'ID visible
-    document.getElementById('subscribe-modal').style.display = 'none';
-    document.getElementById('new-sub-id').innerText = newKey;
-    document.getElementById('success-modal').style.display = 'flex';
-
     btn.innerHTML = oldHtml;
-    btn.disabled = false;
+    btn.disabled  = false;
 }
 
-function generateReceiptPDF(key, days, screens) {
+function generateReceiptPDF(key, days, screens, amount, bonusJours, codeParrain) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const amount = updatePrice ? updatePrice() : '---';
-    const now = new Date();
+    const now     = new Date();
     const dateStr = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
 
-    // En-tête
     doc.setFillColor(20, 20, 20); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(26); doc.setFont("helvetica", "bold");
     doc.text("MY BOX TV", 105, 20, null, null, "center");
-    doc.setFontSize(11); doc.setTextColor(229, 9, 20); doc.text("REÇU DE PAIEMENT & CERTIFICAT D'ABONNEMENT", 105, 32, null, null, "center");
-    doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text("Date : " + dateStr, 105, 40, null, null, "center");
+    doc.setFontSize(11); doc.setTextColor(229, 9, 20);
+    doc.text("REÇU DE PAIEMENT & CERTIFICAT D'ABONNEMENT", 105, 32, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("Date : " + dateStr, 105, 40, null, null, "center");
 
-    // Montant payé
     doc.setFillColor(0, 100, 0); doc.rect(40, 50, 130, 18, 'F');
     doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont("helvetica", "bold");
     doc.text("✓  PAIEMENT CONFIRMÉ  —  " + amount + " FCFA", 105, 62, null, null, "center");
 
-    // ID de connexion
     doc.setTextColor(0, 0, 0); doc.setFontSize(13); doc.setFont("helvetica", "normal");
     doc.text("VOTRE ID DE CONNEXION :", 105, 82, null, null, "center");
-    doc.setFillColor(240, 240, 240); doc.setDrawColor(229, 9, 20); doc.setLineWidth(1.5); doc.rect(35, 86, 140, 26, 'FD');
+    doc.setFillColor(240, 240, 240); doc.setDrawColor(229, 9, 20); doc.setLineWidth(1.5);
+    doc.rect(35, 86, 140, 26, 'FD');
     doc.setFont("courier", "bold"); doc.setFontSize(28); doc.setTextColor(229, 9, 20);
     doc.text(key, 105, 103, null, null, "center");
 
-    // Détails abonnement
     doc.setFont("helvetica", "normal"); doc.setTextColor(0, 0, 0); doc.setFontSize(12); doc.setLineWidth(0.1);
-    doc.text(`VALIDITÉ : ${days} Jours`, 45, 124); doc.text(`ÉCRANS : ${screens}`, 125, 124);
+    doc.text(`VALIDITÉ : ${parseInt(days) + (bonusJours||0)} Jours`, 45, 124);
+    doc.text(`ÉCRANS : ${screens}`, 125, 124);
 
-    doc.setDrawColor(200, 200, 200); doc.line(20, 130, 190, 130);
+    if (bonusJours > 0) {
+        doc.setTextColor(46, 204, 113); doc.setFontSize(10);
+        doc.text(`✓ Bonus parrainage : +${bonusJours} jours inclus`, 45, 132);
+        doc.setTextColor(0,0,0);
+    }
 
-    // Instructions
-    doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 142);
+    doc.setDrawColor(200, 200, 200); doc.line(20, 138, 190, 138);
+
+    doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 150);
     doc.setFontSize(11); doc.setFont("helvetica", "normal");
-    doc.text("1. Connectez votre appareil à Internet.", 22, 153);
-    doc.text("2. Ouvrez l'application MY BOX TV.", 22, 162);
-    doc.text("3. Entrez votre ID ci-dessus dans le champ de connexion.", 22, 171);
-    doc.text("4. Profitez de +14.000 chaînes en HD/4K !", 22, 180);
+    doc.text("1. Connectez votre appareil à Internet.", 22, 161);
+    doc.text("2. Ouvrez l'application MY BOX TV.", 22, 170);
+    doc.text("3. Entrez votre ID ci-dessus dans le champ de connexion.", 22, 179);
+    doc.text("4. Profitez de +14.000 chaînes en HD/4K !", 22, 188);
 
-    doc.line(20, 188, 190, 188);
-
-    // Avertissement
+    doc.line(20, 196, 190, 196);
     doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont("helvetica", "italic");
-    doc.text("Conservez précieusement cet ID. Ne le partagez pas. Valide sur " + screens + " appareil(s) simultané(s).", 105, 197, null, null, "center");
+    doc.text("Conservez précieusement cet ID. Valide sur " + screens + " appareil(s) simultané(s).", 105, 204, null, null, "center");
 
-    // Pied de page
     doc.setFillColor(245, 245, 245); doc.rect(0, 255, 210, 45, 'F');
     doc.setTextColor(229, 9, 20); doc.setFontSize(12); doc.setFont("helvetica", "bold");
     doc.text("SUPPORT TECHNIQUE — WHATSAPP", 105, 268, null, null, "center");
@@ -1145,19 +1646,16 @@ function generateReceiptPDF(key, days, screens) {
 
 function copyNewId() {
     const id = document.getElementById('new-sub-id').innerText;
-    navigator.clipboard.writeText(id).then(() => {
-        showToastNotif("ID copié !");
-    });
+    navigator.clipboard.writeText(id).then(() => showToastNotif("ID copié !"));
 }
 
 function closeSuccessAndLogin() {
     const newKey = document.getElementById('new-sub-id').innerText.trim();
-    document.getElementById('success-modal').style.display = 'none';
+    document.getElementById('success-modal').style.display   = 'none';
     document.getElementById('subscribe-modal').style.display = 'none';
-    // Pré-remplir et connecter automatiquement
-    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-screen').style.display    = 'flex';
     document.getElementById('licenseKey').value = newKey;
-    setTimeout(() => login(), 300); // légère pause pour que l'UI se mette à jour
+    setTimeout(() => login(), 300);
 }
 
 
@@ -1197,9 +1695,9 @@ function scrollTop() { document.getElementById('channel-list').scrollTo({ top: 0
 // ALERTS
 // =======================================================
 let onAlertCloseAction = null, onConfirmAction = null;
-function showMyAlert(msg, cb) { document.getElementById('custom-alert-text').innerText = msg; document.getElementById('custom-alert').style.display = 'flex'; if(cb) onAlertCloseAction = cb; }
+function showMyAlert(msg, cb) { document.getElementById('custom-alert-text').innerText = msg; document.getElementById('custom-alert').style.display = 'block'; if(cb) onAlertCloseAction = cb; }
 function closeCustomAlert() { document.getElementById('custom-alert').style.display = 'none'; if(onAlertCloseAction) { onAlertCloseAction(); onAlertCloseAction = null; } }
-function showMyConfirm(msg, cb) { document.getElementById('custom-confirm-text').innerText = msg; document.getElementById('custom-confirm').style.display = 'flex'; onConfirmAction = cb; }
+function showMyConfirm(msg, cb) { document.getElementById('custom-confirm-text').innerText = msg; document.getElementById('custom-confirm').style.display = 'block'; onConfirmAction = cb; }
 function closeCustomConfirm(c) { document.getElementById('custom-confirm').style.display = 'none'; if(c && onConfirmAction) onConfirmAction(); onConfirmAction = null; }
 
 // =======================================================
@@ -1413,7 +1911,7 @@ function tryPlayChannel(ch) {
     const name = (typeof ch==='object'?ch:allChannels[ch]).name.toLowerCase();
     if(name.includes('adult')||name.includes('xxx')||name.includes('porn')) {
         pendingChannelIndex = index;
-        document.getElementById('pin-modal').style.display='flex';
+        document.getElementById('pin-modal').style.display='block';
     } else { currentChannelIndex=index; playChannel(currentChannelIndex); }
 }
 
@@ -1579,7 +2077,7 @@ function closePin() { document.getElementById('pin-modal').style.display='none';
 // =======================================================
 // SETTINGS
 // =======================================================
-function openSettings() { document.getElementById('settings-modal').style.display='flex'; updateCategoryChips(); }
+function openSettings() { document.getElementById('settings-modal').style.display='block'; updateCategoryChips(); }
 function closeSettings() { document.getElementById('settings-modal').style.display='none'; }
 function showTab(id) {
     document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
@@ -1800,19 +2298,62 @@ function flushBatch(batch) {
 // AUTH — Supabase
 // =======================================================
 function updateAccountDisplay(key, rawStatus) {
-    document.getElementById('sub-id').innerText = key;
+    document.getElementById('sub-id').innerText     = key;
     document.getElementById('sub-device').innerText = deviceId;
     if (rawStatus) {
+        // rawStatus format: 'SUCCESS:duree:max_ecrans'
         const parts = rawStatus.split(':');
         if (parts.length >= 2) {
             const duree = parts[1];
-            document.getElementById('sub-details').innerText = duree === 'VIE' ? 'À vie' : duree + ' jours';
-            const badge = document.getElementById('sub-status');
-            const active = duree === 'VIE' || parseInt(duree) > 0;
-            badge.innerText = active ? 'ACTIF' : 'EXPIRÉ';
-            badge.className = 'account-status-badge ' + (active ? 'badge-active' : 'badge-expired');
+            const jours = parseInt(duree);
+            document.getElementById('sub-details').innerText = isNaN(jours) ? 'À vie' : jours + ' jours restants';
+            const badge  = document.getElementById('sub-status');
+            const active = isNaN(jours) || jours > 0;
+            badge.innerText   = active ? 'ACTIF' : 'EXPIRÉ';
+            badge.className   = 'account-status-badge ' + (active ? 'badge-active' : 'badge-expired');
         }
     }
+    // Load parrainage info (async, non-blocking)
+    _loadParrainageInfo(key);
+}
+
+async function _loadParrainageInfo(key) {
+    try {
+        // Fetch code_parrainage depuis utilisateurs
+        const userData = await sbGet('utilisateurs',
+            'cle=eq.' + encodeURIComponent(key) + '&select=code_parrainage');
+
+        const codeEl = document.getElementById('parrain-code-val');
+        if (userData && userData[0] && userData[0].code_parrainage) {
+            if (codeEl) codeEl.innerText = userData[0].code_parrainage;
+        } else {
+            if (codeEl) codeEl.innerText = '—';
+        }
+
+        // Compter les filleuls (ceux dont parraine_par = code_parrainage de cet utilisateur)
+        const monCode = (userData && userData[0]) ? userData[0].code_parrainage : null;
+        let nbFilleuls = 0;
+        if (monCode) {
+            const filleuls = await sbGet('utilisateurs',
+                'parraine_par=eq.' + encodeURIComponent(monCode) + '&select=cle');
+            nbFilleuls = filleuls ? filleuls.length : 0;
+        }
+
+        const nbEl = document.getElementById('parrain-nb-filleuls');
+        const jEl  = document.getElementById('parrain-jours-gagnes');
+        if (nbEl) nbEl.innerText = nbFilleuls;
+        if (jEl)  jEl.innerText  = (nbFilleuls * 15) + 'j';
+
+    } catch(e) {
+        const el = document.getElementById('parrain-code-val');
+        if (el) el.innerText = '—';
+    }
+}
+
+function copyCodeParrainage() {
+    const code = document.getElementById('parrain-code-val').innerText;
+    if (!code || code === '—' || code === 'CHARGEMENT...') return;
+    navigator.clipboard.writeText(code).then(() => showToastNotif('Code parrainage copié ! 🎁'));
 }
 
 function _calcDaysLeft(user) {
@@ -1836,7 +2377,7 @@ function startRealTimeCheck() {
                 if (hls) { hls.destroy(); hls = null; }
                 video.pause(); video.src = '';
                 document.getElementById('settings-modal').style.display = 'none';
-                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('login-screen').style.display = 'block';
                 document.getElementById('login-msg').style.color = '#ff8c00';
                 document.getElementById('login-msg').innerText = '⛔ Abonnement expiré. Renouvelez votre abonnement.';
                 document.getElementById('licenseKey').value = '';
@@ -1965,11 +2506,8 @@ async function initApp() {
             document.getElementById('scan-info').style.display = 'flex';
             document.getElementById('scan-text').innerText = 'Connexion aux serveurs Premium...';
 
-            // Get sources from 'chaines' table (direct channels) + 'sources' table (playlists)
-            const [chaines, sources] = await Promise.all([
-                sbGet('chaines', 'select=nom,url_flux,groupe,statut'),
-                sbGet('sources', 'select=nom,lien')
-            ]);
+            // MODE PREMIUM : uniquement table 'chaines' de Supabase
+            const chaines = await sbGet('chaines', 'select=nom,url_flux,groupe,statut&order=groupe.asc');
 
             // Nettoyage complet
             allChannels = [DEFAULT_CHANNEL];
@@ -1977,10 +2515,8 @@ async function initApp() {
             allCategories = new Set(['Favoris']);
             selectedCategories = [];
 
-            // Add direct channels from 'chaines' table
             if (chaines && chaines.length > 0) {
-                for (let i = 0; i < chaines.length; i++) {
-                    const c = chaines[i];
+                for (const c of chaines) {
                     if (c.url_flux && !loadedUrls.has(c.url_flux) && !hiddenChannels.includes(c.url_flux)) {
                         const cat = c.groupe || 'Premium';
                         const ch = { name: c.nom || 'Chaîne', url: c.url_flux, category: cat, logo: '' };
@@ -1991,21 +2527,10 @@ async function initApp() {
                 }
             }
 
-            // Load playlists from 'sources' table
-            if (sources && sources.length > 0) {
-                for (let i = 0; i < sources.length; i++) {
-                    const s = sources[i];
-                    if (s.lien) {
-                        document.getElementById('scan-text').innerText = `Chargement : ${s.nom || 'Source '+(i+1)} (${i+1}/${sources.length})...`;
-                        await fetchPlaylistWithWatchdog(s.lien);
-                    }
-                }
-            }
-
             document.getElementById('scan-info').style.display = 'none';
             updateCategoryChips();
             renderList(true);
-            showToastNotif(`✅ Premium activé : ${allChannels.length} chaînes chargées`);
+            showToastNotif('✅ Premium : ' + (allChannels.length - 1) + ' chaînes chargées');
 
         } catch(e) {
             console.log('Premium err', e);
@@ -2184,7 +2709,7 @@ document.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return;
 
     const menuOpen = document.body.classList.contains('menu-open');
-    const settingsOpen = document.getElementById('settings-modal').style.display === 'flex';
+    const settingsOpen = document.getElementById('settings-modal').style.display === 'block';
 
     // Escape / Back : ferme settings → ferme menu
     if (e.key === 'Escape' || e.key === 'Backspace') {
