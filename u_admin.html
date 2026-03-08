@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — My Box TV</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e50914; --blue: #0af; --green: #2ecc71;
+            --bg: #111; --surface: #1a1a1a; --surface2: #222; --border: #2a2a2a;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #eee; margin: 0; }
+
+        /* ===== LOGIN ===== */
+        #login-overlay { position:fixed; inset:0; background:#000; z-index:999; display:flex; align-items:center; justify-content:center; }
+        .login-box { background: var(--surface); padding:40px; border-radius:14px; border:1px solid var(--border); text-align:center; width:320px; }
+        .login-box h2 { color:var(--red); margin:0 0 24px; font-size:16px; letter-spacing:2px; }
+        .login-box input { width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:white; font-size:14px; margin-bottom:12px; }
+        .login-box input:focus { border-color:var(--red); outline:none; }
+        .btn-red { background:var(--red); color:white; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:13px; transition:background .2s; }
+        .btn-red:hover { background:#ff1a24; }
+
+        /* ===== DASHBOARD ===== */
+        #dashboard { display:none; padding:20px; max-width:1350px; margin:0 auto; }
+        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:2px solid var(--border); padding-bottom:18px; flex-wrap:wrap; gap:10px; }
+        .header h1 { color:var(--red); margin:0; display:flex; align-items:center; gap:12px; font-size:22px; }
+
+        /* ===== SYNC STATUS BANNER ===== */
+        #sync-banner {
+            display:flex; align-items:center; gap:12px; background:var(--surface);
+            border:1px solid var(--border); border-radius:10px; padding:10px 16px;
+            margin-bottom:18px; font-size:12px; flex-wrap:wrap;
+        }
+        .sync-node { display:flex; align-items:center; gap:7px; padding:5px 12px;
+            border-radius:20px; font-weight:700; font-size:11px; letter-spacing:.5px; }
+        .sync-ok   { background:rgba(46,204,113,.15); color:var(--green); border:1px solid rgba(46,204,113,.25); }
+        .sync-err  { background:rgba(229,9,20,.15);   color:var(--red);   border:1px solid rgba(229,9,20,.25); }
+        .sync-wait { background:rgba(255,255,255,.06); color:#888;         border:1px solid #333; }
+        .sync-dot  { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+        .dot-ok    { background:var(--green); box-shadow:0 0 6px var(--green); }
+        .dot-err   { background:var(--red);   box-shadow:0 0 6px var(--red); animation:blink 1s infinite; }
+        .dot-wait  { background:#555; }
+        @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+
+        /* ===== STATS ===== */
+        #stats-bar { display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap; }
+        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 20px; flex:1; min-width:120px; }
+        .stat-val  { font-size:26px; font-weight:900; color:var(--red); }
+        .stat-lbl  { font-size:10px; color:#555; margin-top:2px; }
+
+        /* ===== TABS ===== */
+        .tabs { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+        .tab-btn { background:var(--surface2); padding:10px 18px; border-radius:7px; cursor:pointer; border:1px solid var(--border); color:#888; font-weight:700; font-size:12px; transition:all .2s; }
+        .tab-btn:hover { color:#eee; border-color:#444; }
+        .tab-btn.active { background:var(--red); color:white; border-color:var(--red); }
+        .section { display:none; }
+        .section.active { display:block; }
+
+        /* ===== TABLE ===== */
+        table { width:100%; border-collapse:collapse; background:var(--surface); border-radius:10px; overflow:hidden; }
+        th, td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--border); font-size:12px; }
+        th { background:#1e1e1e; color:#666; font-size:10px; text-transform:uppercase; letter-spacing:.5px; }
+        tr:hover td { background:rgba(255,255,255,.03); }
+        td.mono { font-family:monospace; font-weight:700; color:white; letter-spacing:1px; }
+
+        /* ===== ADD FORM ===== */
+        .add-form { background:var(--surface); border:1px solid var(--border); padding:16px 18px; border-radius:10px; margin-bottom:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .add-form h3 { margin:0; color:#666; font-size:12px; white-space:nowrap; }
+        .add-form input, .add-form select { padding:9px 12px; border-radius:7px; border:1px solid var(--border); background:var(--surface2); color:white; font-size:12px; }
+        .add-form input:focus, .add-form select:focus { border-color:var(--red); outline:none; }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-btn { padding:5px 9px; font-size:11px; margin-right:3px; border-radius:5px; cursor:pointer; border:none; color:white; transition:opacity .2s; }
+        .action-btn:hover { opacity:.8; }
+        .btn-pdf  { background:#28a745; }
+        .btn-edit { background:#007bff; }
+        .btn-del  { background:#ff4444; }
+        .btn-rst  { background:#555; }
+
+        /* ===== BADGES ===== */
+        .badge { display:inline-block; padding:2px 9px; border-radius:12px; font-size:10px; font-weight:700; }
+        .badge-vie    { background:rgba(0,170,255,.18); color:var(--blue); }
+        .badge-active { background:rgba(46,204,113,.18); color:var(--green); }
+        .badge-exp    { background:rgba(229,9,20,.18);   color:var(--red); }
+        .badge-std    { background:rgba(229,9,20,.18);   color:var(--red);   border:1px solid rgba(229,9,20,.3); }
+        .badge-pro    { background:rgba(0,170,255,.18);  color:var(--blue);  border:1px solid rgba(0,170,255,.3); }
+
+        /* ===== MAINT ===== */
+        .maint-status { padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; }
+        .maint-on  { background:red;   color:white; }
+        .maint-off { background:green; color:white; }
+
+        /* ===== HEADER BUTTONS ===== */
+        .hdr-btn { padding:8px 14px; border:none; border-radius:7px; cursor:pointer; font-weight:700; font-size:11px; color:white; transition:opacity .2s; }
+        .hdr-btn:hover { opacity:.8; }
+
+        /* ===== TOAST ===== */
+        #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(70px);
+            background:var(--surface); border:1px solid var(--border); color:#eee;
+            padding:11px 22px; border-radius:30px; z-index:9999; font-size:12px;
+            transition:transform .3s ease; pointer-events:none; white-space:nowrap; }
+        #toast.show { transform:translateX(-50%) translateY(0); }
+
+        /* ===== DUAL RESULT MODAL ===== */
+        #result-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9000; align-items:center; justify-content:center; }
+        #result-modal.show { display:flex; }
+        .result-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px; width:380px; max-width:95vw; }
+        .result-box h3 { margin:0 0 18px; font-size:14px; letter-spacing:1px; }
+        .result-row { display:flex; align-items:center; gap:12px; background:var(--surface2); border-radius:8px; padding:12px 14px; margin-bottom:8px; }
+        .result-icon { font-size:18px; width:28px; text-align:center; }
+        .result-info { flex:1; }
+        .result-name { font-weight:700; font-size:12px; }
+        .result-msg  { font-size:10px; color:#666; margin-top:2px; }
+
+        @media(max-width:600px){
+            .add-form input[style*="width"] { width:100% !important; }
+            th:nth-child(n+4), td:nth-child(n+4) { display:none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login-overlay">
+    <div class="login-box">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="85" style="border-radius:10px; margin-bottom:18px;">
+        <h2>ADMIN ACCESS</h2>
+        <input type="password" id="admin-pass" placeholder="Mot de passe admin"
+            onkeyup="if(event.key==='Enter')adminLogin()">
+        <button class="btn-red" onclick="adminLogin()" style="width:100%; padding:13px;">
+            <i class="fas fa-sign-in-alt"></i> ENTRER
+        </button>
+        <div id="login-error" style="color:#ff5555; margin-top:10px; font-size:12px;"></div>
+    </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="dashboard">
+    <div class="header">
+        <h1>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/COMPANY%281%29.png" width="50" style="border-radius:8px;">
+            MY BOX TV <span style="font-size:13px; color:#555;">MANAGER</span>
+        </h1>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="hdr-btn" id="maint-btn" onclick="toggleMaintenance()" style="background:#444;">
+                <i class="fas fa-tools"></i> MAINTENANCE
+            </button>
+            <span id="maint-display" class="maint-status">...</span>
+            <button class="hdr-btn" onclick="downloadBackup()" style="background:#007bff;">
+                <i class="fas fa-download"></i> BACKUP CSV
+            </button>
+            <button class="hdr-btn" onclick="loadData()" style="background:#333;">
+                <i class="fas fa-sync-alt"></i> ACTUALISER
+            </button>
+        </div>
+    </div>
+
+    <!-- Sync status -->
+    <div id="sync-banner">
+        <span style="color:#555; font-size:11px; font-weight:700; margin-right:4px;">SERVEURS :</span>
+        <span class="sync-node sync-wait" id="sync-std">
+            <span class="sync-dot dot-wait"></span> 📡 MY BOX SERVER
+        </span>
+        <span class="sync-node sync-wait" id="sync-pro">
+            <span class="sync-dot dot-wait"></span> ⚡ MY BOX SERVER PRO
+        </span>
+        <span id="sync-note" style="color:#444; font-size:10px; margin-left:auto;">Données chargées depuis le serveur PRO · Toutes les actions écrivent sur les deux serveurs</span>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats-bar">
+        <div class="stat-card"><div class="stat-val" id="st-total">—</div><div class="stat-lbl">Abonnés</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-active">—</div><div class="stat-lbl">Actifs</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-vie">—</div><div class="stat-lbl">À vie</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-sources">—</div><div class="stat-lbl">Sources M3U</div></div>
+        <div class="stat-card"><div class="stat-val" id="st-chaines">—</div><div class="stat-lbl">Chaînes directes</div></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('users-s')"><i class="fas fa-users"></i> UTILISATEURS</button>
+        <button class="tab-btn" onclick="showTab('sources-s')"><i class="fas fa-link"></i> SOURCES M3U</button>
+        <button class="tab-btn" onclick="showTab('chaines-s')"><i class="fas fa-tv"></i> CHAÎNES DIRECTES</button>
+        <button class="tab-btn" onclick="showTab('message-s')"><i class="fas fa-bullhorn"></i> MESSAGE</button>
+    </div>
+
+    <!-- ---- UTILISATEURS ---- -->
+    <div id="users-s" class="section active">
+        <div class="add-form">
+            <h3>Nouveau client :</h3>
+            <input type="text" id="new-key" placeholder="ID (vide = auto)" style="width:160px;">
+            <select id="new-days">
+                <option value="30">30 Jours</option>
+                <option value="60">60 Jours</option>
+                <option value="90">3 Mois</option>
+                <option value="365">1 An</option>
+                <option value="VIE">À VIE</option>
+            </select>
+            <select id="new-screens">
+                <option value="1">1 Écran</option>
+                <option value="2">2 Écrans</option>
+                <option value="4">4 Écrans</option>
+                <option value="10">10 Écrans</option>
+                <option value="50">50 Écrans</option>
+            </select>
+            <input type="text" id="new-msg" placeholder="Message perso (opt.)" style="width:180px;">
+            <button class="btn-red" onclick="addUser()"><i class="fas fa-plus"></i> CRÉER SUR LES 2 SERVEURS</button>
+        </div>
+        <table>
+            <thead><tr><th>CLÉ</th><th>DURÉE</th><th>ÉCRANS</th><th>APPAREILS</th><th>DATE</th><th>MESSAGE</th><th>ACTIONS</th></tr></thead>
+            <tbody id="users-body"></tbody>
+        </table>
+    </div>
+
+    <!-- ---- SOURCES ---- -->
+    <div id="sources-s" class="section">
+        <div class="add-form">
+            <h3>Nouvelle source :</h3>
+            <input type="text" id="new-src-name" placeholder="Nom" style="width:180px;">
+            <input type="text" id="new-src-link" placeholder="https://..." style="width:400px;">
+            <button class="btn-red" onclick="addSource()"><i class="fas fa-plus"></i> AJOUTER</button>
+        </div>
+        <table>
+            <thead><tr><th>#</th><th>NOM</th><th>LIEN</th><th>ACTIONS</th></tr></thead>
+            <tbody id="sources-body"></tbody>
+        </table>
+    </div>
+
+    <!-- ---- CHAÎNES DIRECTES ---- -->
+    <div id="chaines-s" class="section">
+        <div class="add-form">
+            <h3>Nouvelle chaîne :</h3>
+            <input type="text" id="new-ch-nom"    placeholder="Nom"             style="width:150px;">
+            <input type="text" id="new-ch-url"    placeholder="https://... flux" style="width:320px;">
+            <input type="text" id="new-ch-groupe" placeholder="Groupe/Catégorie" style="width:150px;">
+            <select id="new-ch-statut"><option value="OK">OK</option><option value="HS">HS</option></select>
+            <button class="btn-red" onclick="addChaine()"><i class="fas fa-plus"></i> AJOUTER</button>
+        </div>
+        <table>
+            <thead><tr><th>NOM</th><th>URL</th><th>GROUPE</th><th>STATUT</th><th>ACTIONS</th></tr></thead>
+            <tbody id="chaines-body"></tbody>
+        </table>
+    </div>
+
+    <!-- ---- MESSAGE ---- -->
+    <div id="message-s" class="section">
+        <div style="background:var(--surface); border:1px solid var(--border); padding:22px; border-radius:10px; max-width:580px;">
+            <h3 style="margin:0 0 6px; color:#aaa; font-size:13px;"><i class="fas fa-bullhorn"></i> Message d'accueil global</h3>
+            <p style="font-size:11px; color:#555; margin:0 0 14px;">Affiché à tous les utilisateurs au démarrage.</p>
+            <input type="text" id="global-msg" style="width:100%; padding:13px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:white; font-size:13px;" placeholder="Ex: Maintenance prévue ce soir…">
+            <button class="btn-red" onclick="saveMessage()" style="width:100%; margin-top:12px; padding:12px; border-radius:8px;">
+                <i class="fas fa-save"></i> METTRE À JOUR SUR LES 2 SERVEURS
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== DUAL RESULT MODAL ========== -->
+<div id="result-modal">
+    <div class="result-box">
+        <h3 id="result-title" style="color:var(--green);"><i class="fas fa-check-circle"></i> OPÉRATION TERMINÉE</h3>
+        <div id="result-std" class="result-row">
+            <div class="result-icon">📡</div>
+            <div class="result-info">
+                <div class="result-name">MY BOX SERVER</div>
+                <div class="result-msg" id="res-std-msg">—</div>
+            </div>
+            <span id="res-std-icon" style="font-size:18px;">⏳</span>
+        </div>
+        <div id="result-pro" class="result-row">
+            <div class="result-icon">⚡</div>
+            <div class="result-info">
+                <div class="result-name">MY BOX SERVER PRO</div>
+                <div class="result-msg" id="res-pro-msg">—</div>
+            </div>
+            <span id="res-pro-icon" style="font-size:18px;">⏳</span>
+        </div>
+        <button class="btn-red" onclick="closeResult()" style="width:100%; margin-top:16px; padding:12px; border-radius:8px;">OK</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ================================================================
+// DUAL SERVER CONFIG
+// ================================================================
+const GS_URL  = "https://script.google.com/macros/s/AKfycbwtT21oefu4dRVMR-dn2bMM8y8Sqv_lXSgYO-vccxosP7j87y1CvyGqlp3HYSbYL4XPaw/exec";
+const SB_URL  = "https://yvcdadenofftnbljutwk.supabase.co";
+const SB_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2Y2RhZGVub2ZmdG5ibGp1dHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzQ0ODIsImV4cCI6MjA4ODQ1MDQ4Mn0.xqJzLpQszFmph599FBIvdE7NF88_i-JkABG-aSrAndE";
+const ADMIN_PASSWORD = "ADMIN1234";
+const SB_HDR = { 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json', 'Prefer':'return=representation' };
+
+let globalUsers = [], globalSources = [], globalChaines = [];
+
+// ================================================================
+// LOW-LEVEL HELPERS
+// ================================================================
+
+// --- Google Sheets ---
+async function gs(params) {
+    try {
+        const res = await fetch(GS_URL + '?' + params);
+        return await res.text();
+    } catch(e) { throw new Error('Réseau : ' + e.message); }
+}
+async function gsJSON(params) {
+    try {
+        const res = await fetch(GS_URL + '?' + params);
+        return await res.json();
+    } catch(e) { throw new Error('Réseau : ' + e.message); }
+}
+
+// --- Supabase ---
+async function sbGet(table, params) {
+    const q = params ? '?' + params : '';
+    const res = await fetch(`${SB_URL}/rest/v1/${table}${q}`, { headers: SB_HDR });
+    if (!res.ok) throw new Error((await res.json())?.message || res.status);
+    return await res.json();
+}
+async function sbInsert(table, body) {
+    const res = await fetch(`${SB_URL}/rest/v1/${table}`, { method:'POST', headers:SB_HDR, body:JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json())?.message || res.status);
+    return await res.json();
+}
+async function sbPatch(table, filter, body) {
+    const res = await fetch(`${SB_URL}/rest/v1/${table}?${filter}`, { method:'PATCH', headers:SB_HDR, body:JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json())?.message || res.status);
+}
+async function sbDelete(table, filter) {
+    const res = await fetch(`${SB_URL}/rest/v1/${table}?${filter}`, { method:'DELETE', headers:SB_HDR });
+    if (!res.ok) throw new Error((await res.json())?.message || res.status);
+}
+
+// ================================================================
+// DUAL WRITE — runs both in parallel, shows unified result
+// ================================================================
+async function dualWrite(label, gsFn, sbFn, onSuccess) {
+    showResultModal(label);
+    setResultRow('std', 'wait', 'En cours…');
+    setResultRow('pro', 'wait', 'En cours…');
+
+    const [gsRes, sbRes] = await Promise.allSettled([gsFn(), sbFn()]);
+
+    const gsOk = gsRes.status === 'fulfilled';
+    const sbOk = sbRes.status === 'fulfilled';
+
+    setResultRow('std', gsOk ? 'ok' : 'err', gsOk ? 'Synchronisé ✓' : '✗ ' + gsRes.reason?.message);
+    setResultRow('pro', sbOk ? 'ok' : 'err', sbOk ? 'Synchronisé ✓' : '✗ ' + sbRes.reason?.message);
+
+    const title = document.getElementById('result-title');
+    if (gsOk || sbOk) {
+        title.innerHTML = '<i class="fas fa-check-circle" style="color:var(--green)"></i> ' + label;
+        title.style.color = 'var(--green)';
+        if (onSuccess) await onSuccess(gsOk, sbOk);
+    } else {
+        title.innerHTML = '<i class="fas fa-exclamation-circle" style="color:var(--red)"></i> Échec des deux serveurs';
+        title.style.color = 'var(--red)';
+    }
+    updateSyncStatus(gsOk, sbOk);
+}
+
+function showResultModal(label) {
+    document.getElementById('result-modal').classList.add('show');
+    document.getElementById('result-title').innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + label;
+    document.getElementById('result-title').style.color = '#aaa';
+}
+function closeResult() {
+    document.getElementById('result-modal').classList.remove('show');
+    loadData();
+}
+function setResultRow(srv, state, msg) {
+    const icons = { ok:'✅', err:'❌', wait:'⏳' };
+    document.getElementById('res-' + srv + '-msg').innerText  = msg;
+    document.getElementById('res-' + srv + '-icon').innerText = icons[state] || '⏳';
+}
+function updateSyncStatus(gsOk, sbOk) {
+    const set = (id, ok) => {
+        const el = document.getElementById('sync-' + id);
+        el.className = 'sync-node ' + (ok ? 'sync-ok' : 'sync-err');
+        el.querySelector('.sync-dot').className = 'sync-dot ' + (ok ? 'dot-ok' : 'dot-err');
+    };
+    set('std', gsOk);
+    set('pro', sbOk);
+}
+
+// ================================================================
+// LOGIN — local password check
+// ================================================================
+function adminLogin() {
+    const pass = document.getElementById('admin-pass').value;
+    if (pass === ADMIN_PASSWORD) {
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadData();
+    } else {
+        document.getElementById('login-error').innerText = '❌ Mot de passe incorrect';
+    }
+}
+
+// ================================================================
+// LOAD DATA (primary: Supabase PRO — fastest & structured)
+// ================================================================
+async function loadData() {
+    toast('🔄 Actualisation…');
+    try {
+        const [users, sources, chaines, cfg] = await Promise.all([
+            sbGet('utilisateurs', 'select=*&order=date_activation.desc'),
+            sbGet('sources',      'select=*&order=id.asc'),
+            sbGet('chaines',      'select=*&order=nom.asc'),
+            sbGet('config',       'id=eq.1&select=maintenance,message_accueil')
+        ]);
+
+        globalUsers   = users   || [];
+        globalSources = sources || [];
+        globalChaines = chaines || [];
+
+        // Sync indicators — if we got here Supabase is OK
+        document.getElementById('sync-pro').className = 'sync-node sync-ok';
+        document.getElementById('sync-pro').querySelector('.sync-dot').className = 'sync-dot dot-ok';
+
+        // Stats
+        const vie    = globalUsers.filter(u => u.duree === 'VIE').length;
+        const active = globalUsers.filter(u => u.duree === 'VIE' || parseInt(u.duree) > 0).length;
+        document.getElementById('st-total').innerText   = globalUsers.length;
+        document.getElementById('st-active').innerText  = active;
+        document.getElementById('st-vie').innerText     = vie;
+        document.getElementById('st-sources').innerText = globalSources.length;
+        document.getElementById('st-chaines').innerText = globalChaines.length;
+
+        // Maintenance
+        if (cfg && cfg[0]) {
+            const on = cfg[0].maintenance === true;
+            const el = document.getElementById('maint-display');
+            el.innerText   = on ? 'ACTIF ⛔' : 'INACTIF ✅';
+            el.className   = 'maint-status ' + (on ? 'maint-on' : 'maint-off');
+            const msgIn = document.getElementById('global-msg');
+            if (msgIn) msgIn.value = cfg[0].message_accueil || '';
+        }
+
+        // Users table
+        const tbody = document.getElementById('users-body');
+        tbody.innerHTML = '';
+        globalUsers.forEach(u => {
+            const devCount = u.appareils ? u.appareils.split(',').filter(d=>d.trim()).length : 0;
+            const isVie    = u.duree === 'VIE';
+            const days     = isVie ? '∞' : parseInt(u.duree);
+            const bc       = isVie ? 'badge-vie' : days > 0 ? 'badge-active' : 'badge-exp';
+            const bt       = isVie ? 'À VIE' : days > 0 ? days+'j' : 'EXPIRÉ';
+            tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td class="mono">${esc(u.cle)}</td>
+                <td><span class="badge ${bc}">${bt}</span></td>
+                <td>${u.max_ecrans||1}</td>
+                <td style="color:#555;">${devCount}/${u.max_ecrans||1}</td>
+                <td style="color:#444; font-size:11px;">${u.date_activation||'—'}</td>
+                <td style="color:#555; font-size:11px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(u.message||'—')}</td>
+                <td style="white-space:nowrap;">
+                    <button class="action-btn btn-pdf"  onclick="generatePDF('${esc(u.cle)}','${u.duree}','${u.max_ecrans||1}')" title="PDF"><i class="fas fa-file-pdf"></i></button>
+                    <button class="action-btn btn-edit" onclick="editUser('${esc(u.cle)}','${u.duree}','${u.max_ecrans||1}','${esc(u.message||'')}')" title="Modifier"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-rst"  onclick="resetDevices('${esc(u.cle)}')" title="Reset appareils"><i class="fas fa-unlock"></i></button>
+                    <button class="action-btn btn-del"  onclick="deleteUser('${esc(u.cle)}')" title="Supprimer"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`);
+        });
+
+        // Sources table
+        const sBo = document.getElementById('sources-body');
+        sBo.innerHTML = '';
+        globalSources.forEach(s => {
+            sBo.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td style="color:#444;">${s.id}</td>
+                <td style="font-weight:600;">${esc(s.nom)}</td>
+                <td style="color:#555; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(s.lien)}">${esc(s.lien)}</td>
+                <td><button class="action-btn btn-del" onclick="deleteSource(${s.id},'${esc(s.nom)}','${esc(s.lien)}')"><i class="fas fa-trash"></i></button></td>
+            </tr>`);
+        });
+
+        // Chaînes table
+        const cBo = document.getElementById('chaines-body');
+        cBo.innerHTML = '';
+        globalChaines.forEach(c => {
+            const sc = c.statut==='OK' ? 'var(--green)' : 'var(--red)';
+            cBo.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td style="font-weight:600;">${esc(c.nom)}</td>
+                <td style="color:#555; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(c.url_flux)}">${esc(c.url_flux)}</td>
+                <td><span style="background:rgba(255,255,255,.06);padding:2px 8px;border-radius:10px;font-size:10px;">${esc(c.groupe||'—')}</span></td>
+                <td style="color:${sc};font-weight:700;font-size:11px;">${esc(c.statut||'—')}</td>
+                <td>
+                    <button class="action-btn btn-edit" onclick="editChaine('${c.id}','${esc(c.nom)}','${esc(c.url_flux)}','${esc(c.groupe||'')}','${c.statut||'OK'}')"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn btn-del"  onclick="deleteChaine('${c.id}','${esc(c.nom)}')"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`);
+        });
+
+        toast('✅ Données actualisées');
+    } catch(e) {
+        document.getElementById('sync-pro').className = 'sync-node sync-err';
+        document.getElementById('sync-pro').querySelector('.sync-dot').className = 'sync-dot dot-err';
+        toast('❌ Erreur Supabase : ' + e.message);
+    }
+}
+
+function esc(s){ return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); }
+
+// ================================================================
+// UTILISATEURS — DUAL WRITE
+// ================================================================
+async function addUser() {
+    let key = document.getElementById('new-key').value.trim().toUpperCase();
+    if (!key) {
+        const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let r = "";
+        for (let i=0;i<6;i++) r += c.charAt(Math.floor(Math.random()*c.length));
+        key = "BOX-" + r;
+    }
+    const days    = document.getElementById('new-days').value;
+    const screens = parseInt(document.getElementById('new-screens').value);
+    const msg     = document.getElementById('new-msg').value.trim();
+
+    if (!confirm(`Créer le client "${key}" (${days}j / ${screens} écran(s)) sur les 2 serveurs ?`)) return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    await dualWrite(
+        'CRÉATION ABONNÉ — ' + key,
+        () => gs(`action=admin_user_action&type=add&key=${encodeURIComponent(key)}&days=${days}&screens=${screens}`),
+        () => sbInsert('utilisateurs', { cle:key, duree:days, appareils:'', date_activation:today, max_ecrans:screens, message:msg }),
+        (gsOk, sbOk) => {
+            if (gsOk || sbOk) {
+                generatePDF(key, days, screens);
+                document.getElementById('new-key').value = '';
+                document.getElementById('new-msg').value = '';
+            }
+        }
+    );
+}
+
+async function deleteUser(k) {
+    if (!confirm(`Supprimer "${k}" sur les 2 serveurs ?`)) return;
+    await dualWrite(
+        'SUPPRESSION — ' + k,
+        () => gs(`action=admin_user_action&type=delete&key=${encodeURIComponent(k)}`),
+        () => sbDelete('utilisateurs', 'cle=eq.' + encodeURIComponent(k))
+    );
+}
+
+async function editUser(k, oldD, oldS, oldMsg) {
+    const d   = prompt('Durée (jours ou VIE) :', oldD);  if (d===null) return;
+    const s   = prompt('Nb écrans :', oldS);              if (s===null) return;
+    const msg = prompt('Message perso (opt.) :', oldMsg); if (msg===null) return;
+    await dualWrite(
+        'MODIFICATION — ' + k,
+        () => gs(`action=admin_user_action&type=edit&key=${encodeURIComponent(k)}&days=${d}&screens=${s}`),
+        () => sbPatch('utilisateurs', 'cle=eq.'+encodeURIComponent(k), { duree:d, max_ecrans:parseInt(s), message:msg })
+    );
+}
+
+async function resetDevices(k) {
+    if (!confirm(`Réinitialiser les appareils de "${k}" sur les 2 serveurs ?`)) return;
+    await dualWrite(
+        'RESET APPAREILS — ' + k,
+        () => gs(`action=admin_user_action&type=edit&key=${encodeURIComponent(k)}&reset=yes`),
+        () => sbPatch('utilisateurs', 'cle=eq.'+encodeURIComponent(k), { appareils:'' })
+    );
+}
+
+// ================================================================
+// SOURCES M3U — DUAL WRITE
+// ================================================================
+async function addSource() {
+    const n = document.getElementById('new-src-name').value.trim();
+    const l = document.getElementById('new-src-link').value.trim();
+    if (!l) { toast('⚠️ Entrez un lien'); return; }
+    await dualWrite(
+        'AJOUT SOURCE — ' + (n||l.substring(0,30)),
+        () => gs(`action=admin_source_action&type=add&name=${encodeURIComponent(n||'Source')}&link=${encodeURIComponent(l)}`),
+        () => sbInsert('sources', { nom: n||'Source', lien: l }),
+        () => {
+            document.getElementById('new-src-name').value = '';
+            document.getElementById('new-src-link').value = '';
+        }
+    );
+}
+
+async function deleteSource(sbId, nom, lien) {
+    if (!confirm(`Supprimer la source "${nom}" sur les 2 serveurs ?`)) return;
+    await dualWrite(
+        'SUPPRESSION SOURCE — ' + nom,
+        () => gs(`action=admin_source_action&type=delete&link=${encodeURIComponent(lien)}`),
+        () => sbDelete('sources', 'id=eq.' + sbId)
+    );
+}
+
+// ================================================================
+// CHAÎNES DIRECTES — DUAL WRITE (Supabase only for chaînes table)
+// ================================================================
+async function addChaine() {
+    const nom    = document.getElementById('new-ch-nom').value.trim();
+    const url    = document.getElementById('new-ch-url').value.trim();
+    const groupe = document.getElementById('new-ch-groupe').value.trim();
+    const statut = document.getElementById('new-ch-statut').value;
+    if (!nom||!url) { toast('⚠️ Nom et URL obligatoires'); return; }
+    await dualWrite(
+        'AJOUT CHAÎNE — ' + nom,
+        // GS: add as a source/playlist entry (closest equivalent)
+        () => gs(`action=admin_source_action&type=add&name=${encodeURIComponent(nom)}&link=${encodeURIComponent(url)}`),
+        () => sbInsert('chaines', { nom, url_flux:url, groupe:groupe||'Général', statut }),
+        () => {
+            document.getElementById('new-ch-nom').value    = '';
+            document.getElementById('new-ch-url').value    = '';
+            document.getElementById('new-ch-groupe').value = '';
+        }
+    );
+}
+
+async function editChaine(id, oldNom, oldUrl, oldGroupe, oldStatut) {
+    const nom    = prompt('Nom :', oldNom);     if (nom===null) return;
+    const url    = prompt('URL flux :', oldUrl); if (url===null) return;
+    const groupe = prompt('Groupe :', oldGroupe); if (groupe===null) return;
+    const statut = prompt('Statut (OK/HS) :', oldStatut); if (statut===null) return;
+    await dualWrite(
+        'MODIFICATION CHAÎNE — ' + nom,
+        // GS: delete old + add new (best possible with Sheet API)
+        async () => {
+            await gs(`action=admin_source_action&type=delete&link=${encodeURIComponent(oldUrl)}`);
+            await gs(`action=admin_source_action&type=add&name=${encodeURIComponent(nom)}&link=${encodeURIComponent(url)}`);
+        },
+        () => sbPatch('chaines', 'id=eq.'+id, { nom, url_flux:url, groupe, statut:statut.toUpperCase() })
+    );
+}
+
+async function deleteChaine(id, nom) {
+    if (!confirm(`Supprimer la chaîne "${nom}" sur les 2 serveurs ?`)) return;
+    await dualWrite(
+        'SUPPRESSION CHAÎNE — ' + nom,
+        // GS: remove from sources as well if it was added there
+        () => gs(`action=admin_source_action&type=delete&link=CHAINE_${id}`).catch(()=>{}),
+        () => sbDelete('chaines', 'id=eq.'+id)
+    );
+}
+
+// ================================================================
+// MESSAGE — DUAL WRITE
+// ================================================================
+async function saveMessage() {
+    const msg = document.getElementById('global-msg').value.trim();
+    await dualWrite(
+        'MISE À JOUR MESSAGE',
+        () => gs(`action=admin_set_message&msg=${encodeURIComponent(msg)}`),
+        () => sbPatch('config', 'id=eq.1', { message_accueil: msg })
+    );
+}
+
+// ================================================================
+// MAINTENANCE — DUAL WRITE
+// ================================================================
+async function toggleMaintenance() {
+    const current = document.getElementById('maint-display').innerText.includes('ACTIF');
+    const newState = !current;
+    if (!confirm('Maintenance → ' + (newState ? 'ON ⛔' : 'OFF ✅') + ' sur les 2 serveurs ?')) return;
+    await dualWrite(
+        'MAINTENANCE ' + (newState ? 'ON ⛔' : 'OFF ✅'),
+        () => gs(`action=set_maintenance&status=${newState ? 'ON' : 'OFF'}`),
+        () => sbPatch('config', 'id=eq.1', { maintenance: newState })
+    );
+}
+
+// ================================================================
+// BACKUP CSV
+// ================================================================
+function downloadBackup() {
+    if (!globalUsers.length) { toast('⚠️ Aucune donnée'); return; }
+    let csv = "CLE,DUREE,APPAREILS,DATE_ACTIVATION,MAX_ECRANS,MESSAGE\n";
+    globalUsers.forEach(u => {
+        csv += [u.cle, u.duree, u.appareils||'', u.date_activation||'', u.max_ecrans||1, u.message||'']
+            .map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',') + '\n';
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'}));
+    a.download = 'backup_myboxtv_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    toast('💾 Backup téléchargé');
+}
+
+// ================================================================
+// TABS / TOAST
+// ================================================================
+function showTab(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+let _tt;
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.innerText = msg; el.classList.add('show');
+    clearTimeout(_tt);
+    _tt = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ================================================================
+// PDF
+// ================================================================
+function generatePDF(key, days, screens) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const now = new Date();
+    const dt  = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+
+    doc.setFillColor(20,20,20); doc.rect(0,0,210,42,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(28); doc.setFont("helvetica","bold");
+    doc.text("MY BOX TV", 105, 20, null, null, "center");
+    doc.setFontSize(12); doc.setTextColor(229,9,20);
+    doc.text("CERTIFICAT D'ABONNEMENT", 105, 31, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("Émis le " + dt, 105, 39, null, null, "center");
+
+    doc.setTextColor(0,0,0); doc.setFontSize(14); doc.setFont("helvetica","normal");
+    doc.text("VOTRE ID DE CONNEXION :", 105, 60, null, null, "center");
+    doc.setFillColor(240,240,240); doc.setDrawColor(229,9,20); doc.setLineWidth(1.5);
+    doc.rect(35,65,140,27,'FD');
+    doc.setFont("courier","bold"); doc.setFontSize(30); doc.setTextColor(229,9,20);
+    doc.text(key, 105, 83, null, null, "center");
+
+    doc.setFont("helvetica","normal"); doc.setTextColor(0,0,0); doc.setFontSize(12); doc.setLineWidth(.1);
+    doc.text("VALIDITÉ : " + days + " Jours", 45, 106);
+    doc.text("ÉCRANS : " + screens, 130, 106);
+    doc.setDrawColor(200,200,200); doc.line(20,115,190,115);
+
+    doc.setFontSize(13); doc.setFont("helvetica","bold"); doc.text("INSTRUCTIONS D'ACCÈS", 20, 128);
+    doc.setFontSize(11); doc.setFont("helvetica","normal");
+    doc.text("1. Connectez votre appareil à Internet.", 22, 140);
+    doc.text("2. Ouvrez l'application MY BOX TV.", 22, 150);
+    doc.text("3. Entrez votre ID ci-dessus dans le champ de connexion.", 22, 160);
+    doc.text("4. Choisissez votre serveur préféré.", 22, 170);
+    doc.text("5. Profitez de +14 000 chaînes en HD/4K !", 22, 180);
+    doc.line(20,188,190,188);
+
+    doc.setFontSize(9); doc.setTextColor(130,130,130); doc.setFont("helvetica","italic");
+    doc.text("Cet ID fonctionne sur les deux serveurs My Box TV · Ne le partagez pas.", 105, 196, null, null, "center");
+
+    doc.setFillColor(245,245,245); doc.rect(0,255,210,45,'F');
+    doc.setTextColor(229,9,20); doc.setFontSize(12); doc.setFont("helvetica","bold");
+    doc.text("SUPPORT TECHNIQUE — WHATSAPP", 105, 268, null, null, "center");
+    doc.setTextColor(0,0,0); doc.setFont("helvetica","normal"); doc.setFontSize(14);
+    doc.text("63 82 87 67", 105, 280, null, null, "center");
+    doc.setFontSize(9); doc.setTextColor(150,150,150);
+    doc.text("www.myboxtv.com  —  Merci de votre confiance !", 105, 291, null, null, "center");
+
+    doc.save(`Abonnement_${key}.pdf`);
+}
+</script>
+</body>
+</html>
